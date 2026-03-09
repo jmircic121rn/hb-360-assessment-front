@@ -72,7 +72,7 @@ export function UnifiedLogin() {
     try {
       const res = await api.login(creds);
       setToken(res.user.role, res.token);
-      navigate(res.user.role === 'manager' ? '/manager/dashboard' : '/employee/dashboard');
+      navigate(res.user.role === 'manager' ? '/manager/welcome' : '/employee/dashboard');
     } catch (e) {
       setError(e.message);
     } finally {

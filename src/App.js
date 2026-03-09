@@ -10,8 +10,8 @@ import { UnifiedLogin, ManagerLogin, EmployeeLogin, AdminLogin } from './pages/a
 
 // Manager portal
 import {
-  ManagerDashboard, ManagerEmployees, EmployeeForm,
-  NewCampaign, CampaignDetail, ManagerReports
+  ManagerWelcome, ManagerDashboard, ManagerEmployees, EmployeeForm,
+  NewCampaign, CampaignEdit, CampaignDetail, ManagerReports
 } from './pages/manager/ManagerPages';
 
 // Employee portal
@@ -36,14 +36,14 @@ function RedirectIfAuth({ role, redirectTo, children }) {
 
 // Redirect from unified login if already logged in as any role
 function RedirectIfAnyAuth({ children }) {
-  if (localStorage.getItem('compass_token_manager')) return <Navigate to="/manager/dashboard" replace />;
+  if (localStorage.getItem('compass_token_manager')) return <Navigate to="/manager/welcome" replace />;
   if (localStorage.getItem('compass_token_employee')) return <Navigate to="/employee/dashboard" replace />;
   return children;
 }
 
 // Redirect any logged-in user away from the landing page
 function LandingGuard() {
-  if (localStorage.getItem('compass_token_manager')) return <Navigate to="/manager/dashboard" replace />;
+  if (localStorage.getItem('compass_token_manager')) return <Navigate to="/manager/welcome" replace />;
   if (localStorage.getItem('compass_token_employee')) return <Navigate to="/employee/dashboard" replace />;
   if (localStorage.getItem('compass_token_admin')) return <Navigate to="/admin/campaigns" replace />;
   return <LandingPage />;
@@ -64,14 +64,16 @@ export default function App() {
         <Route path="/admin/login" element={<RedirectIfAuth role="admin" redirectTo="/admin/campaigns"><AdminLogin /></RedirectIfAuth>} />
 
         {/* Manager portal */}
+        <Route path="/manager/welcome" element={<RequireAuth role="manager"><ManagerWelcome /></RequireAuth>} />
         <Route path="/manager/dashboard" element={<RequireAuth role="manager"><ManagerDashboard /></RequireAuth>} />
         <Route path="/manager/employees" element={<RequireAuth role="manager"><ManagerEmployees /></RequireAuth>} />
         <Route path="/manager/employees/new" element={<RequireAuth role="manager"><EmployeeForm /></RequireAuth>} />
         <Route path="/manager/employees/:id/edit" element={<RequireAuth role="manager"><EmployeeForm editMode /></RequireAuth>} />
         <Route path="/manager/campaigns/new" element={<RequireAuth role="manager"><NewCampaign /></RequireAuth>} />
+        <Route path="/manager/campaigns/:id/edit" element={<RequireAuth role="manager"><CampaignEdit /></RequireAuth>} />
         <Route path="/manager/campaigns/:id" element={<RequireAuth role="manager"><CampaignDetail /></RequireAuth>} />
         <Route path="/manager/reports" element={<RequireAuth role="manager"><ManagerReports /></RequireAuth>} />
-        <Route path="/manager" element={<Navigate to="/manager/dashboard" replace />} />
+        <Route path="/manager" element={<Navigate to="/manager/welcome" replace />} />
 
         {/* Employee portal */}
         <Route path="/employee/dashboard" element={<RequireAuth role="employee"><EmployeeDashboard /></RequireAuth>} />

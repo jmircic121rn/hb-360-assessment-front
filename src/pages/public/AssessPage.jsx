@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../../utils/api';
 import { Logo } from '../../components/Layout';
-import { Btn, Spinner, Alert, Card } from '../../components/UI';
+import { Btn, Spinner, Alert, Card, FormField, Input } from '../../components/UI';
 import { leaderQuestions40 } from '../../data/leaderQuestions40';
 import { managerQuestions } from '../../data/managerQuestions';
 import { peerQuestions } from '../../data/peerQuestions';
@@ -16,6 +16,8 @@ export default function AssessPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [currentPillar, setCurrentPillar] = useState(0);
+  const [assessorInfo, setAssessorInfo] = useState({ firstName: '', lastName: '', email: '' });
+  const [identityConfirmed, setIdentityConfirmed] = useState(false);
 
   useEffect(() => {
     api.getAssessment(token)
@@ -53,10 +55,77 @@ export default function AssessPage() {
     </div>
   );
 
+  const assessmentType = data?.assessmentType || data?.type || 'self';
+  const needsIdentity = ['peer', 'directreport', 'direct_report'].includes(assessmentType);
+
+  // Identity step for peer / direct report assessments
+  if (!loading && !error && !submitted && needsIdentity && !identityConfirmed) {
+    function handleIdentitySubmit(e) {
+      e.preventDefault();
+      setIdentityConfirmed(true);
+    }
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--canvas)' }}>
+        <header style={{
+          background: 'var(--ink)', padding: '16px 24px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          position: 'sticky', top: 0, zIndex: 10,
+        }}>
+          <Logo light size="sm" />
+          {data?.employeeName && (
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
+              Assessment for <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{data.employeeName}</strong>
+            </div>
+          )}
+        </header>
+        <div style={{ maxWidth: 480, margin: '60px auto', padding: '0 24px' }}>
+          <Card style={{ padding: '36px' }}>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', marginBottom: '8px' }}>Before you begin</h2>
+            <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '28px' }}>
+              Please enter your details. This information will be recorded alongside your assessment responses.
+            </p>
+            <form onSubmit={handleIdentitySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <FormField label="First Name" required>
+                  <Input
+                    value={assessorInfo.firstName}
+                    onChange={e => setAssessorInfo(i => ({ ...i, firstName: e.target.value }))}
+                    placeholder="First name"
+                    required
+                    autoFocus
+                  />
+                </FormField>
+                <FormField label="Last Name" required>
+                  <Input
+                    value={assessorInfo.lastName}
+                    onChange={e => setAssessorInfo(i => ({ ...i, lastName: e.target.value }))}
+                    placeholder="Last name"
+                    required
+                  />
+                </FormField>
+              </div>
+              <FormField label="Email address" required>
+                <Input
+                  type="email"
+                  value={assessorInfo.email}
+                  onChange={e => setAssessorInfo(i => ({ ...i, email: e.target.value }))}
+                  placeholder="your@email.com"
+                  required
+                />
+              </FormField>
+              <Btn type="submit" style={{ marginTop: '8px', justifyContent: 'center' }}>
+                Continue to Assessment →
+              </Btn>
+            </form>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   // Select question set based on assessment type, then language
   const rawLang = data?.language || data?.lang || 'sr';
   const lang = rawLang === 'en' ? 'eng' : rawLang;
-  const assessmentType = data?.assessmentType || data?.type || 'self';
   const questionBank =
     assessmentType === 'manager' ? managerQuestions :
     assessmentType === 'peer' || assessmentType === 'other' ? peerQuestions :
@@ -72,7 +141,9 @@ export default function AssessPage() {
   async function handleSubmit() {
     setSubmitting(true);
     try {
-      await api.submitAssessment(token, { answers });
+      const payload = { answers };
+      if (needsIdentity) payload.assessorInfo = assessorInfo;
+      await api.submitAssessment(token, payload);
       setSubmitted(true);
     } catch (e) {
       setError(e.message);

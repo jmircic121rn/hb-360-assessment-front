@@ -57,10 +57,16 @@ export const api = {
     getCampaigns: () => request('/api/360/manager/cycles', {}, 'manager'),
     getCampaign: (id) => request(`/api/360/manager/cycles/${id}`, {}, 'manager'),
     createCampaign: (data) => request('/api/360/manager/cycles', { method: 'POST', body: JSON.stringify(data) }, 'manager'),
+    // Group campaign — backend kreira po jedan cycle za svakog employee-a
+    createCampaignBatch: (data) => request('/api/360/manager/cycles/batch', { method: 'POST', body: JSON.stringify(data) }, 'manager'),
+    updateCampaign: (id, data) => request(`/api/360/manager/cycles/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'manager'),
     generateReport1: (campaignId) => request(`/api/360/manager/cycles/${campaignId}/report/1`, { method: 'POST', body: JSON.stringify({ sendToEmployee: true }) }, 'manager'),
     generateReport2: (campaignId) => request(`/api/360/manager/cycles/${campaignId}/report/2`, { method: 'POST', body: JSON.stringify({ sendToEmployee: true }) }, 'manager'),
     getReports: () => request('/api/360/manager/reports', {}, 'manager'),
     deleteReport: (id) => request(`/api/360/manager/reports/${id}`, { method: 'DELETE' }, 'manager'),
+    // Novi endpointi
+    getProfiles: () => request('/api/360/manager/profiles', {}, 'manager'),
+    getManagersList: () => request('/api/360/manager/managers-list', {}, 'manager'),
   },
 
   // Employee
@@ -76,6 +82,7 @@ export const api = {
     getManagers: () => request('/api/360/admin/managers', {}, 'admin'),
     getCampaigns: (status) => request(`/api/360/admin/cycles${status ? `?status=${status}` : ''}`, {}, 'admin'),
     getCampaignData: (id) => request(`/api/360/admin/cycles/${id}/data`, {}, 'admin'),
+    // options: { reportType: 'self' | '360', forceIfIncomplete: bool }
     generateReport1: (campaignId, data) => request(`/api/360/admin/cycles/${campaignId}/report/1`, { method: 'POST', body: JSON.stringify(data) }, 'admin'),
     generateReport2: (campaignId, data) => request(`/api/360/admin/cycles/${campaignId}/report/2`, { method: 'POST', body: JSON.stringify(data) }, 'admin'),
     getReports: () => request('/api/360/admin/reports', {}, 'admin'),
