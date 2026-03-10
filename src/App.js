@@ -11,7 +11,7 @@ import { UnifiedLogin, ManagerLogin, EmployeeLogin, AdminLogin } from './pages/a
 // Manager portal
 import {
   ManagerWelcome, ManagerDashboard, ManagerEmployees, EmployeeForm,
-  NewCampaign, CampaignEdit, CampaignDetail, ManagerReports
+  NewCampaign, CampaignEdit, CampaignDetail
 } from './pages/manager/ManagerPages';
 
 // Employee portal
@@ -72,8 +72,7 @@ export default function App() {
         <Route path="/manager/campaigns/new" element={<RequireAuth role="manager"><NewCampaign /></RequireAuth>} />
         <Route path="/manager/campaigns/:id/edit" element={<RequireAuth role="manager"><CampaignEdit /></RequireAuth>} />
         <Route path="/manager/campaigns/:id" element={<RequireAuth role="manager"><CampaignDetail /></RequireAuth>} />
-        <Route path="/manager/reports" element={<RequireAuth role="manager"><ManagerReports /></RequireAuth>} />
-        <Route path="/manager" element={<Navigate to="/manager/welcome" replace />} />
+<Route path="/manager" element={<Navigate to="/manager/welcome" replace />} />
 
         {/* Employee portal */}
         <Route path="/employee/dashboard" element={<RequireAuth role="employee"><EmployeeDashboard /></RequireAuth>} />

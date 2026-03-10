@@ -10,7 +10,7 @@ const pillars = [
 ];
 
 const steps = [
-  { num: '01', title: 'Initiate Campaign', desc: 'A manager launches a 360° campaign for a team member.' },
+  { num: '01', title: 'Initiate Campaign', desc: 'A manager launches an HB Compass campaign for a team member.' },
   { num: '02', title: 'Collect Feedback', desc: 'Assessors receive unique links and complete assessments anonymously.' },
   { num: '03', title: 'Generate Reports', desc: 'Structured insights reveal strengths and areas for growth.' },
   { num: '04', title: 'Drive Development', desc: 'Targeted plans based on clear, data-driven feedback.' },
@@ -47,7 +47,7 @@ export default function LandingPage() {
             <em style={{ fontStyle: 'italic' }}>Potential</em> of Your People
           </h1>
           <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.8, marginBottom: '44px', maxWidth: 480, margin: '0 auto 44px' }}>
-            HB Compass is a 360° assessment platform that provides structured, actionable insights across Results, Mindset, Skills, and Influence — for every role in your organization.
+            HB Compass is an assessment platform that provides structured, actionable insights across Results, Mindset, Skills, and Influence — for every role in your organization.
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <Link to="/login" style={{
@@ -105,12 +105,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 360° Perspectives */}
+      {/* HB Compass Perspectives */}
       <section style={{ background: '#fff', padding: '80px 24px', borderTop: '1px solid #eee' }}>
         <div style={{ maxWidth: 960, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '64px', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '16px' }}>
-              360° Perspective
+              HB Compass Perspective
             </div>
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', color: 'var(--ink)', fontWeight: 400, lineHeight: 1.25, marginBottom: '20px' }}>
               See yourself through<br /><em style={{ fontStyle: 'italic' }}>every lens that matters</em>
@@ -190,7 +190,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer style={{ background: '#000', padding: '28px 40px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
         <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.78rem' }}>
-          © {new Date().getFullYear()} HB Compass · 360° Assessment Platform
+          © {new Date().getFullYear()} HB Compass · Assessment Platform
         </p>
       </footer>
     </div>

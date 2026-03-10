@@ -74,7 +74,7 @@ export function EmployeeDashboard() {
     <Layout>
       <PageHeader
         title={data?.name ? `Welcome, ${data.name.split(' ')[0]}` : 'Dashboard'}
-        subtitle="Your 360° assessment status"
+        subtitle="Your HB Compass assessment status"
       />
 
       {error && <div style={{ marginBottom: '16px' }}><Alert type="error">{error}</Alert></div>}
@@ -113,7 +113,7 @@ export function EmployeeDashboard() {
                     flexWrap: 'wrap', gap: '12px',
                   }}>
                     <div>
-                      <div style={{ fontWeight: 600, marginBottom: '2px' }}>360° Assessment Campaign</div>
+                      <div style={{ fontWeight: 600, marginBottom: '2px' }}>HB Compass Assessment Campaign</div>
                       <div style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>
                         Started {new Date(c.CreatedAt).toLocaleDateString()}
                       </div>

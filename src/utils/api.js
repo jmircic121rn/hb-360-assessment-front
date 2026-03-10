@@ -67,6 +67,13 @@ export const api = {
     // Novi endpointi
     getProfiles: () => request('/api/360/manager/profiles', {}, 'manager'),
     getManagersList: () => request('/api/360/manager/managers-list', {}, 'manager'),
+    // Peers i Direct Reports po zaposlenom
+    getEmployeePeers: (employeeId) => request(`/api/360/manager/employees/${employeeId}/peers`, {}, 'manager'),
+    addEmployeePeer: (employeeId, data) => request(`/api/360/manager/employees/${employeeId}/peers`, { method: 'POST', body: JSON.stringify(data) }, 'manager'),
+    removeEmployeePeer: (employeeId, peerId) => request(`/api/360/manager/employees/${employeeId}/peers/${peerId}`, { method: 'DELETE' }, 'manager'),
+    getEmployeeDirectReports: (employeeId) => request(`/api/360/manager/employees/${employeeId}/direct-reports`, {}, 'manager'),
+    addEmployeeDirectReport: (employeeId, data) => request(`/api/360/manager/employees/${employeeId}/direct-reports`, { method: 'POST', body: JSON.stringify(data) }, 'manager'),
+    removeEmployeeDirectReport: (employeeId, drId) => request(`/api/360/manager/employees/${employeeId}/direct-reports/${drId}`, { method: 'DELETE' }, 'manager'),
   },
 
   // Employee

@@ -113,7 +113,7 @@ export function AdminCampaigns() {
                     style={!can360Report ? { opacity: 0.45 } : {}}
                     title={!can360Report ? 'Self and manager must be completed' : ''}
                   >
-                    {c.report2Generated ? '✓ 360 Report' : '360 Report'}
+                    {c.report2Generated ? '✓ HB Compass Report' : 'HB Compass Report'}
                   </Btn>
                 </div>,
               ];
@@ -123,7 +123,7 @@ export function AdminCampaigns() {
       </Card>
 
       {/* Report generation modal */}
-      <Modal open={!!reportModal} onClose={() => setReportModal(null)} title={reportModal?.reportType === 1 ? 'Generate Self Assessment Report' : 'Generate 360° Report'}>
+      <Modal open={!!reportModal} onClose={() => setReportModal(null)} title={reportModal?.reportType === 1 ? 'Generate Self Assessment Report' : 'Generate HB Compass Report'}>
         {reportModal && (() => {
           const c = reportModal.campaign;
           const isComplete = allDone(c);
@@ -139,7 +139,7 @@ export function AdminCampaigns() {
                 <Alert type="error" style={{ marginBottom: '16px' }}>
                   {reportModal.reportType === 1
                     ? 'Self assessment has not been completed yet.'
-                    : 'Both self and manager assessments must be completed before generating a 360° report.'}
+                    : 'Both self and manager assessments must be completed before generating an HB Compass report.'}
                 </Alert>
               )}
 

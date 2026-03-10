@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { clearToken } from '../utils/api';
+import { clearToken, api } from '../utils/api';
 
 // ── Logo ───────────────────────────────────────────────────────────────────
 export function Logo({ size = 'md', light }) {
@@ -24,11 +24,18 @@ export function PortalLayout({ role, navItems, children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    api.getMe(role).then(setUser).catch(() => {});
+  }, [role]);
 
   function handleLogout() {
     clearToken(role);
     navigate(`/${role}/login`);
   }
+
+  const displayName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--canvas)' }}>
@@ -87,23 +94,71 @@ export function PortalLayout({ role, navItems, children }) {
         </nav>
 
         {/* Footer */}
-        <div style={{ padding: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <div style={{ padding: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {/* User info */}
+          {!collapsed && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 10px', borderRadius: 'var(--radius-sm)',
+              background: 'rgba(255,255,255,0.06)',
+            }}>
+              <div style={{
+                flexShrink: 0, width: 30, height: 30, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.15)', display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="8" r="4" fill="rgba(255,255,255,0.8)" />
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" fill="none" />
+                </svg>
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {displayName || role}
+                </div>
+                <div style={{ fontSize: '0.69rem', color: 'rgba(255,255,255,0.35)', textTransform: 'capitalize' }}>
+                  {role}
+                </div>
+              </div>
+            </div>
+          )}
+          {collapsed && (
+            <div style={{
+              display: 'flex', justifyContent: 'center', padding: '6px 0',
+            }}>
+              <div style={{
+                width: 30, height: 30, borderRadius: '50%',
+                background: 'rgba(255,255,255,0.15)', display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="8" r="4" fill="rgba(255,255,255,0.8)" />
+                  <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" fill="none" />
+                </svg>
+              </div>
+            </div>
+          )}
+
+          {/* Collapse toggle */}
           <button onClick={() => setCollapsed(!collapsed)} style={{
             display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
-            gap: '8px', padding: '8px 10px', borderRadius: 'var(--radius-sm)',
+            gap: '8px', padding: '7px 10px', borderRadius: 'var(--radius-sm)',
             color: 'rgba(255,255,255,0.3)', fontSize: '0.78rem', background: 'none', border: 'none',
             cursor: 'pointer', transition: 'color var(--transition)', fontFamily: 'var(--font-body)',
           }}>
             <span style={{ fontSize: '0.9rem' }}>{collapsed ? '→' : '←'}</span>
             {!collapsed && 'Collapse'}
           </button>
+
+          {/* Logout */}
           <button onClick={handleLogout} style={{
             display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
             gap: '8px', padding: '8px 10px', borderRadius: 'var(--radius-sm)',
-            color: 'rgba(255,255,255,0.3)', fontSize: '0.78rem', background: 'none', border: 'none',
-            cursor: 'pointer', transition: 'color var(--transition)', fontFamily: 'var(--font-body)',
+            color: 'rgba(255,100,100,0.75)', fontSize: '0.82rem', fontWeight: 500,
+            background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.15)',
+            cursor: 'pointer', transition: 'all var(--transition)', fontFamily: 'var(--font-body)',
           }}>
-            <span>↩</span>
+            <span style={{ fontSize: '0.95rem' }}>↩</span>
             {!collapsed && 'Logout'}
           </button>
         </div>
