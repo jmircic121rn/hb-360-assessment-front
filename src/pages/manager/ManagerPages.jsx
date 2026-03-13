@@ -213,17 +213,17 @@ export function EmployeeForm({ editMode }) {
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '',
     jobTitle: '', jobTitleCustom: '',
-    lang: 'en', profilId: '',
-    managerId: '', managerCustom: '',
+    lang: 'en',
+    managerId: '',
   });
-  const [managers, setManagers] = useState([]);
+  const [allEmployees, setAllEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.manager.getManagersList().then(setManagers).catch(() => {});
-    if (editMode && id) {
-      api.manager.getEmployees().then(list => {
+    api.manager.getEmployees().then(list => {
+      setAllEmployees(list);
+      if (editMode && id) {
         const emp = list.find(e => String(e.EmployeeID) === id);
         if (emp) {
           const knownTitle = JOB_TITLES.slice(0, -1).includes(emp.JobTitle);
@@ -231,13 +231,12 @@ export function EmployeeForm({ editMode }) {
             firstName: emp.FirstName, lastName: emp.LastName, email: emp.Email,
             jobTitle: knownTitle ? emp.JobTitle : (emp.JobTitle ? 'Other' : ''),
             jobTitleCustom: knownTitle ? '' : (emp.JobTitle || ''),
-            lang: emp.Lang || 'en', profilId: emp.ProfilId || '',
+            lang: emp.Lang || 'en',
             managerId: emp.ManagerID ? String(emp.ManagerID) : '',
-            managerCustom: '',
           });
         }
-      });
-    }
+      }
+    }).catch(() => {});
   }, [editMode, id]);
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
@@ -249,9 +248,8 @@ export function EmployeeForm({ editMode }) {
       const payload = {
         firstName: form.firstName, lastName: form.lastName, email: form.email,
         jobTitle: form.jobTitle === 'Other' ? form.jobTitleCustom : form.jobTitle,
-        lang: form.lang, profilId: form.profilId,
-        managerId: form.managerId === 'custom' ? null : (form.managerId || null),
-        managerName: form.managerId === 'custom' ? form.managerCustom : undefined,
+        lang: form.lang,
+        managerEmployeeId: form.managerId ? Number(form.managerId) : null,
       };
       if (editMode) await api.manager.updateEmployee(id, payload);
       else await api.manager.createEmployee(payload);
@@ -284,30 +282,21 @@ export function EmployeeForm({ editMode }) {
 
           <FormField label="Manager" hint="Select the employee's direct manager">
             <Select value={form.managerId} onChange={set('managerId')}>
-              <option value="">— Select manager —</option>
-              {managers.map(m => (
-                <option key={m.ManagerID || m.id} value={m.ManagerID || m.id}>
-                  {m.FirstName || m.firstName} {m.LastName || m.lastName}
+              <option value="">— No manager —</option>
+              {allEmployees.filter(e => String(e.EmployeeID) !== id).map(e => (
+                <option key={e.EmployeeID} value={e.EmployeeID}>
+                  {e.FirstName} {e.LastName}
                 </option>
               ))}
-              <option value="custom">+ Add new manager (manual entry)</option>
             </Select>
-            {form.managerId === 'custom' && (
-              <Input style={{ marginTop: '8px' }} value={form.managerCustom} onChange={set('managerCustom')} placeholder="Full name of manager..." />
-            )}
           </FormField>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-            <FormField label="Language" required>
-              <Select value={form.lang} onChange={set('lang')}>
-                <option value="en">English</option>
-                <option value="sr">Serbian</option>
-              </Select>
-            </FormField>
-            <FormField label="Profile ID" hint="Assessment profile to use">
-              <Input type="number" value={form.profilId} onChange={set('profilId')} placeholder="1" />
-            </FormField>
-          </div>
+          <FormField label="Language" required>
+            <Select value={form.lang} onChange={set('lang')}>
+              <option value="en">English</option>
+              <option value="sr">Serbian</option>
+            </Select>
+          </FormField>
 
           <div style={{ display: 'flex', gap: '10px', paddingTop: '8px' }}>
             <Btn type="submit" variant="teal" loading={loading}>{editMode ? 'Save Changes' : 'Add Employee'}</Btn>
@@ -321,7 +310,7 @@ export function EmployeeForm({ editMode }) {
 
 // ── People Picker (Peers / Direct Reports) ─────────────────────────────────
 // Uvek generiše I shared link I individualne linkove za izabrane iz baze
-function PeoplePicker({ label, employees, selected, onToggle, newPersons, onAddPerson, onRemovePerson, addModalOpen, setAddModalOpen }) {
+function PeoplePicker({ label, employees, selected, onToggle, onSelectAll, newPersons, onAddPerson, onRemovePerson, addModalOpen, setAddModalOpen }) {
   const [newPerson, setNewPerson] = useState({ firstName: '', lastName: '', email: '', jobTitle: '', lang: 'en' });
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState(null);
@@ -350,14 +339,22 @@ function PeoplePicker({ label, employees, selected, onToggle, newPersons, onAddP
       {/* Deo 1 — picker iz baze (individualni linkovi + email) */}
       <div style={{ border: '1.5px solid var(--canvas-warm)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
         <div style={{ padding: '10px 14px', background: 'var(--canvas-warm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
+          <label style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              style={{ accentColor: 'var(--ink)' }}
+              checked={employees.length > 0 && selected.length === employees.length}
+              onChange={() => {
+                const allSelected = selected.length === employees.length;
+                onSelectAll(allSelected ? [] : employees.map(e => e.EmployeeID));
+              }}
+            />
             <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>From database</span>
-            <span style={{ fontSize: '0.76rem', color: 'var(--ink-soft)', marginLeft: '8px' }}>individual link + email per person</span>
-          </div>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            {totalSelected > 0 && <span style={{ fontSize: '0.78rem', color: 'var(--ink-soft)', fontWeight: 500 }}>{totalSelected} selected</span>}
-            <Btn type="button" size="sm" variant="outline" onClick={() => setAddModalOpen(true)}>+ Add New</Btn>
-          </div>
+            <span style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>
+              {totalSelected > 0 ? `${totalSelected} selected` : 'individual link + email per person'}
+            </span>
+          </label>
+          <Btn type="button" size="sm" variant="outline" onClick={() => setAddModalOpen(true)}>+ Add New</Btn>
         </div>
 
         <div style={{ maxHeight: 190, overflowY: 'auto', padding: '6px' }}>
@@ -403,15 +400,8 @@ function PeoplePicker({ label, employees, selected, onToggle, newPersons, onAddP
         )}
       </div>
 
-      {/* Deo 2 — shared link (uvek postoji pored individualnih) */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '11px 14px', background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--canvas-warm)' }}>
-        <span style={{ fontSize: '1rem', marginTop: '1px', flexShrink: 0 }}>🔗</span>
-        <div>
-          <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>Shared link — always generated</div>
-          <div style={{ fontSize: '0.76rem', color: 'var(--ink-soft)', marginTop: '2px', lineHeight: 1.5 }}>
-            A shared link is also generated alongside individual links — forward it to anyone not in the database. Each person enters their name and email before starting.
-          </div>
-        </div>
+      <div style={{ fontSize: '0.76rem', color: 'var(--ink-soft)', padding: '2px 4px', lineHeight: 1.5 }}>
+        A shared link will also be generated after launch — visible on the campaign page.
       </div>
 
       {/* Add new person modal */}
@@ -546,14 +536,6 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
     }));
   }
 
-  // Exclude the subject employee from full list (za group mode)
-  const subjectId = form.employeeId ? Number(form.employeeId) : null;
-  const eligibleEmployees = employees.filter(e => e.EmployeeID !== subjectId);
-
-  // Za peer/DR picker: ako postoje relationships u bazi, koristi ih;
-  // ako je lista prazna (nema relationships), fallback na sve eligible
-  const peerPickerList = peerEmployees.length > 0 ? peerEmployees : eligibleEmployees;
-  const drPickerList   = drEmployees.length > 0   ? drEmployees   : eligibleEmployees;
 
   function handleSubmit(e) {
     e.preventDefault();
@@ -662,7 +644,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
       ) : null}
 
       {/* Profile */}
-      {profiles.length > 1 && (
+      {profiles.length > 0 && (
         <FormField label="Assessment Profile" hint="Which question set to use">
           <Select value={form.profilId} onChange={e => setForm(f => ({ ...f, profilId: e.target.value }))}>
             <option value="">— Default profile —</option>
@@ -698,19 +680,15 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
 
       {/* Peer picker — individual mode only */}
       {form.includePeer && mode === 'individual' && (
-        <FormField
-          label="Peer Review — Assessors"
-          hint={peerEmployees.length > 0
-            ? `${peerEmployees.length} peer(s) found from database relationships`
-            : "No saved peers — showing all employees. Select peers from the list or add new."}
-        >
+        <FormField label="Peer Review — Assessors">
           {loadingRelationships ? (
             <div style={{ padding: '12px', fontSize: '0.84rem', color: 'var(--ink-soft)' }}>Loading peers...</div>
           ) : (
           <PeoplePicker
             label="Peer"
-            employees={peerPickerList}
+            employees={peerEmployees}
             selected={form.peerEmployeeIds}
+            onSelectAll={ids => setForm(f => ({ ...f, peerEmployeeIds: ids }))}
             onToggle={id => toggleId('peerEmployeeIds', id)}
             newPersons={form.peerNewPersons}
             onAddPerson={p => setForm(f => ({ ...f, peerNewPersons: [...f.peerNewPersons, p] }))}
@@ -730,19 +708,15 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
 
       {/* Direct Reports picker — individual mode only */}
       {form.includeDirectReports && mode === 'individual' && (
-        <FormField
-          label="Direct Reports — Assessors"
-          hint={drEmployees.length > 0
-            ? `${drEmployees.length} direct report(s) found from database relationships`
-            : "No saved direct reports — showing all employees. Select direct reports from the list or add new."}
-        >
+        <FormField label="Direct Reports — Assessors">
           {loadingRelationships ? (
             <div style={{ padding: '12px', fontSize: '0.84rem', color: 'var(--ink-soft)' }}>Loading direct reports...</div>
           ) : (
           <PeoplePicker
             label="Direct Report"
-            employees={drPickerList}
+            employees={drEmployees}
             selected={form.drEmployeeIds}
+            onSelectAll={ids => setForm(f => ({ ...f, drEmployeeIds: ids }))}
             onToggle={id => toggleId('drEmployeeIds', id)}
             newPersons={form.drNewPersons}
             onAddPerson={p => setForm(f => ({ ...f, drNewPersons: [...f.drNewPersons, p] }))}
@@ -980,39 +954,50 @@ export function CampaignDetail() {
   }
 
   function GroupRow({ links: groupLinks, label, expanded, onToggle }) {
-    const done = groupLinks.filter(l => l.Status === 'completed').length;
-    const allDone = done === groupLinks.length;
+    const sharedLink = groupLinks.find(l => !l.AssessorEmail);
+    const individualLinks = groupLinks.filter(l => !!l.AssessorEmail);
+    const done = individualLinks.filter(l => l.Status === 'completed').length;
+    const allDone = done === individualLinks.length && individualLinks.length > 0;
+    const sharedPublicUrl = sharedLink?.Token ? `${window.location.origin}/assess/${sharedLink.Token}` : null;
     return (
-      <div>
-        <div onClick={onToggle} style={{
-          display: 'grid', gridTemplateColumns: '140px 1fr 110px 160px', gap: '12px', alignItems: 'center',
-          padding: '12px 14px', background: 'var(--canvas-warm)',
-          borderRadius: expanded ? 'var(--radius-md) var(--radius-md) 0 0' : 'var(--radius-md)',
-          border: '1px solid var(--canvas-warm)', cursor: 'pointer', userSelect: 'none',
-        }}>
-          <span style={{ fontWeight: 600, fontSize: '0.86rem' }}>{label}</span>
-          <span style={{ fontSize: '0.83rem', color: 'var(--ink-soft)' }}>{done}/{groupLinks.length} completed</span>
-          <Badge status={allDone ? 'completed' : 'pending'}>{allDone ? 'done' : 'in progress'}</Badge>
-          <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>{expanded ? '▲ Hide' : '▼ Show all'}</span>
-        </div>
-        {expanded && (
-          <div style={{ border: '1px solid var(--canvas-warm)', borderTop: 'none', borderRadius: '0 0 var(--radius-md) var(--radius-md)', overflow: 'hidden' }}>
-            {groupLinks.map((l, i) => {
-              const publicUrl = l.Token ? `${window.location.origin}/assess/${l.Token}` : null;
-              return (
-                <div key={i} style={{ display: 'grid', gridTemplateColumns: '140px 1fr 110px 160px', gap: '12px', alignItems: 'center', padding: '10px 14px', background: i % 2 === 0 ? 'var(--canvas)' : 'var(--canvas-white)', borderTop: i === 0 ? 'none' : '1px solid var(--canvas-warm)' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>#{i + 1}</span>
-                  {publicUrl ? (
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.79rem', fontFamily: 'monospace', color: 'var(--ink-soft)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{publicUrl}</span>
-                      <Btn size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(publicUrl)}>Copy</Btn>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {/* Shared link — uvek vidljiv */}
+        {sharedPublicUrl && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 14px', background: 'var(--canvas)', borderRadius: 'var(--radius-md)', border: '1px solid var(--canvas-warm)' }}>
+            <span style={{ fontWeight: 600, fontSize: '0.86rem', minWidth: 140 }}>{label} — shared</span>
+            <span style={{ fontSize: '0.79rem', color: 'var(--ink-soft)', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharedPublicUrl}</span>
+            <Btn size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(sharedPublicUrl)}>Copy</Btn>
+            <Badge status={sharedLink.Status === 'completed' ? 'completed' : 'pending'}>{sharedLink.Status}</Badge>
+          </div>
+        )}
+        {/* Individualni — collapsible, samo ime + status */}
+        {individualLinks.length > 0 && (
+          <div>
+            <div onClick={onToggle} style={{
+              display: 'grid', gridTemplateColumns: '140px 1fr 110px 160px', gap: '12px', alignItems: 'center',
+              padding: '12px 14px', background: 'var(--canvas-warm)',
+              borderRadius: expanded ? 'var(--radius-md) var(--radius-md) 0 0' : 'var(--radius-md)',
+              border: '1px solid var(--canvas-warm)', cursor: 'pointer', userSelect: 'none',
+            }}>
+              <span style={{ fontWeight: 600, fontSize: '0.86rem' }}>{label}</span>
+              <span style={{ fontSize: '0.83rem', color: 'var(--ink-soft)' }}>{done}/{individualLinks.length} completed</span>
+              <Badge status={allDone ? 'completed' : 'pending'}>{allDone ? 'done' : 'in progress'}</Badge>
+              <span style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>{expanded ? '▲ Hide' : '▼ Show all'}</span>
+            </div>
+            {expanded && (
+              <div style={{ border: '1px solid var(--canvas-warm)', borderTop: 'none', borderRadius: '0 0 var(--radius-md) var(--radius-md)', overflow: 'hidden' }}>
+                {individualLinks.map((l, i) => (
+                  <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 160px', gap: '12px', alignItems: 'center', padding: '10px 14px', background: i % 2 === 0 ? 'var(--canvas)' : 'var(--canvas-white)', borderTop: i === 0 ? 'none' : '1px solid var(--canvas-warm)' }}>
+                    <div>
+                      <div style={{ fontWeight: 500, fontSize: '0.86rem' }}>{l.AssessorName || l.AssessorEmail}</div>
+                      {l.AssessorName && <div style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>{l.AssessorEmail}</div>}
                     </div>
-                  ) : (l.AssessorEmail || <em style={{ color: 'var(--ink-faint)' }}>—</em>)}
-                  <Badge status={l.Status === 'completed' ? 'completed' : 'pending'}>{l.Status}</Badge>
-                  <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)' }}>{l.CompletedAt ? new Date(l.CompletedAt).toLocaleString() : '—'}</span>
-                </div>
-              );
-            })}
+                    <Badge status={l.Status === 'completed' ? 'completed' : 'pending'}>{l.Status}</Badge>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)' }}>{l.CompletedAt ? new Date(l.CompletedAt).toLocaleString() : '—'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

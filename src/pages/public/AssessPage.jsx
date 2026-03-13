@@ -56,9 +56,12 @@ export default function AssessPage() {
   );
 
   const assessmentType = data?.assessmentType || data?.type || 'self';
-  const needsIdentity = ['peer', 'directreport', 'direct_report'].includes(assessmentType);
+  // requiresIdentity = true kada je shared link (peer/DR/external bez poznate osobe)
+  // Backend šalje data.requiresIdentity: true za shared linkove, false za individualne
+  const needsIdentity = data?.requiresIdentity === true ||
+    (data?.requiresIdentity === undefined && ['external'].includes(assessmentType));
 
-  // Identity step for peer / direct report assessments
+  // Identity step — prikazuje se samo za shared linkove
   if (!loading && !error && !submitted && needsIdentity && !identityConfirmed) {
     function handleIdentitySubmit(e) {
       e.preventDefault();
