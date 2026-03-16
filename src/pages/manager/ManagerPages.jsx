@@ -894,6 +894,9 @@ export function CampaignDetail() {
   const [reports, setReports] = useState([]);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(null);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiStatus, setAiStatus] = useState('');
+  const [aiError, setAiError] = useState(null);
 
   function fetchReports() {
     api.manager.getReports()
@@ -920,6 +923,45 @@ export function CampaignDetail() {
   const managerDone = managerLink?.Status === 'completed';
   const selfManagerDone = selfDone && managerDone;
   const completedCount = links.filter(l => l.Status === 'completed').length;
+
+  async function generateFullReport() {
+    setAiGenerating(true); setAiError(null); setAiStatus('Starting…');
+    let jobId;
+    try {
+      ({ jobId } = await api.manager.generateAIReport(id));
+      setAiStatus('AI is analyzing…');
+    } catch (e) {
+      setAiError(e.message); setAiGenerating(false); setAiStatus('');
+      return;
+    }
+    const poll = async () => {
+      try {
+        const result = await api.manager.getAIReportStatus(id, jobId);
+        if (result.status === 'done') {
+          setAiStatus('Saving…');
+          const saved = await api.manager.saveAIReport(id, result.report || '');
+          const reportId = saved?.reportId || saved?.ReportID || saved?.id;
+          setAiStatus('Downloading PDF…');
+          const blob = await api.manager.downloadAIReportPdf(reportId);
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `AI_Report_${campaign.FirstName}_${campaign.LastName}.pdf`;
+          a.click();
+          URL.revokeObjectURL(url);
+          setAiGenerating(false); setAiStatus('');
+        } else if (result.status === 'error') {
+          setAiError(result.error || 'Report generation failed.');
+          setAiGenerating(false); setAiStatus('');
+        } else {
+          setTimeout(poll, 5000);
+        }
+      } catch (e) {
+        setAiError(e.message); setAiGenerating(false); setAiStatus('');
+      }
+    };
+    poll();
+  }
 
   async function doGenerateReport(type, force = false) {
     if (type === 2 && !force) {
@@ -1064,6 +1106,7 @@ export function CampaignDetail() {
             </p>
             {reportSuccess && <div style={{ marginBottom: '16px' }}><Alert type="success">{reportSuccess}</Alert></div>}
             {reportError && <div style={{ marginBottom: '16px' }}><Alert type="error">{reportError}</Alert></div>}
+            {aiError && <div style={{ marginBottom: '16px' }}><Alert type="error">{aiError}</Alert></div>}
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: reports.length > 0 ? '24px' : 0 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <Btn variant={selfDone ? 'primary' : 'outline'} loading={generating === 1}
@@ -1080,6 +1123,17 @@ export function CampaignDetail() {
                   HB Compass Development Report
                 </Btn>
                 {!selfManagerDone && <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Requires: self + manager complete</span>}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <Btn variant={selfDone ? 'primary' : 'outline'} loading={aiGenerating}
+                  disabled={!selfDone || aiGenerating || generating !== null} onClick={generateFullReport}
+                  style={!selfDone ? { opacity: 0.45, cursor: 'not-allowed' } : {}}>
+                  {aiGenerating ? (aiStatus || 'Generating AI Report…') : 'Generate Full AI Report'}
+                </Btn>
+                {!selfDone
+                  ? <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Requires: self assessment complete</span>
+                  : <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>AI analysis · downloads as PDF</span>
+                }
               </div>
             </div>
 
@@ -1099,7 +1153,7 @@ export function CampaignDetail() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
-                        <Btn size="sm" variant="accent" onClick={() => downloadReportPdf(r.CycleID, r.ReportType)}>⬇ Download PDF</Btn>
+                        <Btn size="sm" variant="accent" onClick={() => downloadReportPdf(r.CycleID, r.ReportType, r.ReportID, campaign.FirstName, campaign.LastName)}>⬇ Download PDF</Btn>
                         <Btn size="sm" variant="outline" onClick={() => setConfirmDeleteId(r.ReportID)} style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>Delete</Btn>
                       </div>
                     </div>
@@ -1155,15 +1209,23 @@ export function CampaignDetail() {
 }
 
 // ── Reports ────────────────────────────────────────────────────────────────
-function downloadReportPdf(campaignId, reportType) {
+function downloadReportPdf(cycleId, reportType, reportId, firstName, lastName) {
   const token = localStorage.getItem('compass_token_manager');
-  const typeNum = reportType === 'report1' ? 1 : 2;
   const BASE = process.env.REACT_APP_API_URL || 'https://api.hansenbeck.com';
-  fetch(`${BASE}/api/360/manager/cycles/${campaignId}/report/${typeNum}/pdf`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
+  const url = reportType === 'report2'
+    ? `${BASE}/api/360/manager/reports/${reportId}/ai-pdf`
+    : `${BASE}/api/360/manager/cycles/${cycleId}/report/1/pdf`;
+  const label = reportType === 'report2' ? 'AI_Report' : 'Self_Assessment_Report';
+  const name = `HansenBeck_${label}_${firstName}_${lastName}.pdf`;
+  fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.blob(); })
-    .then(blob => { const url = URL.createObjectURL(blob); window.open(url, '_blank'); })
+    .then(blob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    })
     .catch(e => alert(`Download failed: ${e.message}`));
 }
 

@@ -66,6 +66,15 @@ export const api = {
     deleteReport: (id) => request(`/api/360/manager/reports/${id}`, { method: 'DELETE' }, 'manager'),
     // Novi endpointi
     getProfiles: () => request('/api/360/manager/profiles', {}, 'manager'),
+    generateAIReport: (cycleId) => request(`/api/360/manager/cycles/${cycleId}/generate-ai-report`, { method: 'POST' }, 'manager'),
+    getAIReportStatus: (cycleId, jobId) => request(`/api/360/manager/cycles/${cycleId}/report-status/${jobId}`, {}, 'manager'),
+    saveAIReport: (cycleId, report) => request(`/api/360/manager/cycles/${cycleId}/save-ai-report`, { method: 'POST', body: JSON.stringify({ report }) }, 'manager'),
+    downloadAIReportPdf: async (reportId) => {
+      const token = localStorage.getItem('compass_token_manager');
+      const res = await fetch(`${BASE}/api/360/manager/reports/${reportId}/ai-pdf`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Failed to download PDF');
+      return res.blob();
+    },
     getManagersList: () => request('/api/360/manager/managers-list', {}, 'manager'),
     // Peers i Direct Reports po zaposlenom
     getEmployeePeers: (employeeId) => request(`/api/360/manager/employees/${employeeId}/peers`, {}, 'manager'),
