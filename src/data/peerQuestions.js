@@ -511,511 +511,643 @@ export const peerQuestions = {
         ]
     },
     eng: {
-        RESULTS: [
-            // PILLAR: SHORT-TERM GOALS
+        "Short-term Goals": [
+            // Cluster 1: Operational Execution & Goal Achievement
             {
-                id: "PR_STG_1.1C",
-                pillar: "SHORT-TERM GOALS",
-                dimension: "RESULTS",
-                facet: "Execution Focus & Delivery, Problem-Solving, Reliability & Consistency, Performance Under Pressure",
-                type: "core",
-                text: "PA - Core Scenario 1.1: During demanding periods with tight deadlines, how does this person typically approach their work and contribution to shared team goals?",
+                id: "PE_STG_1_Q1", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Operational Execution & Goal Achievement", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they set priorities, coordinate on shared goals, and manage execution — which description best fits what you typically observe?",
                 options: [
-                    { score: 3, text: "A. Organized and focused on delivery; generally meets deadlines with acceptable quality, though sometimes needs reminders or coordination from colleagues." },
-                    { score: 1, text: "B. Mostly reacts to what is most urgent at any given moment; delivery is uneven and colleagues sometimes don't know what to expect from them." },
-                    { score: 5, text: "C. Plans proactively and takes ownership of outcomes; colleagues can rely on them — delivery is predictable and surprises are rare." }
+                    { score: 1, text: "A. They communicate their team's priorities and coordinate on dependencies when needed. Their execution approach is functional, though you sometimes need to follow up on commitments or clarify how their work aligns with cross-functional initiatives." },
+                    { score: 3, text: "B. They clearly articulate goals and priorities, making coordination straightforward. They deliver reliably on shared commitments, make timely decisions that keep joint work moving, and proactively communicate when priorities shift." },
+                    { score: 5, text: "C. They demonstrate exceptional clarity in goal-setting and execution that strengthens cross-functional work. They anticipate dependencies, make decisions that consider broader impact, and their execution discipline makes it easier for you to plan and deliver your own team's work." }
                 ]
             },
             {
-                id: "PR_STG_1.1R",
-                pillar: "SHORT-TERM GOALS",
-                dimension: "RESULTS",
-                type: "reflection",
-                text: "PA - Reflection on Impact 1.1: When this person's delivery is delayed or falls short, what is typically the cause?",
+                id: "PE_STG_1_Q2", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Operational Execution & Goal Achievement", type: "impact",
+                text: "When you think about how [Name]'s execution and goal management affect shared work and joint deliverables, what do you typically observe?",
                 options: [
-                    { score: 5, text: "A. They take ownership and adjust their approach when obstacles appear — delays are rare, and when they occur, they are resolved independently and quickly." },
-                    { score: 3, text: "B. Unexpected circumstances sometimes require adjustments, but they generally handle these with minimal coordination from colleagues." },
-                    { score: 1, text: "C. Shortfalls repeat and colleagues need to track or remind this person to stay on track." }
+                    { score: -2, text: "A. Coordination happens and shared work progresses, though it sometimes requires extra effort to maintain alignment. Their team's delivery occasionally creates unexpected dependencies or timeline adjustments." },
+                    { score: 0, text: "B. Their reliable execution makes cross-functional work predictable. Shared commitments are met consistently, and their clear priorities help you plan dependencies with confidence." },
+                    { score: 1, text: "C. Their execution excellence has noticeably improved cross-functional outcomes. A specific indicator: shared initiatives with their team consistently deliver on time and with high quality, and their approach to managing commitments has reduced coordination friction." }
                 ]
             },
             {
-                id: "PR_STG_1.2C",
-                pillar: "SHORT-TERM GOALS",
-                dimension: "RESULTS",
-                type: "core",
-                text: "PA - Core Scenario 1.2: An unexpected problem disrupts shared work and creates pressure on the team. How does this person typically respond when the team is under stress?",
+                id: "PE_STG_1_Q3", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Operational Execution & Goal Achievement", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Focuses on resolving the immediate problem quickly, which helps in the short term, but similar issues recur because underlying causes are not systematically addressed." },
-                    { score: 5, text: "B. Stays calm and has a stabilizing effect on the team; not only contributes to resolving the immediate issue, but proactively thinks about preventing recurrence." },
-                    { score: 3, text: "C. Stays calm and contributes in an organized way to resolving the problem, helping the team stabilize and continue without further disruption." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 2: Problem-Solving & Performance Under Pressure
+            {
+                id: "PE_STG_2_Q1", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Problem-Solving & Performance Under Pressure", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've worked together on solving complex problems or when unexpected challenges have affected shared work — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They contribute to problem-solving and respond to urgent situations affecting joint work. During pressure situations, coordination may require extra effort, and you may need to follow up to ensure alignment on solutions." },
+                    { score: 3, text: "B. They bring structured thinking to problem-solving and maintain steady collaboration during crises. They analyse issues systematically, make timely decisions on shared challenges, and communicate effectively when urgent situations affect cross-functional work." },
+                    { score: 5, text: "C. They elevate problem-solving through sophisticated analysis and demonstrate exceptional composure during crises. Their structured approach to urgent situations helps stabilize cross-functional coordination, and they often identify solutions that others miss." }
                 ]
             },
             {
-                id: "PR_STG_1.2R",
-                pillar: "SHORT-TERM GOALS",
-                dimension: "RESULTS",
-                type: "reflection",
-                text: "PA - Reflection on Impact 1.2: When this person contributes to solving a shared team problem, how long does the solution typically hold?",
+                id: "PE_STG_2_Q2", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Problem-Solving & Performance Under Pressure", type: "impact",
+                text: "When you think about how [Name]'s problem-solving and crisis management affect joint work outcomes, what do you typically observe?",
                 options: [
-                    { score: 3, text: "A. The solution generally works, though related challenges occasionally emerge that the team works through together." },
-                    { score: 1, text: "B. Similar problems recur relatively quickly, suggesting their contribution addresses symptoms rather than the underlying cause." },
-                    { score: 5, text: "C. Similar problems rarely recur; their contribution has a lasting positive effect on how the team works." }
-                ]
-            },
-            // PILLAR: LONG-TERM CHANGE
-            {
-                id: "PR_LTC_1.3C",
-                pillar: "LONG-TERM CHANGE",
-                dimension: "RESULTS",
-                facet: "Adapting to Change, Initiative & Process Improvement, Knowledge Sharing, Contributing to Team Development",
-                type: "core",
-                text: "PA - Core Scenario 1.3: The organization is introducing changes that require learning new ways of working. How does this person typically contribute to the team's adaptation and development of new approaches?",
-                options: [
-                    { score: 3, text: "A. Embraces the changes and invests effort in acquiring new skills; shares what they learn with colleagues when asked." },
-                    { score: 1, text: "B. Adapts slowly and prefers established methods; their contribution to the team's adaptation is limited and colleagues often cannot rely on them in these moments." },
-                    { score: 5, text: "C. Enthusiastically embraces changes, experiments with new approaches, and proactively shares learnings with the team — accelerating collective adaptation." }
+                    { score: -2, text: "A. Problems affecting shared work are addressed, though resolution sometimes requires additional coordination. During crises, joint work may experience delays or require adjustments as priorities shift." },
+                    { score: 0, text: "B. Their problem-solving consistently helps resolve shared challenges effectively. During urgent situations, their steady approach maintains stability in cross-functional work, and coordination continues with minimal disruption." },
+                    { score: 1, text: "C. Their problem-solving and crisis management have noticeably improved cross-functional outcomes. A specific indicator: solutions developed with their involvement tend to be more thorough and lasting, and their composure during recent crises helped you manage your own team's response more effectively." }
                 ]
             },
             {
-                id: "PR_LTC_1.3R",
-                pillar: "LONG-TERM CHANGE",
-                dimension: "RESULTS",
-                type: "reflection",
-                text: "PA - Reflection on Impact 1.3: How quickly and smoothly does this person typically adopt and implement new ways of working?",
+                id: "PE_STG_2_Q3", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Problem-Solving & Performance Under Pressure", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Adaptation takes longer than colleagues; they tend to stay with old habits and this can slow down the team." },
-                    { score: 5, text: "B. Quickly adopts new ways of working and their enthusiasm positively energizes the whole team; they become a resource for colleagues during transitions." },
-                    { score: 3, text: "C. Adapts within a reasonable timeframe without major difficulty; their contribution is adequate though not exceptionally fast." }
-                ]
-            },
-            {
-                id: "PR_LTC_1.4C",
-                pillar: "LONG-TERM CHANGE",
-                dimension: "RESULTS",
-                type: "core",
-                text: "PA - Core Scenario 1.4: The team is going through an organizational transformation while there is also a need to improve existing processes. How does this person typically contribute to this process?",
-                options: [
-                    { score: 5, text: "A. Actively participates in shaping how changes are implemented; proposes process improvements and works to build shared support within the team." },
-                    { score: 1, text: "B. Focuses on meeting the requirements of the transformation without actively contributing to process improvements; relies on others to shape the change." },
-                    { score: 3, text: "C. Understands and accepts the organizational transformation and occasionally proposes incremental process improvements that align with the new direction." }
-                ]
-            },
-            {
-                id: "PR_LTC_1.4R",
-                pillar: "LONG-TERM CHANGE",
-                dimension: "RESULTS",
-                type: "reflection",
-                text: "PA - Reflection on Impact 1.4: When this person proposes a new approach or improvement, how much do others engage with that proposal?",
-                options: [
-                    { score: 3, text: "A. Colleagues consider their proposals but don't always adopt them because context or priorities vary." },
-                    { score: 1, text: "B. Their proposals rarely get broader uptake; either they don't transfer easily to others or they don't attract sufficient attention." },
-                    { score: 5, text: "C. Colleagues actively consider their proposals and often adopt or adapt them; they become a reference point for improvements in the team." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
                 ]
             }
         ],
-        MINDSET: [
-            // PILLAR: TOWARDS SELF
+        "Long-term Change": [
+            // Cluster 3: Strategic Vision & Change Leadership
             {
-                id: "PM_TS_2.1C",
-                pillar: "TOWARDS SELF",
-                dimension: "MINDSET",
-                facet: "Self-Awareness, Growth Mindset & Learning Agility, Resilience, Openness to Change",
-                type: "core",
-                text: "PA - Core Scenario 2.1: This person receives constructive feedback from colleagues about their approach and simultaneously encounters setbacks on a project. How do they typically respond to these situations?",
+                id: "PE_LTC_3_Q1", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Strategic Vision & Change Leadership", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've discussed organizational strategy, future direction, or worked together on change initiatives — which description best fits what you typically observe?",
                 options: [
-                    { score: 3, text: "A. Listens to feedback and considers what is valid; works methodically through setbacks by adapting their approach." },
-                    { score: 1, text: "B. Initially defends their approach when receiving feedback; is frustrated when things don't go according to plan and is slower to adapt to new circumstances." },
-                    { score: 5, text: "C. Actively seeks feedback, sees setbacks as learning opportunities, and openly shares with colleagues what they are working on and what they plan to improve." }
+                    { score: 1, text: "A. They focus on current execution and coordinate on operational matters. In strategic or change discussions, they contribute when asked and implement required changes in their area, though they may not actively drive strategic thinking or change leadership." },
+                    { score: 3, text: "B. They contribute meaningfully to strategic discussions and actively engage in change initiatives. They connect work to organizational objectives, think beyond immediate execution, and communicate proactively about change impacts to cross-functional work." },
+                    { score: 5, text: "C. They take leadership in strategic thinking and organizational change. They elevate strategic conversations with forward-thinking perspectives, build cross-functional alignment during transformations, and often help you think more strategically about future direction or change implementation." }
                 ]
             },
             {
-                id: "PM_TS_2.1R",
-                pillar: "TOWARDS SELF",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "PA - Reflection on Impact 2.1: When this person receives feedback from a colleague that challenges their approach, how do they typically process it?",
+                id: "PE_LTC_3_Q2", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Strategic Vision & Change Leadership", type: "impact",
+                text: "When you think about how [Name]'s strategic thinking and change leadership affect cross-functional work and shared initiatives, what do you typically observe?",
                 options: [
-                    { score: 1, text: "A. Initially resists or defends their approach; needs time before they can genuinely consider a change." },
-                    { score: 5, text: "B. Genuinely curious about feedback and experiments with new approaches based on what they hear from colleagues." },
-                    { score: 3, text: "C. Selectively incorporates feedback — changes approach when it aligns with their own observations." }
+                    { score: -2, text: "A. Joint planning focuses on operational coordination, and changes are implemented with basic coordination. Strategic alignment and change adoption in shared work may require additional discussion or follow-up." },
+                    { score: 0, text: "B. Their strategic perspective improves joint planning, and their change management maintains stability in cross-functional work. Shared initiatives benefit from their ability to connect work to organizational goals and manage transitions smoothly." },
+                    { score: 1, text: "C. Their strategic thinking and change leadership have noticeably strengthened cross-functional outcomes. A specific indicator: perspectives they've shared have influenced strategic decisions affecting shared work, or their change management approach has made organizational transitions easier for your team to navigate." }
                 ]
             },
             {
-                id: "PM_TS_2.2C",
-                pillar: "TOWARDS SELF",
-                dimension: "MINDSET",
-                type: "core",
-                text: "PA - Core Scenario 2.2: The team goes through periods of change and introduction of new tools or processes. How does this person typically respond to changes and challenges outside their comfort zone?",
+                id: "PE_LTC_3_Q3", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Strategic Vision & Change Leadership", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Prefers familiar methods and adopts changes slowly; their reluctance toward new ways of working can slow down the whole team." },
-                    { score: 5, text: "B. Sees change as a natural and positive part of work; adapts quickly, enthusiastically explores new possibilities, and inspires colleagues to do the same." },
-                    { score: 3, text: "C. Accepts changes as necessary and adapts methodically; not the most enthusiastic about change, but adapts without significant resistance." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 4: Innovation & Capability Building
+            {
+                id: "PE_LTC_4_Q1", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Innovation & Capability Building", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed their approach to improving processes, innovating in shared work areas, and developing capabilities that affect cross-functional work — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They follow established processes and manage their team's resources to meet current commitments. In joint work, they contribute to improvement discussions when invited and focus on immediate skill needs." },
+                    { score: 3, text: "B. They actively identify opportunities to improve shared processes and develop their team's capabilities in ways that strengthen cross-functional work. They propose practical solutions, implement process changes effectively, and allocate resources strategically to balance current needs with capability building." },
+                    { score: 5, text: "C. They drive innovation in cross-functional processes and take leadership in capability development that benefits the broader organization. They create frameworks that elevate shared work, proactively build capabilities that enable new types of collaboration, and often inspire others to think more innovatively about improvement." }
                 ]
             },
             {
-                id: "PM_TS_2.2R",
-                pillar: "TOWARDS SELF",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "PA - Reflection on Impact 2.2: How does this person typically affect the rest of the team during periods of change?",
+                id: "PE_LTC_4_Q2", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Innovation & Capability Building", type: "impact",
+                text: "When you think about how [Name]'s innovation and capability development affect cross-functional effectiveness and shared outcomes, what do you typically observe?",
                 options: [
-                    { score: 5, text: "A. Their enthusiasm and openness to change positively affect team morale and the pace of adaptation." },
-                    { score: 3, text: "B. Their approach to change is neutral — they neither encourage nor hinder the team's adaptation." },
-                    { score: 1, text: "C. Their discomfort or resistance to change sometimes negatively affects team morale or the pace of adaptation." }
-                ]
-            },
-            // PILLAR: TOWARDS OTHERS
-            {
-                id: "PM_TO_2.3C",
-                pillar: "TOWARDS OTHERS",
-                dimension: "MINDSET",
-                facet: "Empathy, Team Commitment & Collaboration, Constructive Disagreement, Inclusiveness",
-                type: "core",
-                text: "PA - Core Scenario 2.3: There are disagreements in the team about a project approach, and a team member is struggling to voice their opinion. How does this person typically contribute to group dynamics in such situations?",
-                options: [
-                    { score: 3, text: "A. Listens to different perspectives and helps clarify each side's concerns; makes an effort to support quieter colleagues in expressing their views." },
-                    { score: 1, text: "B. Mostly stays neutral in conflicts, leaving colleagues to resolve disagreements themselves; does not actively encourage inclusive participation." },
-                    { score: 5, text: "C. Actively contributes to constructive resolution of disagreements by asking questions that help illuminate perspectives; explicitly invites colleagues who are hesitant to share their view." }
+                    { score: -2, text: "A. Joint processes function adequately and their team maintains capabilities needed for current shared work. Improvements address specific issues, though broader optimization or capability gaps occasionally create constraints." },
+                    { score: 0, text: "B. Their process improvements consistently make cross-functional work more efficient, and their team's growing capabilities strengthen what can be achieved together. Shared processes benefit from their optimization efforts, and development investments improve collaboration over time." },
+                    { score: 1, text: "C. Their innovation and capability development have noticeably enhanced cross-functional effectiveness. A specific indicator: a process or approach they developed has been adopted across multiple teams, capabilities they've built have enabled new collaboration opportunities, or their optimization work has measurably improved outcomes in shared work areas." }
                 ]
             },
             {
-                id: "PM_TO_2.3R",
-                pillar: "TOWARDS OTHERS",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "PA - Reflection on Impact 2.3: How does this person typically approach understanding different perspectives when they disagree with colleagues?",
+                id: "PE_LTC_4_Q3", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Innovation & Capability Building", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Listens but sometimes quickly takes sides; doesn't always explore the deeper motivations behind different positions." },
-                    { score: 5, text: "B. Genuinely curious about colleagues' perspectives even when they initially have a clear view; often discovers legitimate concerns they had previously overlooked." },
-                    { score: 3, text: "C. Listens carefully and asks for clarification; acknowledges valid points even when disagreeing with a colleague's overall position." }
-                ]
-            },
-            {
-                id: "PM_TO_2.4C",
-                pillar: "TOWARDS OTHERS",
-                dimension: "MINDSET",
-                type: "core",
-                text: "PA - Core Scenario 2.4: The team is working on a complex project requiring close collaboration and knowledge sharing. How does this person typically contribute to team collaboration and commitment?",
-                options: [
-                    { score: 5, text: "A. Proactively offers help to colleagues, freely shares knowledge and skills, and actively looks for opportunities to contribute to the success of the whole team — not just their own tasks." },
-                    { score: 1, text: "B. Focuses on their own tasks and shares information only when directly asked; does not actively track the needs of colleagues." },
-                    { score: 3, text: "C. Participates in team activities and shares knowledge when asked; occasionally reaches out to offer help, though not always proactively." }
-                ]
-            },
-            {
-                id: "PM_TO_2.4R",
-                pillar: "TOWARDS OTHERS",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "PA - Reflection on Impact 2.4: When a colleague of this person is struggling or working in isolation, how does this person typically respond?",
-                options: [
-                    { score: 3, text: "A. Notices when a colleague seems to be struggling and offers help; sometimes reaches out if they think their contribution would be useful." },
-                    { score: 1, text: "B. Often doesn't notice, or assumes colleagues are managing on their own; responds only when a problem becomes visible or a colleague directly asks for help." },
-                    { score: 5, text: "C. Regularly pays attention to how colleagues are managing and proactively reaches out when they notice someone could benefit from support." }
-                ]
-            },
-            // PILLAR: TOWARDS COMPANY & WORK
-            {
-                id: "PM_TCW_2.5C",
-                pillar: "TOWARDS COMPANY & WORK",
-                dimension: "MINDSET",
-                facet: "Accountability & Ownership, Reliability, Values Alignment, Professional Integrity",
-                type: "core",
-                text: "PA - Core Scenario 2.5: A project this person is working on with the team encounters obstacles or failures. How do they typically respond and take ownership?",
-                options: [
-                    { score: 3, text: "A. Takes responsibility for their part in the failure and identifies what they can improve; constructively contributes to finding a solution." },
-                    { score: 5, text: "B. Takes full ownership, actively analyzes what contributed to the failure, and proposes systemic improvements that would prevent recurrence." },
-                    { score: 1, text: "C. Mostly highlights external factors or the contributions of others; tends to be indecisive in difficult moments and is slow to move to problem-solving." }
-                ]
-            },
-            {
-                id: "PM_TCW_2.5R",
-                pillar: "TOWARDS COMPANY & WORK",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "PA - Reflection on Impact 2.5: How much can colleagues rely on this person to take ownership of what they commit to?",
-                options: [
-                    { score: 1, text: "A. Colleagues sometimes have to track or remind this person; they can be unreliable and this erodes trust in the team." },
-                    { score: 5, text: "B. Colleagues can fully rely on this person; they deliver what they say they will and proactively communicate when they cannot meet a commitment." },
-                    { score: 3, text: "C. Colleagues can generally rely on them; occasionally they need guidance, but rarely disappoint without warning." }
-                ]
-            },
-            {
-                id: "PM_TCW_2.6C",
-                pillar: "TOWARDS COMPANY & WORK",
-                dimension: "MINDSET",
-                type: "core",
-                text: "PA - Core Scenario 2.6: This person has an idea or proposal to improve the way the team works that may face resistance from colleagues or managers. How do they typically advocate for their ideas?",
-                options: [
-                    { score: 1, text: "A. Presents the proposal directly and assumes the argument will speak for itself; doesn't always build support before putting forward the idea." },
-                    { score: 3, text: "B. Prepares a good argument and shares it with colleagues, taking their concerns into account and adapting the proposal where it makes sense." },
-                    { score: 5, text: "C. Proactively engages colleagues in developing the idea, listens to concerns, and actively adapts the approach; advocates constructively and persistently even when facing resistance." }
-                ]
-            },
-            {
-                id: "PM_TCW_2.6R",
-                pillar: "TOWARDS COMPANY & WORK",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "PA - Reflection on Impact 2.6: When this person puts forward a proposal or idea that faces resistance from colleagues, what typically happens?",
-                options: [
-                    { score: 1, text: "A. The idea typically doesn't progress; this person is not always sure why they face resistance and quickly abandons the proposal." },
-                    { score: 5, text: "B. They continue to advocate and engage colleagues; the idea is either adopted or it becomes clear they have made the strongest possible case." },
-                    { score: 3, text: "C. The idea gradually gains support; it moves forward with enough colleagues on board to be tried." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
                 ]
             }
         ],
-        SKILLS: [
-            // PILLAR: PERSONAL EFFECTIVENESS & COLLABORATION
+        "Towards Oneself": [
+            // Cluster 5: Self-Awareness & Personal Growth
             {
-                id: "PV_PEC_3.1C",
-                pillar: "PERSONAL EFFECTIVENESS & COLLABORATION",
-                dimension: "SKILLS",
-                facet: "Priority Management, Problem-Solving, Adaptability, Reliability",
-                type: "core",
-                text: "PA - Core Scenario 3.1: The team is under pressure — the workload is high, deadlines are tight, and a new tool or process has been introduced that changes the workflow. How does this person typically manage their own workload and contribute to team efficiency?",
+                id: "PE_TO_5_Q1", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Self-Awareness & Personal Growth", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they handle feedback, discuss their own development, respond to learning opportunities, and approach new challenges — which description best fits what you typically observe?",
                 options: [
-                    { score: 3, text: "A. Organizes their own work systematically, learns the new tool methodically, and manages to meet their commitments without negatively affecting colleagues during the transition." },
-                    { score: 1, text: "B. Reacts to urgent tasks, adopts the new tool slowly, and sometimes creates bottlenecks that slow down colleagues." },
-                    { score: 5, text: "C. Thoughtfully organizes their own work, masters the new tool quickly, and actively shares learnings with the team — accelerating collective adoption." }
+                    { score: 1, text: "A. They participate in feedback conversations and engage with development opportunities when they arise. They may need encouragement to recognize how their approach affects shared work, and their openness to learning can vary depending on the situation." },
+                    { score: 3, text: "B. They demonstrate solid self-awareness and genuine commitment to learning. They seek feedback on collaboration, respond constructively to input, actively pursue development opportunities, and openly discuss both their strengths and areas they're working to improve." },
+                    { score: 5, text: "C. They model exceptional self-awareness and learning agility. They proactively ask how they can work more effectively with others, embrace challenging learning opportunities, demonstrate sophisticated understanding of their impact, and often help others develop greater self-awareness through their example." }
                 ]
             },
             {
-                id: "PV_PEC_3.1R",
-                pillar: "PERSONAL EFFECTIVENESS & COLLABORATION",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "PA - Reflection on Impact 3.1: When the team went through a period of change or adoption of new tools, how did this person's contribution affect colleagues?",
+                id: "PE_TO_5_Q2", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Self-Awareness & Personal Growth", type: "impact",
+                text: "When you think about how [Name]'s self-awareness and approach to learning affect your working relationship and their effectiveness in shared work, what do you typically observe?",
                 options: [
-                    { score: 5, text: "A. Their speed of adoption and proactive knowledge sharing positively accelerated the whole team's adaptation." },
-                    { score: 1, text: "B. Their slow adaptation sometimes created difficulties for colleagues who depended on their delivery or knowledge." },
-                    { score: 3, text: "C. Their contribution was adequate — they adapted without disrupting colleagues, though they did not particularly accelerate the team's adaptation." }
+                    { score: -2, text: "A. Collaboration functions adequately, and they engage with development when prompted. You sometimes need to provide direct feedback to address issues in how you work together, and their response helps maintain a functional relationship." },
+                    { score: 0, text: "B. Their self-awareness makes collaboration smoother, and their learning translates into improved effectiveness. They recognize and address issues in joint work without requiring you to raise them, and you've observed measurable improvement in how they work over time." },
+                    { score: 1, text: "C. Their self-awareness and learning agility have noticeably strengthened collaboration and outcomes. A specific indicator: they've proactively adjusted their approach in ways that improved shared work, their rapid learning has enabled new types of collaboration, or their openness about development has made it easier to navigate challenges together." }
                 ]
             },
             {
-                id: "PV_PEC_3.2C",
-                pillar: "PERSONAL EFFECTIVENESS & COLLABORATION",
-                dimension: "SKILLS",
-                type: "core",
-                text: "PA - Core Scenario 3.2: The team is facing a recurring problem that causes delays in shared work. How does this person typically approach solving this problem?",
+                id: "PE_TO_5_Q3", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Self-Awareness & Personal Growth", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Mostly finds ways to work around the problem until it is addressed by someone else; does not initiate systematic resolution." },
-                    { score: 5, text: "B. Proactively identifies the root cause and proposes or implements a systemic solution, improving the workflow for the whole team." },
-                    { score: 3, text: "C. Analyzes the problem and proposes a solution; contributes to resolving it, though the initiative for deeper systemic changes usually comes from someone else." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 6: Resilience & Adaptability
+            {
+                id: "PE_TO_6_Q1", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Resilience & Adaptability", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they handle pressure, respond to setbacks, adapt to changing priorities, or manage uncertainty affecting shared work — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They work through challenging periods and adapt to changes affecting joint work. During sustained pressure or significant uncertainty, coordination may require extra effort, and recovery from setbacks affecting shared work can take time." },
+                    { score: 3, text: "B. They maintain steady collaboration during pressure and adapt effectively to changing circumstances. They handle setbacks constructively, adjust to new priorities without significant disruption, and maintain reliable engagement even during uncertain periods." },
+                    { score: 5, text: "C. They demonstrate exceptional resilience and adaptability that strengthens cross-functional work. They maintain composure and effectiveness during high-pressure situations, adapt quickly to changes affecting shared work, and often help you and others navigate uncertainty more effectively." }
                 ]
             },
             {
-                id: "PV_PEC_3.2R",
-                pillar: "PERSONAL EFFECTIVENESS & COLLABORATION",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "PA - Reflection on Impact 3.2: When this person contributes to solving a shared team problem, how long does the solution typically hold?",
+                id: "PE_TO_6_Q2", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Resilience & Adaptability", type: "impact",
+                text: "When you think about how [Name]'s resilience and adaptability affect shared work during challenging periods or changes, what do you typically observe?",
                 options: [
-                    { score: 3, text: "A. The solution works and generally holds with minor team adjustments." },
-                    { score: 5, text: "B. The solution addresses the root cause and has a lasting effect; their contribution raises the quality of the whole team's work over time." },
-                    { score: 1, text: "C. The solution works initially but the problem tends to resurface; it is not always clear whether the underlying cause was fully addressed." }
-                ]
-            },
-            // PILLAR: COMMUNICATION
-            {
-                id: "PV_CO_3.3C",
-                pillar: "COMMUNICATION",
-                dimension: "SKILLS",
-                facet: "Clarity & Precision, Active Listening, Peer Influence, Constructive Dialogue",
-                type: "core",
-                text: "PA - Core Scenario 3.3: This person needs to present a complex or controversial idea to colleagues who are skeptical or busy. How do they typically approach this communication challenge?",
-                options: [
-                    { score: 3, text: "A. Prepares a clear message with colleagues' perspectives in mind and adjusts the explanation when listening to concerns." },
-                    { score: 1, text: "B. Presents a detailed argument focused on logic, not always anticipating the concerns or perspectives of colleagues upfront." },
-                    { score: 5, text: "C. Thinks ahead about colleagues' perspectives and frames the idea in the context of shared goals; listens carefully and adapts the communication — seeking an approach that works for everyone." }
+                    { score: -2, text: "A. Joint work continues during difficult periods, though coordination may require additional effort. Adaptation to changes happens, though it may take time to reestablish smooth collaboration after significant setbacks or shifts." },
+                    { score: 0, text: "B. Their steady approach maintains stability in cross-functional work during pressure. Shared work adapts to changes with minimal disruption, and collaboration remains effective even during uncertain periods." },
+                    { score: 1, text: "C. Their resilience and adaptability have noticeably strengthened cross-functional outcomes during challenges. A specific indicator: during recent pressure situations, their composure helped maintain shared work quality, their quick adaptation to changes reduced disruption to joint initiatives, or their approach to setbacks helped you manage your own team's response." }
                 ]
             },
             {
-                id: "PV_CO_3.3R",
-                pillar: "COMMUNICATION",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "PA - Reflection on Impact 3.3: When this person presents an idea or proposal to skeptical colleagues, what typically happens?",
+                id: "PE_TO_6_Q3", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Resilience & Adaptability", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Colleagues remain skeptical or don't adopt the idea; the explanation doesn't address key concerns or the idea doesn't gain broader support." },
-                    { score: 5, text: "B. Colleagues understand the idea, engage with it, and work together on the practical implementation details." },
-                    { score: 3, text: "C. Colleagues understand the idea and agree to proceed after discussion; some exchange takes place but a decision is reached together." }
-                ]
-            },
-            {
-                id: "PV_CO_3.4C",
-                pillar: "COMMUNICATION",
-                dimension: "SKILLS",
-                type: "core",
-                text: "PA - Core Scenario 3.4: This person needs to coordinate or get support from colleagues or another team that has competing priorities and commitments. How do they typically approach this kind of coordination?",
-                options: [
-                    { score: 1, text: "A. Makes a direct request explaining what they need, without always fully understanding colleagues' constraints and priorities upfront." },
-                    { score: 5, text: "B. Sees coordination as an opportunity to build relationships; frames requests in the context of mutual benefits and explores flexible solutions that work for both sides." },
-                    { score: 3, text: "C. Reaches out to colleagues, explains the need, and asks about their priorities; looks for ways to align shared goals." }
-                ]
-            },
-            {
-                id: "PV_CO_3.4R",
-                pillar: "COMMUNICATION",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "PA - Reflection on Impact 3.4: When this person seeks coordination or support from colleagues, what is typically the result?",
-                options: [
-                    { score: 1, text: "A. Colleagues have difficulty fulfilling requests or delay them; this person must find alternatives or escalate." },
-                    { score: 5, text: "B. Colleagues understand the request, engage quickly, and work together on a solution; collaboration runs smoothly." },
-                    { score: 3, text: "C. Colleagues provide support, though sometimes with negotiation on timelines or scope; an acceptable path forward is found together." }
-                ]
-            },
-            // PILLAR: TEAM CONTRIBUTION & DEVELOPMENT
-            {
-                id: "PV_TCD_3.5C",
-                pillar: "TEAM CONTRIBUTION & DEVELOPMENT",
-                dimension: "SKILLS",
-                facet: "Peer Mentoring & Support, Giving & Receiving Feedback, Contributing to Team Development, Constructive Conversations",
-                type: "core",
-                text: "PA - Core Scenario 3.5: A new or less experienced colleague is struggling with a task, while the team has also achieved a shared success worth recognizing. How does this person typically respond to these situations?",
-                options: [
-                    { score: 1, text: "A. Doesn't always notice when a colleague is struggling or leaves them to find their own solution; for shared success, mostly stays quiet or gives generic comments." },
-                    { score: 3, text: "B. Offers help if the colleague asks or if the situation is obvious; for shared success, gives sincere and specific praise." },
-                    { score: 5, text: "C. Proactively notices when a colleague is struggling and offers support before being asked; for shared success, specifically highlights individual contributions and strengthens the team." }
-                ]
-            },
-            {
-                id: "PV_TCD_3.5R",
-                pillar: "TEAM CONTRIBUTION & DEVELOPMENT",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "PA - Reflection on Impact 3.5: As a colleague, how much could you rely on this person to help you when you face a challenge?",
-                options: [
-                    { score: 1, text: "A. This person rarely offers help without being directly asked and sometimes has limited availability or willingness to help." },
-                    { score: 3, text: "B. This person would help if asked; they are generally reliable when approached for support." },
-                    { score: 5, text: "C. This person would notice if you were struggling and offer help before you had to ask; they actively contribute to colleagues' development." }
-                ]
-            },
-            {
-                id: "PV_TCD_3.6C",
-                pillar: "TEAM CONTRIBUTION & DEVELOPMENT",
-                dimension: "SKILLS",
-                type: "core",
-                text: "PA - Core Scenario 3.6: There is a situation where constructive feedback needs to be given to a colleague whose behavior is negatively affecting the team's work. How does this person typically approach these difficult conversations?",
-                options: [
-                    { score: 1, text: "A. Mostly avoids direct conversations about problematic behavior, preferring to hope the issue resolves itself or that someone else will intervene." },
-                    { score: 3, text: "B. Approaches the conversation diplomatically, presents specific examples and describes the impact on the team; remains professional and constructive." },
-                    { score: 5, text: "C. Prepares for the conversation, thinks about how the colleague might react, and plans their approach; delivers the feedback in a way that encourages understanding and growth rather than defensiveness." }
-                ]
-            },
-            {
-                id: "PV_TCD_3.6R",
-                pillar: "TEAM CONTRIBUTION & DEVELOPMENT",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "PA - Reflection on Impact 3.6: When this person delivers constructive feedback to a colleague, what is typically the outcome?",
-                options: [
-                    { score: 1, text: "A. The conversation is uncomfortable or doesn't achieve its goal; the colleague becomes defensive or it's unclear whether they understand what needs to change." },
-                    { score: 3, text: "B. The conversation is clear and professional; the colleague understands the message, though some initial resistance may be present." },
-                    { score: 5, text: "C. The conversation is productive; the colleague engages constructively and visible behavioral changes follow." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
                 ]
             }
         ],
-        IMPACT: [
-            // PILLAR: TEAM ATMOSPHERE
+        "Towards Others": [
+            // Cluster 7: Empathy & Inclusive Collaboration
             {
-                id: "PU_TA_4.1C",
-                pillar: "TEAM ATMOSPHERE",
-                dimension: "IMPACT",
-                facet: "Authenticity, Emotional Presence, Inclusiveness, Building Trust",
-                type: "core",
-                text: "PA - Core Scenario 4.1: The team is going through a period of uncertainty or tension. Some colleagues are visibly upset; others are hesitant to voice concerns. How does this person typically contribute to the team's emotional climate and psychological safety?",
+                id: "PE_TOT_7_Q1", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Empathy & Inclusive Collaboration", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they understand different perspectives, respond to others' needs, value diverse contributions, and create space for all voices — which description best fits what you typically observe?",
                 options: [
-                    { score: 3, text: "A. Notices when colleagues are upset and actively opens space for them to share concerns; makes an effort to include those who are hesitant." },
-                    { score: 1, text: "B. Focuses on the work and doesn't initiate conversations about the emotional climate; assumes colleagues will raise concerns if they want to." },
-                    { score: 5, text: "C. Actively creates space for open communication; acknowledges that uncertainty is normal and helps colleagues feel heard and accepted." }
+                    { score: 1, text: "A. They work cooperatively and acknowledge different viewpoints in joint work. They may need reminders to consider diverse perspectives fully, and their approach to ensuring all voices are heard can be inconsistent." },
+                    { score: 3, text: "B. They consistently demonstrate empathy and value diverse contributions. They actively listen to different perspectives, respond thoughtfully to others' needs, create space for all voices in cross-functional discussions, and foster inclusive collaboration." },
+                    { score: 5, text: "C. They champion empathy and inclusion in cross-functional work. They proactively seek out diverse perspectives, skillfully navigate situations where voices might be marginalized, actively celebrate different contributions, and create an environment where everyone feels genuinely valued." }
                 ]
             },
             {
-                id: "PU_TA_4.1R",
-                pillar: "TEAM ATMOSPHERE",
-                dimension: "IMPACT",
-                type: "reflection",
-                text: "PA - Reflection on Impact 4.1: How does this person's presence typically affect the team atmosphere?",
+                id: "PE_TOT_7_Q2", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Empathy & Inclusive Collaboration", type: "impact",
+                text: "When you think about how [Name]'s empathy and inclusive approach affect cross-functional collaboration and team dynamics, what do you typically observe?",
                 options: [
-                    { score: 1, text: "A. Their presence sometimes adds tension or is neutral; their contribution to the team atmosphere is not particularly positive." },
-                    { score: 5, text: "B. They have a markedly positive effect on the atmosphere; colleagues feel safer, more open, and more engaged when they are present." },
-                    { score: 3, text: "C. Their presence is generally positive; colleagues feel more comfortable, though their influence on the climate is not particularly pronounced." }
+                    { score: -2, text: "A. Joint work happens and different perspectives are considered. Collaboration functions adequately, though some voices may be more prominent than others in shared discussions." },
+                    { score: 0, text: "B. Their empathetic and inclusive approach consistently strengthens cross-functional work. Diverse perspectives are actively integrated into shared decisions, and people from different backgrounds engage confidently in joint initiatives." },
+                    { score: 1, text: "C. Their empathy and inclusion have noticeably enhanced cross-functional collaboration. A specific indicator: people actively seek to work with them because they feel heard and valued, their inclusive approach has improved how diverse perspectives are integrated into shared work, or they've helped you create more inclusive collaboration in your own area." }
                 ]
             },
             {
-                id: "PU_TA_4.2C",
-                pillar: "TEAM ATMOSPHERE",
-                dimension: "IMPACT",
-                type: "core",
-                text: "PA - Core Scenario 4.2: A difficult team decision has been made that negatively affects some colleagues. This person was not the decision-maker. How do they typically respond and communicate in such situations?",
+                id: "PE_TOT_7_Q3", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Empathy & Inclusive Collaboration", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 5, text: "A. Helps colleagues understand the context of the decision if they know it; actively listens to the concerns of those affected and helps maintain team cohesion even when the situation is difficult." },
-                    { score: 1, text: "B. Doesn't particularly engage in conversations about the decision; focuses on their own work and leaves affected colleagues to process the situation on their own." },
-                    { score: 3, text: "C. Listens to the concerns of affected colleagues and offers support; doesn't take an active role in explaining the decision but helps maintain a positive climate." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 8: Collaboration & Constructive Conflict
+            {
+                id: "PE_TOT_8_Q1", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Collaboration & Constructive Conflict", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed their commitment to shared success, knowledge sharing, and how they handle disagreements or conflicts in cross-functional work — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They contribute to joint work and coordinate on shared goals. During disagreements, they may avoid difficult conversations or focus primarily on their team's interests, and knowledge sharing happens when requested." },
+                    { score: 3, text: "B. They demonstrate genuine commitment to shared success, actively sharing knowledge and resources. They approach disagreements constructively, maintain objectivity during conflicts, and work collaboratively to find solutions that serve collective goals." },
+                    { score: 5, text: "C. They champion cross-functional success and model exceptional collaboration. They proactively share knowledge, embrace healthy disagreement as valuable for better outcomes, create psychological safety for difficult conversations, and navigate conflicts in ways that strengthen cross-functional relationships." }
                 ]
             },
             {
-                id: "PU_TA_4.2R",
-                pillar: "TEAM ATMOSPHERE",
-                dimension: "IMPACT",
-                type: "reflection",
-                text: "PA - Reflection on Impact 4.2: When the team goes through a difficult change or decision, what is this person's contribution to team cohesion?",
+                id: "PE_TOT_8_Q2", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Collaboration & Constructive Conflict", type: "impact",
+                text: "When you think about how [Name]'s collaborative approach and conflict management affect shared work and cross-functional relationships, what do you typically observe?",
                 options: [
-                    { score: 1, text: "A. This person mostly withdraws or stays neutral; their contribution to team cohesion in difficult moments is minimal." },
-                    { score: 3, text: "B. This person supports colleagues and contributes to a positive atmosphere to the extent they can." },
-                    { score: 5, text: "C. This person actively helps maintain team cohesion; their presence and support have a significant positive effect on morale and the team." }
-                ]
-            },
-            // PILLAR: HOW DO THEY MOTIVATE COLLEAGUES?
-            {
-                id: "PU_HMC_4.3C",
-                pillar: "HOW DO THEY MOTIVATE COLLEAGUES?",
-                dimension: "IMPACT",
-                facet: "Peer Inspiration & Motivation, Supporting Engagement, Advocating for the Team, Influence Without Authority",
-                type: "core",
-                text: "PA - Core Scenario 4.3: The team is working on a demanding project with tight deadlines, and some colleagues seem disengaged or demotivated. How does this person typically contribute to team motivation and engagement?",
-                options: [
-                    { score: 3, text: "A. Actively engages in the work and communicates its importance; offers help to struggling colleagues and tries to keep the team motivated." },
-                    { score: 1, text: "B. Focuses on their own tasks and leaves others to manage their own motivation." },
-                    { score: 5, text: "C. Proactively helps colleagues understand the meaning and importance of their contribution; energizes the team and lifts morale even during difficult periods." }
+                    { score: -2, text: "A. Joint work progresses and conflicts are eventually resolved. Knowledge sharing happens, though you may need to request information, and some disagreements may require additional effort to work through." },
+                    { score: 0, text: "B. Their collaborative approach consistently strengthens shared work. Knowledge flows effectively, disagreements are resolved constructively, and cross-functional relationships remain professional and productive even during tension." },
+                    { score: 1, text: "C. Their collaboration and conflict management have noticeably improved cross-functional outcomes. A specific indicator: they've helped resolve complex disagreements in ways that strengthened relationships, their knowledge sharing has measurably improved joint work quality, or their approach to healthy conflict has influenced how you handle disagreements in your own area." }
                 ]
             },
             {
-                id: "PU_HMC_4.3R",
-                pillar: "HOW DO THEY MOTIVATE COLLEAGUES?",
-                dimension: "IMPACT",
-                type: "reflection",
-                text: "PA - Reflection on Impact 4.3: When this person tries to motivate or engage colleagues, what typically happens?",
+                id: "PE_TOT_8_Q3", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Collaboration & Constructive Conflict", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 5, text: "A. Colleagues respond positively; a visible increase in team engagement and motivation is apparent." },
-                    { score: 1, text: "B. The effect on colleagues is limited; this person doesn't always succeed in moving others and knows how to do it." },
-                    { score: 3, text: "C. Some colleagues respond positively; a certain increase in engagement occurs, though not from everyone." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "Towards Company & Position": [
+            // Cluster 9: Accountability & Decision Ownership
+            {
+                id: "PE_TCP_9_Q1", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Accountability & Decision Ownership", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they take ownership of shared outcomes, make decisions affecting cross-functional work, and demonstrate accountability for their commitments — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They accept responsibility for their part of joint work and make decisions within their area. During challenges affecting shared work, they may focus on external factors, and their decision-making on cross-functional matters may require consensus-building." },
+                    { score: 3, text: "B. They consistently take ownership of shared outcomes and make timely decisions on cross-functional matters. They assume accountability for both successes and failures in joint work, make decisions with appropriate confidence, and follow through on commitments reliably." },
+                    { score: 5, text: "C. They demonstrate exceptional ownership of cross-functional outcomes and decisive leadership. They proactively assume accountability for broader impacts, make confident decisions that move shared work forward, and create an environment where others feel empowered to make decisions and take ownership." }
                 ]
             },
             {
-                id: "PU_HMC_4.4C",
-                pillar: "HOW DO THEY MOTIVATE COLLEAGUES?",
-                dimension: "IMPACT",
-                type: "core",
-                text: "PA - Core Scenario 4.4: This person identifies something that could improve the way the team works but knows the proposal may face resistance from colleagues or managers. How do they typically advocate for changes they consider important?",
+                id: "PE_TCP_9_Q2", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Accountability & Decision Ownership", type: "impact",
+                text: "When you think about how [Name]'s accountability and decision-making affect shared work and cross-functional outcomes, what do you typically observe?",
                 options: [
-                    { score: 1, text: "A. Presents the proposal directly and assumes the argument will speak for itself; doesn't always build support before putting forward the idea." },
-                    { score: 3, text: "B. Prepares a good argument and shares it with relevant colleagues, taking their concerns into account and adapting the approach." },
-                    { score: 5, text: "C. Actively engages colleagues in developing the idea, listens to concerns, and adapts the proposal; advocates constructively and persistently even when facing resistance." }
+                    { score: -2, text: "A. Joint work progresses and decisions are made. When issues arise in shared work, they participate in addressing them, though accountability for cross-functional outcomes may sometimes be unclear." },
+                    { score: 0, text: "B. Their clear ownership makes cross-functional work more effective. They take accountability for shared outcomes without deflecting, make decisions that keep joint work moving, and their reliable follow-through builds trust." },
+                    { score: 1, text: "C. Their accountability and decision-making have noticeably strengthened cross-functional work. A specific indicator: their ownership of shared outcomes has improved how cross-functional accountability works, their decisive approach has accelerated joint initiatives, or their model of accountability has influenced how you think about ownership in your own area." }
                 ]
             },
             {
-                id: "PU_HMC_4.4R",
-                pillar: "HOW DO THEY MOTIVATE COLLEAGUES?",
-                dimension: "IMPACT",
-                type: "reflection",
-                text: "PA - Reflection on Impact 4.4: When this person advocates for a change or improvement that faces resistance, what typically happens?",
+                id: "PE_TCP_9_Q3", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Accountability & Decision Ownership", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. The idea typically doesn't progress; this person is not always sure why they face resistance and quickly drops the proposal." },
-                    { score: 5, text: "B. They continue to advocate and engage colleagues; the idea is either adopted or it becomes clear they have made the strongest possible case." },
-                    { score: 3, text: "C. The idea gradually gains support; it moves forward with enough colleagues on board to be tried." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 10: Strategic Ownership & Values Alignment
+            {
+                id: "PE_TCP_10_Q1", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Strategic Ownership & Values Alignment", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've discussed how work connects to organizational strategy, observed their commitment to company mission and values, and seen how they make decisions — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They focus on executing current priorities and acknowledge organizational values when relevant. In strategic discussions, they understand current goals, though they may not actively connect work to longer-term organizational direction or consistently reference values in decision-making." },
+                    { score: 3, text: "B. They effectively connect their work to organizational strategy and consistently demonstrate company values. They contribute meaningfully to strategic discussions, make decisions aligned with organizational mission, and help others see how shared work serves broader goals." },
+                    { score: 5, text: "C. They champion organizational strategy and embody company values in ways that influence others. They proactively connect cross-functional work to strategic goals, inspire commitment to organizational mission, model values-driven decision-making that others reference, and actively shape how the broader organization thinks about strategy and culture." }
+                ]
+            },
+            {
+                id: "PE_TCP_10_Q2", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Strategic Ownership & Values Alignment", type: "impact",
+                text: "When you think about how [Name]'s strategic ownership and values alignment affect cross-functional work and shared decisions, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Joint planning focuses on operational coordination, and values are acknowledged in shared discussions. Strategic alignment in cross-functional work is maintained through formal processes, and values alignment may be inconsistent when competing priorities arise." },
+                    { score: 0, text: "B. Their strategic clarity and values alignment consistently strengthen cross-functional work. Shared decisions reflect organizational mission, and their genuine commitment to company values makes collaboration more purposeful and aligned." },
+                    { score: 1, text: "C. Their strategic ownership and values leadership have noticeably influenced cross-functional culture. A specific indicator: they've connected shared work to organizational strategy in ways that improved decision-making, their values-driven approach has influenced how you or others make decisions in joint work, or their commitment to company mission has strengthened the overall quality of cross-functional collaboration." }
+                ]
+            },
+            {
+                id: "PE_TCP_10_Q3", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Strategic Ownership & Values Alignment", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "Personal Efficiency": [
+            // Cluster 11: Priority Management & Personal Effectiveness
+            {
+                id: "PE_PE_11_Q1", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Priority Management & Personal Effectiveness", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they manage competing priorities, solve problems independently, and adapt their approach when circumstances change in shared work — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They manage their workload and address shared problems when they arise. During periods of high demand or significant change, coordination may require extra effort, and they may need time to adapt their approach when joint priorities shift." },
+                    { score: 3, text: "B. They effectively manage their commitments in cross-functional work, prioritizing clearly and solving shared problems with structured thinking. They adapt readily to changing priorities, communicate proactively about capacity, and maintain reliable delivery even when circumstances shift." },
+                    { score: 5, text: "C. They demonstrate exceptional personal effectiveness that strengthens cross-functional work. They anticipate and communicate capacity constraints proactively, bring sophisticated problem-solving to shared challenges, and adapt so smoothly to changing circumstances that joint work rarely experiences disruption." }
+                ]
+            },
+            {
+                id: "PE_PE_11_Q2", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Priority Management & Personal Effectiveness", type: "impact",
+                text: "When you think about how [Name]'s personal effectiveness and adaptability affect shared work and joint deliverables, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Shared work progresses and problems are addressed, though coordination sometimes requires additional follow-up. During busy periods or significant changes, their delivery on joint commitments may require adjustment." },
+                    { score: 0, text: "B. Their reliable personal effectiveness makes cross-functional coordination straightforward. Shared commitments are met consistently, problems are solved efficiently, and their adaptability means joint work continues smoothly through priority changes." },
+                    { score: 1, text: "C. Their personal effectiveness has noticeably improved cross-functional outcomes. A specific indicator: their proactive communication about priorities has allowed you to plan shared work more confidently, their problem-solving has reduced time spent on shared challenges, or their adaptability during recent changes helped maintain joint delivery when it could have been disrupted." }
+                ]
+            },
+            {
+                id: "PE_PE_11_Q3", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Priority Management & Personal Effectiveness", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 12: Change Tactics & Implementation Capability
+            {
+                id: "PE_PE_12_Q1", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Change Tactics & Implementation Capability", type: "behavioural",
+                text: "In your collaborative work with [Name] — when organizational changes have affected shared work or when you've observed how they engage stakeholders and manage resistance during transitions — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They implement changes in their area and coordinate basic transition needs with you. Their approach to managing resistance is functional, though complex stakeholder situations or sustained resistance may require additional effort." },
+                    { score: 3, text: "B. They apply structured change management approaches that make cross-functional transitions smoother. They engage key stakeholders proactively, address resistance constructively, and communicate clearly about change impacts, making shared transitions more manageable." },
+                    { score: 5, text: "C. They demonstrate sophisticated change management that elevates cross-functional transitions. They build broad stakeholder coalitions, transform resistance into engagement, and create change communication that makes adoption feel natural rather than imposed. Their approach often helps your team navigate transitions more effectively." }
+                ]
+            },
+            {
+                id: "PE_PE_12_Q2", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Change Tactics & Implementation Capability", type: "impact",
+                text: "When you think about how [Name]'s change management approach has affected shared transitions and cross-functional adoption, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Cross-functional changes are implemented over time, though adoption may be uneven and some coordination challenges may persist. Their change management maintains basic stability in shared work during transitions." },
+                    { score: 0, text: "B. Their structured change approach consistently makes cross-functional transitions smoother. Shared changes achieve solid adoption, resistance is addressed effectively, and coordination during transitions is maintained with reasonable stability." },
+                    { score: 1, text: "C. Their change management has noticeably improved cross-functional transition outcomes. A specific indicator: a recent change they managed achieved faster or stronger adoption than similar changes, their stakeholder engagement approach reduced resistance in ways that benefited your team, or their change communication served as a model for how you approached a similar transition." }
+                ]
+            },
+            {
+                id: "PE_PE_12_Q3", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Change Tactics & Implementation Capability", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "Communication": [
+            // Cluster 13: Impactful Communication & Strategic Listening
+            {
+                id: "PE_CO_13_Q1", pillar: "Communication", dimension: "Skills",
+                cluster: "Impactful Communication & Strategic Listening", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they communicate important messages, listen in conversations, and adapt their communication to different audiences — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They communicate clearly on topics relevant to shared work and listen to what is said in conversations. Their messages address the subject, though they may not consistently frame information in terms of what matters most to the recipient." },
+                    { score: 3, text: "B. They frame messages in terms of clear value for the recipient and listen beyond stated positions to understand underlying concerns. Their communication creates genuine understanding, and their listening helps address the real drivers of issues in cross-functional conversations." },
+                    { score: 5, text: "C. They demonstrate exceptional communication and listening that elevates cross-functional work. They anticipate what different stakeholders need to hear, craft messages that create commitment rather than just understanding, and use listening to identify hidden concerns or opportunities that others miss." }
+                ]
+            },
+            {
+                id: "PE_CO_13_Q2", pillar: "Communication", dimension: "Skills",
+                cluster: "Impactful Communication & Strategic Listening", type: "impact",
+                text: "When you think about how [Name]'s communication and listening affect cross-functional understanding and shared decisions, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Their communication ensures shared work is coordinated, and their listening helps address stated concerns. Some misalignment may persist after conversations, or follow-up may be needed to ensure full understanding of important messages." },
+                    { score: 0, text: "B. Their communication consistently creates clear understanding among stakeholders in shared work. Their strategic listening addresses underlying concerns, and conversations with them tend to result in better-quality decisions and stronger alignment." },
+                    { score: 1, text: "C. Their communication and listening have noticeably improved cross-functional outcomes. A specific indicator: their reframing of a message changed stakeholder perspectives in a way that unblocked shared work, their listening surfaced an important concern that improved a joint decision, or the quality of shared decisions has measurably improved because of how they facilitate conversations." }
+                ]
+            },
+            {
+                id: "PE_CO_13_Q3", pillar: "Communication", dimension: "Skills",
+                cluster: "Impactful Communication & Strategic Listening", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 14: Influence & Stakeholder Navigation
+            {
+                id: "PE_CO_14_Q1", pillar: "Communication", dimension: "Skills",
+                cluster: "Influence & Stakeholder Navigation", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they gain support for ideas, remove barriers to shared initiatives, and navigate organizational dynamics — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They present their ideas and work to gain support for shared initiatives. Their influence approach is functional, though they may not consistently address the specific concerns of different stakeholders or remove the friction that creates resistance in cross-functional work." },
+                    { score: 3, text: "B. They effectively influence stakeholders by framing requests in terms of mutual benefit and proactively addressing barriers. They navigate organizational dynamics skillfully, build productive relationships across teams, and help move shared initiatives forward with solid stakeholder support." },
+                    { score: 5, text: "C. They demonstrate exceptional influence and organizational navigation that elevates cross-functional work. They design approaches that make desired actions compelling for all stakeholders, build coalitions that create momentum, and navigate complex dynamics in ways that transform how shared initiatives gain traction." }
+                ]
+            },
+            {
+                id: "PE_CO_14_Q2", pillar: "Communication", dimension: "Skills",
+                cluster: "Influence & Stakeholder Navigation", type: "impact",
+                text: "When you think about how [Name]'s influence and stakeholder navigation affect cross-functional initiatives and shared outcomes, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Shared initiatives progress and stakeholder support is gained over time. Some friction in cross-functional coordination persists, and gaining alignment on complex shared decisions may require additional effort." },
+                    { score: 0, text: "B. Their influence approach consistently moves cross-functional initiatives forward. Stakeholders engage constructively, barriers to shared work are addressed effectively, and their organizational navigation helps maintain momentum on joint priorities." },
+                    { score: 1, text: "C. Their influence and stakeholder navigation have noticeably improved cross-functional outcomes. A specific indicator: they've unblocked a shared initiative that was stalling due to stakeholder resistance, their coalition-building has accelerated a joint decision, or their approach to navigating organizational dynamics has helped you think about how to manage similar situations." }
+                ]
+            },
+            {
+                id: "PE_CO_14_Q3", pillar: "Communication", dimension: "Skills",
+                cluster: "Influence & Stakeholder Navigation", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "Team & People Development": [
+            // Cluster 15: Delegation & Performance Development
+            {
+                id: "PE_TPD_15_Q1", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Delegation & Performance Development", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they delegate to their team, manage team member performance, and develop people in ways that affect cross-functional work — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They assign work to their team and manage performance to meet current commitments. Team members contribute to joint work at a functional level, though capability gaps occasionally create constraints in what can be accomplished together." },
+                    { score: 3, text: "B. They delegate effectively with clear expectations, developing their team's capabilities in ways that strengthen cross-functional work. Their team members take ownership of joint commitments, and their performance management ensures reliable delivery on shared initiatives." },
+                    { score: 5, text: "C. They build exceptional team capability and performance ownership that elevates cross-functional work. Their team members bring growing sophistication to shared initiatives, take accountability for joint outcomes, and often propose improvements to how cross-functional work is done." }
+                ]
+            },
+            {
+                id: "PE_TPD_15_Q2", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Delegation & Performance Development", type: "impact",
+                text: "When you think about how [Name]'s approach to delegation and performance development affects the capabilities available for cross-functional work, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Their team contributes to shared work at the required level. Occasional capability gaps or performance issues affect joint delivery, requiring adjustments to what can be accomplished together." },
+                    { score: 0, text: "B. Their team's growing capabilities consistently strengthen cross-functional collaboration. Delegation and performance management produce team members who deliver reliably on shared commitments and contribute meaningfully to joint initiatives." },
+                    { score: 1, text: "C. Their delegation and performance development approach has noticeably enhanced cross-functional effectiveness. A specific indicator: their team members have taken on more complex roles in shared initiatives, the quality of their team's contributions to joint work has measurably improved, or their approach to developing others has influenced how you think about delegation and development in your own area." }
+                ]
+            },
+            {
+                id: "PE_TPD_15_Q3", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Delegation & Performance Development", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 16: Recognition & Difficult Conversations
+            {
+                id: "PE_TPD_16_Q1", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Recognition & Difficult Conversations", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they recognize contributions in cross-functional work and how they approach difficult conversations affecting shared initiatives — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They acknowledge significant contributions to joint work and address performance-related conversations when needed. Their recognition is generally positive, though it may not always acknowledge specific contributions to shared work, and they may avoid difficult cross-functional conversations." },
+                    { score: 3, text: "B. They consistently recognize contributions to shared work in meaningful, specific ways. They approach difficult cross-functional conversations directly and constructively, maintaining professional relationships while addressing issues that affect joint outcomes." },
+                    { score: 5, text: "C. They demonstrate exceptional recognition and conversational skill in cross-functional contexts. They find genuinely creative ways to celebrate cross-functional contributions, and they navigate difficult conversations about shared work with such skill that relationships are typically strengthened rather than strained." }
+                ]
+            },
+            {
+                id: "PE_TPD_16_Q2", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Recognition & Difficult Conversations", type: "impact",
+                text: "When you think about how [Name]'s approach to recognition and difficult conversations affects your working relationship and cross-functional dynamics, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Contributions to joint work are acknowledged and difficult conversations happen when necessary. Some recognition may feel routine rather than meaningful, and challenging cross-functional conversations may leave residual tension." },
+                    { score: 0, text: "B. Their recognition of cross-functional contributions is consistently meaningful and motivating. Difficult conversations about shared work are handled constructively, and professional relationships remain strong even after challenging discussions." },
+                    { score: 1, text: "C. Their recognition and conversational approach have noticeably strengthened cross-functional relationships. A specific indicator: their specific acknowledgment of a contribution changed how you or others engaged in shared work, a difficult conversation they managed resolved a persistent issue in cross-functional collaboration, or their approach to honest conversation has influenced how you handle similar situations." }
+                ]
+            },
+            {
+                id: "PE_TPD_16_Q3", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Recognition & Difficult Conversations", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "How Do I Make My Team Feel?": [
+            // Cluster 17: Authentic Presence & Emotional Impact
+            {
+                id: "PE_HMF_17_Q1", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Authentic Presence & Emotional Impact", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they show up in interactions, demonstrate emotional awareness, and create genuine connection in cross-functional contexts — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They are professionally present in cross-functional interactions and manage emotions appropriately. Their engagement is generally positive, though interactions may feel focused on task coordination rather than genuine connection." },
+                    { score: 3, text: "B. They create authentic connection in cross-functional interactions, demonstrating genuine interest in others and emotional awareness. They read dynamics accurately, respond thoughtfully to concerns, and contribute to a positive emotional climate in shared work." },
+                    { score: 5, text: "C. They demonstrate exceptional authentic presence and emotional intelligence that elevates cross-functional relationships. They create genuine connection that goes beyond task coordination, navigate complex emotional dynamics with sophistication, and contribute to psychological safety in shared work environments." }
+                ]
+            },
+            {
+                id: "PE_HMF_17_Q2", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Authentic Presence & Emotional Impact", type: "impact",
+                text: "When you think about how [Name]'s authentic presence and emotional impact affect your working relationship and cross-functional dynamics, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Cross-functional interactions are professional and task-focused. Connection is maintained at a functional level, though the relationship may not extend significantly beyond operational coordination." },
+                    { score: 0, text: "B. Their authentic presence and emotional awareness make cross-functional collaboration genuinely enjoyable and effective. People feel comfortable sharing real concerns, and the emotional climate in shared work is positive and productive." },
+                    { score: 1, text: "C. Their authentic presence and emotional intelligence have noticeably strengthened cross-functional relationships. A specific indicator: their genuine engagement has made people more willing to raise difficult topics in shared work, their emotional awareness has helped navigate a sensitive cross-functional situation, or their presence in joint settings creates a noticeably more open and productive environment." }
+                ]
+            },
+            {
+                id: "PE_HMF_17_Q3", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Authentic Presence & Emotional Impact", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 18: Inclusion, Belonging & Trust
+            {
+                id: "PE_HMF_18_Q1", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Inclusion, Belonging & Trust", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they create inclusion in cross-functional settings, build trust through their actions, and ensure all voices are heard in shared work — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They treat cross-functional colleagues fairly and maintain commitments in joint work. They may not consistently ensure all voices are equally heard in shared discussions, and trust-building behaviors may vary depending on the situation." },
+                    { score: 3, text: "B. They actively ensure diverse perspectives are heard and valued in cross-functional work. They build trust through consistent, transparent behavior and reliable follow-through, creating an environment where people feel genuinely included and secure in shared work." },
+                    { score: 5, text: "C. They champion inclusion and create exceptional trust in cross-functional relationships. They proactively ensure all voices contribute meaningfully in shared settings, address barriers to participation, and build trust so effectively that people feel confident raising difficult topics and taking risks in joint work." }
+                ]
+            },
+            {
+                id: "PE_HMF_18_Q2", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Inclusion, Belonging & Trust", type: "impact",
+                text: "When you think about how [Name]'s approach to inclusion and trust-building affects cross-functional collaboration, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Cross-functional collaboration is professional and commitments are generally honoured. Some voices may be more prominent than others in shared discussions, and trust may not fully support the openness needed for challenging cross-functional conversations." },
+                    { score: 0, text: "B. Their commitment to inclusion and trust-building consistently strengthens cross-functional work. Diverse perspectives are actively integrated, commitments are honoured reliably, and people feel secure raising concerns and sharing honest perspectives in shared settings." },
+                    { score: 1, text: "C. Their inclusion and trust have noticeably transformed cross-functional collaboration. A specific indicator: people from diverse backgrounds participate with noticeably greater confidence in shared settings, a trust foundation they've built has enabled a difficult but important cross-functional conversation, or their approach to inclusion has influenced how you create belonging in your own area." }
+                ]
+            },
+            {
+                id: "PE_HMF_18_Q3", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Inclusion, Belonging & Trust", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "How Do I Induce Action?": [
+            // Cluster 19: Visionary Inspiration & Empowerment
+            {
+                id: "PE_HIA_19_Q1", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Visionary Inspiration & Empowerment", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they communicate purpose, inspire action in cross-functional settings, and create ownership in shared work — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They communicate about shared goals and assign responsibilities in joint work. Their approach is functional, though the connection to broader purpose may not always be clear, and driving progress in shared work may require regular coordination." },
+                    { score: 3, text: "B. They articulate the \"why\" behind shared work compellingly and create genuine ownership in cross-functional initiatives. Their team members engage with joint work purposefully, and their approach to empowerment makes shared initiatives more self-sustaining." },
+                    { score: 5, text: "C. They inspire genuine commitment to shared purpose and create exceptional ownership in cross-functional work. Their vision-setting and empowerment approach make joint initiatives energizing, and their team members bring proactive initiative and ownership to shared work that goes well beyond task completion." }
+                ]
+            },
+            {
+                id: "PE_HIA_19_Q2", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Visionary Inspiration & Empowerment", type: "impact",
+                text: "When you think about how [Name]'s inspiration and empowerment approach affect engagement and ownership in cross-functional work, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Shared work progresses with coordination and direction. Team members from their area complete joint responsibilities, though progress may require regular follow-up and ownership of cross-functional outcomes may be limited." },
+                    { score: 0, text: "B. Their approach to inspiration and empowerment creates meaningful engagement in shared work. Team members take genuine ownership of joint commitments, and shared initiatives progress with greater self-direction than is typical." },
+                    { score: 1, text: "C. Their visionary inspiration and empowerment have noticeably transformed cross-functional engagement. A specific indicator: their team members proactively drive improvements in shared work, joint initiatives have achieved results beyond original expectations because of their team's ownership, or their empowerment approach has influenced how you think about creating ownership in your own cross-functional relationships." }
+                ]
+            },
+            {
+                id: "PE_HIA_19_Q3", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Visionary Inspiration & Empowerment", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 20: Change Leadership & Strategic Influence
+            {
+                id: "PE_HIA_20_Q1", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Change Leadership & Strategic Influence", type: "behavioural",
+                text: "In your collaborative work with [Name] — when you've observed how they challenge existing approaches, lead change that affects shared work, and influence cross-functional initiatives — which description best fits what you typically observe?",
+                options: [
+                    { score: 1, text: "A. They implement changes in their area and participate in cross-functional change initiatives. Their influence approach is direct, and they work within established channels, though they may not consistently challenge existing processes or build the broader coalitions needed for significant cross-functional impact." },
+                    { score: 3, text: "B. They actively challenge processes that limit effectiveness, lead change with clear rationale and stakeholder engagement, and influence cross-functional initiatives through well-designed strategies. They build coalitions, create positive momentum, and move shared priorities forward with broad support." },
+                    { score: 5, text: "C. They drive innovation and strategic influence that transforms cross-functional work. They challenge the status quo compellingly, inspire others to lead change, and build powerful cross-functional coalitions that create lasting organizational impact well beyond their formal authority." }
+                ]
+            },
+            {
+                id: "PE_HIA_20_Q2", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Change Leadership & Strategic Influence", type: "impact",
+                text: "When you think about how [Name]'s change leadership and strategic influence have affected cross-functional initiatives and organizational direction, what do you typically observe?",
+                options: [
+                    { score: -2, text: "A. Changes affecting shared work are implemented and their influence achieves functional outcomes. Cross-functional initiatives progress with coordination, though complex organizational dynamics may limit broader impact on shared priorities." },
+                    { score: 0, text: "B. Their change leadership creates genuine momentum in cross-functional initiatives. Their strategic influence advances shared priorities effectively, builds meaningful stakeholder support, and makes joint change initiatives more successful than they would be without their involvement." },
+                    { score: 1, text: "C. Their change leadership and strategic influence have created noticeably lasting cross-functional impact. A specific indicator: an initiative they championed has fundamentally changed how cross-functional work is done, their influence has shaped organizational decisions affecting shared priorities, or their approach to leading change has influenced how you think about driving improvement in your own area." }
+                ]
+            },
+            {
+                id: "PE_HIA_20_Q3", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Change Leadership & Strategic Influence", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
                 ]
             }
         ]

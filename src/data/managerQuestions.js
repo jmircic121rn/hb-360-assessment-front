@@ -511,511 +511,643 @@ export const managerQuestions = {
         ]
     },
     eng: {
-        RESULTS: [
-            // PILLAR: SHORT-TERM GOALS
+        "Short-term Goals": [
+            // Cluster 1: Operational Execution & Goal Achievement
             {
-                id: "MR_STG_1.1C",
-                pillar: "SHORT-TERM GOALS",
-                dimension: "RESULTS",
-                facet: "Goal Setting & Operational Focus, Problem-Solving & Decision Making, Performance Management, Crisis Response",
-                type: "core",
-                text: "MA - Core Scenario 1.1: It is the start of a busy quarter. How does this person typically approach goal-setting and performance management through the quarter?",
+                id: "ME_STG_1_Q1", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Operational Execution & Goal Achievement", type: "behavioural",
+                text: "When you observe how [Name] sets goals, manages day-to-day execution, and drives their team to deliver results, which description best fits what you typically see?",
                 options: [
-                    { score: 3, text: "A. Sets clear goals at the start of the quarter and tracks progress regularly. Generally delivers on time, though sometimes requires guidance or course corrections during the quarter." },
-                    { score: 1, text: "B. Reacts to priorities as they emerge and addresses performance issues only when they become urgent. Results are uneven depending on how well they anticipate shifting priorities." },
-                    { score: 5, text: "C. Proactively connects goals to organizational strategy, plans ahead, and takes full ownership of results. Delivery is predictable with few last-minute surprises." }
+                    { score: 1, text: "A. They set goals that address immediate priorities and monitor team progress. Their approach to execution is functional, though they may need guidance on complex prioritization, resource allocation, or when goals require adjustment due to changing circumstances." },
+                    { score: 3, text: "B. They establish clear, measurable goals aligned with strategic objectives and manage execution effectively. They track progress consistently, make timely decisions to keep work on track, and ensure their team understands priorities and delivers against expectations." },
+                    { score: 5, text: "C. They proactively set ambitious yet realistic goals with strong strategic alignment, anticipating execution challenges and resource constraints. They make sophisticated decisions that balance competing priorities, adapt goals skilfully when conditions change, and create an execution rhythm that keeps the team focused and productive." }
                 ]
             },
             {
-                id: "MR_STG_1.1R",
-                pillar: "SHORT-TERM GOALS",
-                dimension: "RESULTS",
-                type: "reflection",
-                text: "MA - Reflection on Impact 1.1: When performance gaps appear with this person, what is typically the root cause?",
+                id: "ME_STG_1_Q2", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Operational Execution & Goal Achievement", type: "impact",
+                text: "When you review the results [Name]'s team delivers against their goals and operational commitments, what pattern do you typically see?",
                 options: [
-                    { score: 5, text: "A. They understand what is expected, take ownership, and adjust their approach when obstacles arise — requiring minimal intervention." },
-                    { score: 3, text: "B. Goals sometimes need adjustment due to new information, but they generally adapt and stay on track with some support." },
-                    { score: 1, text: "C. Gaps often stem from unclear goals or sudden priority shifts; they struggle to self-correct without direct guidance." }
+                    { score: -2, text: "A. The team delivers on most goals, though some require mid-period adjustments or your intervention. Execution challenges occasionally create delays or quality issues that need to be addressed." },
+                    { score: 0, text: "B. The team consistently meets goals and operational commitments. Progress is predictable, decisions lead to effective outcomes, and the team maintains steady performance against expectations." },
+                    { score: 1, text: "C. The team consistently exceeds expectations with strong execution discipline. A specific indicator: their goals are achieved with minimal intervention from you, and their execution approach has become a reference point for how other teams should operate." }
                 ]
             },
             {
-                id: "MR_STG_1.2C",
-                pillar: "SHORT-TERM GOALS",
-                dimension: "RESULTS",
-                type: "core",
-                text: "MA - Core Scenario 1.2: An unexpected operational error threatens a key deadline and causes immediate panic. How does this person typically respond in a crisis?",
+                id: "ME_STG_1_Q3", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Operational Execution & Goal Achievement", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Takes control by fixing the problem themselves or pushing for faster work — addressing the immediate deadline, but similar problems tend to recur, suggesting a focus on symptoms rather than causes." },
-                    { score: 5, text: "B. Calmly stabilizes the situation, then investigates the root cause and works on systemic fixes that prevent recurrence." },
-                    { score: 3, text: "C. Stays calm, organizes a structured diagnosis, and makes a clear decision to resolve the issue while maintaining focus on quality and deadline." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 2: Problem-Solving & Performance Under Pressure
+            {
+                id: "ME_STG_2_Q1", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Problem-Solving & Performance Under Pressure", type: "behavioural",
+                text: "When you observe how [Name] handles complex problems, makes decisions under pressure, and manages their team through unexpected challenges or crises, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They address problems as they arise and work to stabilize difficult situations. Under pressure, they may need guidance on root cause analysis, managing team stress, or balancing immediate response with longer-term solutions." },
+                    { score: 3, text: "B. They systematically analyze problems, make timely decisions considering both immediate and long-term implications, and maintain team stability during crises. They handle pressure well, communicate clearly during urgent situations, and resolve most challenges independently." },
+                    { score: 5, text: "C. They demonstrate sophisticated problem-solving and exceptional composure under pressure. They proactively identify issues before they escalate, make well-reasoned decisions in high-stakes situations, and guide their team through crises in ways that build resilience and often prevent similar problems from recurring." }
                 ]
             },
             {
-                id: "MR_STG_1.2R",
-                pillar: "SHORT-TERM GOALS",
-                dimension: "RESULTS",
-                type: "reflection",
-                text: "MA - Reflection on Impact 1.2: When this person resolves an operational crisis, what typically happens in the weeks that follow?",
+                id: "ME_STG_2_Q2", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Problem-Solving & Performance Under Pressure", type: "impact",
+                text: "When you review how [Name]'s team performs during challenging situations and the lasting impact of their problem-solving, what pattern do you typically see?",
                 options: [
-                    { score: 3, text: "A. Related challenges occasionally recur, but they generally handle them better based on previous experience." },
-                    { score: 1, text: "B. Similar problems resurface quickly, suggesting their solutions address symptoms rather than underlying causes." },
-                    { score: 5, text: "C. Similar problems rarely recur; systemic fixes hold, and they become more resilient in preventing future issues." }
-                ]
-            },
-            // PILLAR: LONG-TERM CHANGE
-            {
-                id: "MR_LTC_1.3C",
-                pillar: "LONG-TERM CHANGE",
-                dimension: "RESULTS",
-                facet: "Strategic Thinking & Vision, Change Process Implementation, Innovation & Process Optimization, Capability Development",
-                type: "core",
-                text: "MA - Core Scenario 1.3: The organization is going through a strategic change requiring new capabilities. How does this person typically approach long-term capability development and leading change?",
-                options: [
-                    { score: 3, text: "A. Explains the strategic rationale and develops a plan for new capabilities, working to balance current operations with the future direction." },
-                    { score: 1, text: "B. Announces the new direction and expects the team or themselves to develop needed skills at their own pace, staying focused mainly on short-term delivery." },
-                    { score: 5, text: "C. Translates market dynamics into a clear vision, proactively builds capabilities, and encourages experimentation and learning through adaptation." }
+                    { score: -2, text: "A. Problems are addressed and the team manages through difficult periods, though resolution may take time or require your support. Similar issues sometimes resurface, suggesting solutions addressed symptoms rather than root causes." },
+                    { score: 0, text: "B. Their problem-solving consistently resolves issues effectively, and the team maintains reasonable performance during pressure situations. Crises are managed with appropriate composure, and operations stabilize in reasonable timeframes." },
+                    { score: 1, text: "C. Their problem-solving produces lasting solutions and their crisis management builds team resilience. A specific indicator: similar problems rarely recur after they've addressed them, and their team demonstrates notable composure and effectiveness even during high-pressure situations." }
                 ]
             },
             {
-                id: "MR_LTC_1.3R",
-                pillar: "LONG-TERM CHANGE",
-                dimension: "RESULTS",
-                type: "reflection",
-                text: "MA - Reflection on Impact 1.3: What obstacles typically arise when this person works on long-term capability development?",
+                id: "ME_STG_2_Q3", pillar: "Short-term Goals", dimension: "Results",
+                cluster: "Problem-Solving & Performance Under Pressure", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Struggles to balance learning with day-to-day demands; pressures often delay capability-building efforts and results lag behind the planned pace." },
-                    { score: 5, text: "B. Generally progresses according to plan, adjusting the vision when market conditions or new insights reveal new priorities." },
-                    { score: 3, text: "C. Progress is steady but uneven; some planned capabilities take longer than expected." }
-                ]
-            },
-            {
-                id: "MR_LTC_1.4C",
-                pillar: "LONG-TERM CHANGE",
-                dimension: "RESULTS",
-                type: "core",
-                text: "MA - Core Scenario 1.4: The organization is undergoing a major transformation while process optimization is also needed. How does this person balance driving change with maintaining operational stability?",
-                options: [
-                    { score: 5, text: "A. Champions the transformation and actively involves the team in shaping implementation, encouraging process innovations aligned with the new direction." },
-                    { score: 1, text: "B. Prioritizes alignment with the organizational transformation and stability, deferring local process innovations for a better moment." },
-                    { score: 3, text: "C. Develops a plan for transformation implementation while also creating space for incremental process innovations that fit the new direction." }
-                ]
-            },
-            {
-                id: "MR_LTC_1.4R",
-                pillar: "LONG-TERM CHANGE",
-                dimension: "RESULTS",
-                type: "reflection",
-                text: "MA - Reflection on Impact 1.4: When this person leads a change initiative, to what extent do their approaches spread and get adopted by others?",
-                options: [
-                    { score: 3, text: "A. Some other teams adopt their approaches but usually with significant adaptation because context varies." },
-                    { score: 1, text: "B. Their innovations rarely transfer beyond their immediate context; systemic barriers or competing priorities limit broader adoption." },
-                    { score: 5, text: "C. Other teams show interest in their approach; they document learnings and actively help others adapt solutions to their context." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
                 ]
             }
         ],
-        MINDSET: [
-            // PILLAR: TOWARDS SELF
+        "Long-term Change": [
+            // Cluster 3: Strategic Vision & Change Leadership
             {
-                id: "MM_TS_2.1C",
-                pillar: "TOWARDS SELF",
-                dimension: "MINDSET",
-                facet: "Self-Awareness, Growth Mindset & Learning Agility, Resilience, Openness to Change",
-                type: "core",
-                text: "MA - Core Scenario 2.1: This person receives constructive feedback about their approach and simultaneously encounters setbacks on a project. How do they typically process feedback and respond to challenges?",
+                id: "ME_LTC_3_Q1", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Strategic Vision & Change Leadership", type: "behavioural",
+                text: "When you observe how [Name] thinks strategically about the future, communicates vision, and leads organizational change initiatives, which description best fits what you typically see?",
                 options: [
-                    { score: 3, text: "A. Listens to feedback, considers what is valid, and makes concrete adjustments. Works methodically through setbacks by adapting their approach." },
-                    { score: 1, text: "B. Initially defends their approach when receiving feedback. Setbacks cause frustration and they tend to stick to existing methods rather than quickly changing course." },
-                    { score: 5, text: "C. Actively seeks feedback from multiple sources, treats setbacks as data for improvement, and openly discusses what they are working on — modeling that difficulties are part of growth." }
+                    { score: 1, text: "A. They focus primarily on current execution and implement required changes. When discussing strategy or leading change, they may need support in connecting work to long-term direction, managing stakeholder resistance, or anticipating future implications." },
+                    { score: 3, text: "B. They effectively balance operational focus with strategic thinking, articulating a clear vision for their team's direction. They plan and execute change initiatives with structured approaches, communicate change effectively, and consider how emerging trends should influence their area." },
+                    { score: 5, text: "C. They demonstrate sophisticated strategic thinking and change leadership. They proactively shape organizational direction with compelling vision, lead complex transformations that build strong stakeholder coalitions, and anticipate future developments in ways that position the organization advantageously." }
                 ]
             },
             {
-                id: "MM_TS_2.1R",
-                pillar: "TOWARDS SELF",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "MA - Reflection on Impact 2.1: When this person receives feedback that challenges their approach, how do they typically process it?",
+                id: "ME_LTC_3_Q2", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Strategic Vision & Change Leadership", type: "impact",
+                text: "When you review how [Name]'s strategic thinking and change leadership influence organizational direction and transformation outcomes, what pattern do you typically see?",
                 options: [
-                    { score: 1, text: "A. Initially resists or defends against the feedback; needs time before they can genuinely consider changing their approach." },
-                    { score: 5, text: "B. Genuinely curious about feedback, even when difficult to hear; looks for patterns and experiments with new approaches based on what they learn." },
-                    { score: 3, text: "C. Selectively incorporates feedback — changes approach when it aligns with their own observations." }
+                    { score: -2, text: "A. Their team executes current priorities effectively. Change initiatives are implemented, though adoption may take time or require additional support, and strategic contributions emerge primarily through guidance from you or senior leadership." },
+                    { score: 0, text: "B. Their team demonstrates clear strategic understanding, and change initiatives achieve solid adoption. They independently align work with strategic priorities and successfully guide their team through transitions with reasonable stakeholder buy-in." },
+                    { score: 1, text: "C. Their strategic thinking has influenced organizational direction, and their change initiatives achieve exceptional adoption. A specific indicator: they've proactively proposed strategic initiatives that were adopted, their change management approach has created advocates rather than just compliance, or their vision has measurably influenced how others think about future direction." }
                 ]
             },
             {
-                id: "MM_TS_2.2C",
-                pillar: "TOWARDS SELF",
-                dimension: "MINDSET",
-                type: "core",
-                text: "MA - Core Scenario 2.2: The company introduces a significant organizational change requiring entirely new systems. How does this person typically manage their mindset and emotions during this period?",
+                id: "ME_LTC_3_Q3", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Strategic Vision & Change Leadership", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Accepts the change because they have to but prefers established methods; learns new systems cautiously without actively seeking opportunities to leverage them." },
-                    { score: 5, text: "B. Sees change as an opportunity to reassess old ways of working; actively explores new systems, experiments, and shares learnings with colleagues." },
-                    { score: 3, text: "C. Accepts that change is necessary, works methodically through the learning curve, and maintains focus on delivering results during the transition." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 4: Innovation & Capability Building
+            {
+                id: "ME_LTC_4_Q1", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Innovation & Capability Building", type: "behavioural",
+                text: "When you observe how [Name] drives innovation, optimizes processes, and develops their team's capabilities for long-term organizational strength, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They implement improvements when directed and manage current resource allocation to meet immediate needs. They may need support in identifying strategic capability gaps, challenging existing processes, or creating comprehensive development plans aligned with long-term organizational needs." },
+                    { score: 3, text: "B. They regularly identify improvement opportunities and effectively develop team capabilities. They implement process changes successfully, allocate resources to balance current delivery with capability building, and create structured development plans that produce measurable improvements." },
+                    { score: 5, text: "C. They demonstrate sophisticated innovation and capability development. They create systematic approaches to continuous improvement, design innovative development programs that others adopt, and strategically build capabilities that strengthen the broader organization and create lasting competitive advantage." }
                 ]
             },
             {
-                id: "MM_TS_2.2R",
-                pillar: "TOWARDS SELF",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "MA - Reflection on Impact 2.2: When this person goes through a significant change, how do they typically manage their mindset?",
+                id: "ME_LTC_4_Q2", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Innovation & Capability Building", type: "impact",
+                text: "When you review the impact of [Name]'s innovation efforts and the capabilities their team has developed, what pattern do you typically see?",
                 options: [
-                    { score: 5, text: "A. Treats change as a normal part of work; uses disruption as an opportunity for reflection and learning." },
-                    { score: 3, text: "B. Adapts as needed and moves forward, occasionally reflecting on what they miss from the old way, but without significant stress." },
-                    { score: 1, text: "C. Shows anxiety or frustration; functions, but adaptation is visibly uncomfortable." }
-                ]
-            },
-            // PILLAR: TOWARDS OTHERS
-            {
-                id: "MM_TO_2.3C",
-                pillar: "TOWARDS OTHERS",
-                dimension: "MINDSET",
-                facet: "Empathy, Team Commitment & Collaboration, Conflict Resolution Mindset, Inclusive Leadership",
-                type: "core",
-                text: "MA - Core Scenario 2.3: Two colleagues are in a heated disagreement and a new team member is struggling to voice their opinion. How does this person typically intervene or contribute to team dynamics?",
-                options: [
-                    { score: 3, text: "A. Listens to both sides and helps them understand each other's concerns; specifically asks the new team member for their input." },
-                    { score: 1, text: "B. Stays neutral in colleague conflicts unless directly asked for help; does not actively encourage quieter team members to engage." },
-                    { score: 5, text: "C. Sees conflict as an opportunity to strengthen relationships; asks questions that help articulate positions and explicitly invites the new team member to contribute." }
+                    { score: -2, text: "A. Improvements are implemented and the team maintains necessary skills for current work. Innovation addresses specific issues and development happens, though capability building may be reactive to emerging needs rather than strategically planned." },
+                    { score: 0, text: "B. Their process improvements deliver measurable efficiency gains, and their team demonstrates steady capability growth aligned with organizational needs. Innovation efforts produce practical solutions, and development investments improve team performance over time." },
+                    { score: 1, text: "C. Their innovation work has produced significant, lasting improvements, and their team has developed distinctive capabilities. A specific indicator: process changes they've implemented have been adopted by other teams, capabilities they've built are now leveraged across the organization, or their approach to capability development has been recognized as a model." }
                 ]
             },
             {
-                id: "MM_TO_2.3R",
-                pillar: "TOWARDS OTHERS",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "MA - Reflection on Impact 2.3: How does this person typically approach understanding different perspectives in conflicts?",
+                id: "ME_LTC_4_Q3", pillar: "Long-term Change", dimension: "Results",
+                cluster: "Innovation & Capability Building", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Listens to both sides but sometimes quickly judges who is right; doesn't always explore the deeper motivations behind the disagreement." },
-                    { score: 5, text: "B. Genuinely curious about why people disagree, even when they initially have a clear view; asks about the drivers of each perspective and often discovers legitimate concerns." },
-                    { score: 3, text: "C. Listens carefully, asks clarifying questions, and acknowledges valid points from both sides, even when disagreeing with an overall position." }
-                ]
-            },
-            {
-                id: "MM_TO_2.4C",
-                pillar: "TOWARDS OTHERS",
-                dimension: "MINDSET",
-                type: "core",
-                text: "MA - Core Scenario 2.4: The team is working on a complex project requiring deep collaboration. How does this person typically contribute to team commitment and collaboration?",
-                options: [
-                    { score: 5, text: "A. Proactively offers support to colleagues, freely shares knowledge and resources, and actively looks for opportunities to strengthen how the team works together." },
-                    { score: 1, text: "B. Focuses on their own tasks and shares information when asked, but does not actively track the team's needs." },
-                    { score: 3, text: "C. Participates in team activities, shares knowledge when asked, and occasionally checks whether colleagues need support." }
-                ]
-            },
-            {
-                id: "MM_TO_2.4R",
-                pillar: "TOWARDS OTHERS",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "MA - Reflection on Impact 2.4: When a colleague of this person is struggling or working in isolation, how does this person typically respond?",
-                options: [
-                    { score: 3, text: "A. Notices when colleagues seem isolated and offers help; sometimes reaches out if they think their contribution would be useful." },
-                    { score: 1, text: "B. Often doesn't notice, or assumes colleagues are managing; responds only when a problem becomes visible." },
-                    { score: 5, text: "C. Regularly checks on colleagues and looks for signs that support may be needed; proactively reaches out and finds ways to collaborate." }
-                ]
-            },
-            // PILLAR: TOWARDS COMPANY & ROLE
-            {
-                id: "MM_TCR_2.5C",
-                pillar: "TOWARDS COMPANY & ROLE",
-                dimension: "MINDSET",
-                facet: "Accountability & Ownership, Decision-Making, Strategic Ownership, Values-Based Leadership",
-                type: "core",
-                text: "MA - Core Scenario 2.5: A high-visibility project this person leads experiences a significant failure. They need to make a difficult decision under pressure that aligns with company values but may be unpopular. How do they typically respond?",
-                options: [
-                    { score: 3, text: "A. Takes responsibility for their part in the failure, makes a decision aligned with company values, and explains the rationale — even when the decision is not popular." },
-                    { score: 5, text: "B. Takes full ownership, investigates systemic causes of the failure, makes a values-aligned decision, and transparently communicates why it is the right path — even under pressure." },
-                    { score: 1, text: "C. Highlights external factors that contributed to the failure; tends to be indecisive in difficult moments and makes decisions more slowly than the situation requires." }
-                ]
-            },
-            {
-                id: "MM_TCR_2.5R",
-                pillar: "TOWARDS COMPANY & ROLE",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "MA - Reflection on Impact 2.5: When this person makes a difficult, unpopular decision, how do they handle resistance?",
-                options: [
-                    { score: 1, text: "A. Defends the decision but sometimes wonders whether concerns should have been more deeply considered before deciding." },
-                    { score: 5, text: "B. Holds firm while acknowledging concerns and looks for ways to mitigate negative impact; later reflects on whether the approach could have been better communicated." },
-                    { score: 3, text: "C. Explains the rationale and remains open to feedback but does not change the decision when they believe it aligns with company values." }
-                ]
-            },
-            {
-                id: "MM_TCR_2.6C",
-                pillar: "TOWARDS COMPANY & ROLE",
-                dimension: "MINDSET",
-                type: "core",
-                text: "MA - Core Scenario 2.6: This person identifies a significant strategic opportunity that challenges existing norms and may face resistance. How do they typically advocate for this initiative?",
-                options: [
-                    { score: 1, text: "A. Develops a strong business case with data and risk mitigation, presenting it to decision-makers and assuming a well-constructed argument will carry weight without building broader support." },
-                    { score: 3, text: "B. Builds a strong business case and engages key stakeholders in shaping the proposal, incorporating feedback before presenting to senior leadership." },
-                    { score: 5, text: "C. Actively involves stakeholders in developing the proposal, listens to concerns, adapts the approach where it strengthens the initiative, and persistently advocates even when resistance continues." }
-                ]
-            },
-            {
-                id: "MM_TCR_2.6R",
-                pillar: "TOWARDS COMPANY & ROLE",
-                dimension: "MINDSET",
-                type: "reflection",
-                text: "MA - Reflection on Impact 2.6: When this person proposes a strategic initiative that faces resistance, what typically happens?",
-                options: [
-                    { score: 1, text: "A. The proposal stalls or is rejected; they move to other priorities and it is not always clear whether resistance stemmed from the idea itself or organizational politics." },
-                    { score: 5, text: "B. They continue to advocate and engage stakeholders; the proposal is either adopted or they reach a point where they know they have made the strongest possible case." },
-                    { score: 3, text: "C. Addresses concerns and repositions the proposal, which eventually gains momentum and moves forward with enough support to be piloted." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
                 ]
             }
         ],
-        SKILLS: [
-            // PILLAR: PERSONAL EFFECTIVENESS
+        "Towards Oneself": [
+            // Cluster 5: Self-Awareness & Personal Growth
             {
-                id: "MV_PE_3.1C",
-                pillar: "PERSONAL EFFECTIVENESS",
-                dimension: "SKILLS",
-                facet: "Priority & Time Management, Problem-Solving, Adaptability, Change Management",
-                type: "core",
-                text: "MA - Core Scenario 3.1: This person manages a large workload with competing priorities, and new software has been introduced that changes their workflow. How do they typically manage priorities and adapt to new technology?",
+                id: "ME_TO_5_Q1", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Self-Awareness & Personal Growth", type: "behavioural",
+                text: "When you observe how [Name] demonstrates understanding of their strengths and limitations, responds to feedback, embraces learning opportunities, and believes in their ability to develop, which description best fits what you typically see?",
                 options: [
-                    { score: 3, text: "A. Establishes a priority system based on importance and deadlines and learns the new software systematically, ensuring productivity remains stable through the transition." },
-                    { score: 1, text: "B. Reacts to what is most urgent and learns the new software gradually; prefers not to change processes until absolutely necessary." },
-                    { score: 5, text: "C. Thoughtfully designs a priority system, learns the new software early, experiments with it, and shares learnings — looking for opportunities to improve through the new tool." }
+                    { score: 1, text: "A. They show basic awareness of their capabilities and accept feedback when provided. They may need prompting to recognize blind spots or development needs, and their engagement with learning opportunities can be inconsistent or require encouragement." },
+                    { score: 3, text: "B. They accurately assess their strengths and development areas, proactively seek feedback, and consistently pursue learning opportunities. They demonstrate belief in their ability to grow, respond constructively to input, and actively work on developing new capabilities." },
+                    { score: 5, text: "C. They demonstrate deep self-awareness and exceptional learning agility. They anticipate their own development needs, actively seek diverse perspectives on their impact, embrace challenging learning opportunities, and model growth mindset practices that inspire others to develop." }
                 ]
             },
             {
-                id: "MV_PE_3.1R",
-                pillar: "PERSONAL EFFECTIVENESS",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "MA - Reflection on Impact 3.1: When this person has had to adapt to significant changes in tools or processes, how smoothly did the transition typically go?",
+                id: "ME_TO_5_Q2", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Self-Awareness & Personal Growth", type: "impact",
+                text: "When you provide feedback to [Name] or observe their response to development opportunities and challenges, what pattern do you typically see?",
                 options: [
-                    { score: 5, text: "A. Adapted relatively quickly; began finding efficiencies with the new tool in a short period, though full optimization took longer." },
-                    { score: 1, text: "B. The transition was challenging and took longer than expected; a drop in productivity and frustration were visible during the adjustment period." },
-                    { score: 3, text: "C. Adapted with manageable disruption; an initial slowdown was present but productivity returned to normal levels within a reasonable timeframe." }
+                    { score: -2, text: "A. They receive feedback and generally work to address it, though behavior change may be gradual. They engage with development opportunities when provided, though they may need support in translating feedback into action or maintaining momentum in their growth." },
+                    { score: 0, text: "B. They respond constructively to feedback with specific development plans and demonstrate consistent behavior change. They independently pursue learning opportunities, show measurable skill growth over time, and apply new learning effectively to their work." },
+                    { score: 1, text: "C. They actively seek feedback before issues arise and demonstrate sophisticated self-development. A specific indicator: they've identified and addressed development needs before you raised them, they've pursued challenging learning that accelerated their growth, or their approach to self-development has influenced how others on the team think about their own growth." }
                 ]
             },
             {
-                id: "MV_PE_3.2C",
-                pillar: "PERSONAL EFFECTIVENESS",
-                dimension: "SKILLS",
-                type: "core",
-                text: "MA - Core Scenario 3.2: A recurring workflow problem is causing delays, and an organizational change requires process adaptation. How does this person typically approach solving the problem and leading through the change?",
+                id: "ME_TO_5_Q3", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Self-Awareness & Personal Growth", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. Manages around the recurring problem by escalating to experts and sticks to established processes during the change, implementing new requirements only when mandatory." },
-                    { score: 5, text: "B. Systematically investigates root causes of the recurring problem and develops a workflow-improving solution; thoughtfully adapts processes during organizational change and helps the team through the transition." },
-                    { score: 3, text: "C. Analyzes contributing factors to the recurring problem and implements a solution; leads the team through organizational change and adapts processes while maintaining efficiency." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 6: Resilience & Adaptability
+            {
+                id: "ME_TO_6_Q1", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Resilience & Adaptability", type: "behavioural",
+                text: "When you observe how [Name] maintains effectiveness under pressure, recovers from setbacks, adapts to changing circumstances, and manages uncertainty, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They work through challenges and adapt to changes when they occur. Under sustained pressure or significant change, they may become overwhelmed or require support to maintain effectiveness, and recovery from setbacks can take time." },
+                    { score: 3, text: "B. They effectively manage stress and adversity, maintaining consistent performance during difficult periods. They adapt readily to changing circumstances, recover from setbacks with reasonable speed, and maintain a constructive outlook during uncertainty." },
+                    { score: 5, text: "C. They demonstrate exceptional resilience and adaptability. They maintain high effectiveness even under sustained pressure, recover quickly from setbacks often with new insights, proactively anticipate and prepare for changes, and thrive in uncertain environments while helping others navigate challenges." }
                 ]
             },
             {
-                id: "MV_PE_3.2R",
-                pillar: "PERSONAL EFFECTIVENESS",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "MA - Reflection on Impact 3.2: When this person solves a recurring problem, how well does the solution hold over time?",
+                id: "ME_TO_6_Q2", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Resilience & Adaptability", type: "impact",
+                text: "When you observe how [Name] and their team perform during periods of pressure, change, or after significant setbacks, what pattern do you typically see?",
                 options: [
-                    { score: 3, text: "A. The solution effectively addresses the problem and generally holds with minor adjustments." },
-                    { score: 5, text: "B. The solution addresses the root cause and remains lasting; lessons learned are applied and the fundamental fix prevents recurrence." },
-                    { score: 1, text: "C. The solution works initially but the problem tends to resurface or evolve; the approach needs to be modified multiple times." }
-                ]
-            },
-            // PILLAR: COMMUNICATION
-            {
-                id: "MV_CO_3.3C",
-                pillar: "COMMUNICATION",
-                dimension: "SKILLS",
-                facet: "Values-Based Communication, Strategic Listening, Action-Driving Influence, Stakeholder Navigation",
-                type: "core",
-                text: "MA - Core Scenario 3.3: This person needs to explain a complex strategic initiative to a skeptical, busy senior leader who gives a vague initial 'no'. How do they typically approach this communication challenge?",
-                options: [
-                    { score: 3, text: "A. Prepares their message with the stakeholder's priorities in mind and listens to concerns, adapting the explanation as needed." },
-                    { score: 1, text: "B. Prepares a thorough explanation of the strategic benefits and focuses on the logical argument, not always anticipating the stakeholder's specific concerns upfront." },
-                    { score: 5, text: "C. Thinks ahead about the stakeholder's priorities and frames the initiative in the context of their goals; listens carefully and adapts the message; is willing to negotiate implementation details to find a path that works for both." }
+                    { score: -2, text: "A. They work through difficult periods and adapt to changes, though performance may dip temporarily. Recovery from setbacks happens, though it may require your support or additional time to restore full effectiveness." },
+                    { score: 0, text: "B. They maintain steady performance during pressure and adapt to changes with minimal disruption. After setbacks, they recover in reasonable timeframes and help their team maintain focus and effectiveness through transitions." },
+                    { score: 1, text: "C. They demonstrate notable resilience that strengthens team performance. A specific indicator: during recent pressure situations or changes, they maintained exceptional effectiveness, their recovery from setbacks included process improvements that prevented recurrence, or their adaptability during uncertainty helped stabilize broader organizational response." }
                 ]
             },
             {
-                id: "MV_CO_3.3R",
-                pillar: "COMMUNICATION",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "MA - Reflection on Impact 3.3: When this person communicates an initiative to a skeptical stakeholder, what typically happens?",
+                id: "ME_TO_6_Q3", pillar: "Towards Oneself", dimension: "Mindset",
+                cluster: "Resilience & Adaptability", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. The stakeholder remains skeptical or declines; the explanation does not address key concerns or real constraints prevent agreement." },
-                    { score: 5, text: "B. The stakeholder understands the initiative, asks clarifying questions, and engages around practical implementation details." },
-                    { score: 3, text: "C. The stakeholder understands the initiative and agrees to move forward after discussing concerns; some exchange occurs but a decision is reached together." }
-                ]
-            },
-            {
-                id: "MV_CO_3.4C",
-                pillar: "COMMUNICATION",
-                dimension: "SKILLS",
-                type: "core",
-                text: "MA - Core Scenario 3.4: This person needs to secure a critical resource from another department where they have no formal authority, and that department has competing priorities. How do they typically approach this cross-functional collaboration?",
-                options: [
-                    { score: 1, text: "A. Makes a direct request explaining why the resource is needed, without always fully understanding the other department's constraints upfront." },
-                    { score: 5, text: "B. Sees this as an opportunity to build a collaborative relationship; frames the request in the context of mutual benefit and explores creative solutions that work for both sides." },
-                    { score: 3, text: "C. Reaches out to the other department, explains the need, and asks about their priorities; looks for ways their goals can align and proposes solutions that work for both teams." }
-                ]
-            },
-            {
-                id: "MV_CO_3.4R",
-                pillar: "COMMUNICATION",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "MA - Reflection on Impact 3.4: When this person seeks support from other segments, what is typically the result?",
-                options: [
-                    { score: 1, text: "A. The other department declines or significantly delays; despite explaining the need, they cannot or will not fulfill it, and this person finds alternative solutions." },
-                    { score: 5, text: "B. The other department understands the request and is able to help; they engage in joint problem-solving and respond promptly." },
-                    { score: 3, text: "C. The other department provides support, though not without negotiating timelines or scope; a workable path forward is found together." }
-                ]
-            },
-            // PILLAR: TEAM & PEOPLE DEVELOPMENT
-            {
-                id: "MV_TPD_3.5C",
-                pillar: "TEAM & PEOPLE DEVELOPMENT",
-                dimension: "SKILLS",
-                facet: "Empowering Delegation, Performance Management, Recognition & Appreciation, Difficult Conversations",
-                type: "core",
-                text: "MA - Core Scenario 3.5: This person has a high-potential team member ready for a challenge and a consistent performer showing little growth initiative. How do they typically approach developing these individuals?",
-                options: [
-                    { score: 1, text: "A. Provides close oversight of the challenging task and maintains stable expectations for the consistent performer, leaving them to determine their own growth pace." },
-                    { score: 3, text: "B. Selects challenging tasks with developmental intent, provides initial guidance and space for independent work; discusses career interests with the consistent performer and suggests growth areas." },
-                    { score: 5, text: "C. Intentionally delegates challenging tasks with autonomy and developmental support; conducts deeper conversations with the consistent performer to identify growth opportunities aligned with their interests and team needs." }
-                ]
-            },
-            {
-                id: "MV_TPD_3.5R",
-                pillar: "TEAM & PEOPLE DEVELOPMENT",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "MA - Reflection on Impact 3.5: When this person delegates a challenging task to a team member, what typically happens?",
-                options: [
-                    { score: 1, text: "A. The team member struggles significantly and needs substantial help; this person becomes quite involved in ensuring success, limiting the team member's ownership of the outcome." },
-                    { score: 3, text: "B. The team member works through challenges with periodic check-ins; they develop, complete the task, and learn from both successes and setbacks along the way." },
-                    { score: 5, text: "C. The team member takes ownership and independently manages most challenges; they come with specific questions and apply lessons learned to subsequent work." }
-                ]
-            },
-            {
-                id: "MV_TPD_3.6C",
-                pillar: "TEAM & PEOPLE DEVELOPMENT",
-                dimension: "SKILLS",
-                type: "core",
-                text: "MA - Core Scenario 3.6: This person needs to address consistently negative behavior from a direct report, while the team is also achieving a significant result. How do they typically manage these challenging interactions and team achievements?",
-                options: [
-                    { score: 1, text: "A. Gives the negative behavior time to resolve itself before intervening; thanks the team for effort on the achievement but focuses more on the completed work than on individual recognition." },
-                    { score: 3, text: "B. Prepares specific examples and schedules a private conversation about the negative behavior; publicly acknowledges team efforts and recognizes individual contributions in one-on-one conversations." },
-                    { score: 5, text: "C. Thoroughly prepares for the difficult conversation, plans their approach and adapts it if the person becomes defensive; designs recognition for the achievement that highlights specific contributions and strengthens the team." }
-                ]
-            },
-            {
-                id: "MV_TPD_3.6R",
-                pillar: "TEAM & PEOPLE DEVELOPMENT",
-                dimension: "SKILLS",
-                type: "reflection",
-                text: "MA - Reflection on Impact 3.6: When this person delivers difficult feedback to a team member, what is typically the outcome?",
-                options: [
-                    { score: 1, text: "A. The conversation is uncomfortable or defensive; the team member resists and it is unclear whether they understand what needs to change." },
-                    { score: 3, text: "B. The conversation is clear and professional; the team member understands the expected improvement, though some initial resistance is present." },
-                    { score: 5, text: "C. The conversation is productive; the team member understands the feedback, engages on how to improve, and together they develop a plan that leads to visible behavioral changes." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
                 ]
             }
         ],
-        IMPACT: [
-            // PILLAR: HOW DOES THE TEAM FEEL?
+        "Towards Others": [
+            // Cluster 7: Empathy & Inclusive Collaboration
             {
-                id: "MU_HTF_4.1C",
-                pillar: "HOW DOES THE TEAM FEEL?",
-                dimension: "IMPACT",
-                facet: "Authentic Presence, Emotional Intelligence, Inclusion & Belonging, Building Trust",
-                type: "core",
-                text: "MA - Core Scenario 4.1: The team is discussing a sensitive organizational change. Some members are visibly upset; others are hesitant to voice concerns. How does this person typically manage the emotional climate and foster an inclusive environment?",
+                id: "ME_TOT_7_Q1", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Empathy & Inclusive Collaboration", type: "behavioural",
+                text: "When you observe how [Name] understands and responds to others' perspectives and needs, values diverse contributions, creates psychological safety, and fosters collaboration, which description best fits what you typically see?",
                 options: [
-                    { score: 3, text: "A. Acknowledges that change can cause anxiety and invites the team to share concerns; makes a point of asking quieter team members for their perspective." },
-                    { score: 1, text: "B. Presents the facts clearly and directly, leaving space for responses but not actively inviting emotional reactions or concerns." },
-                    { score: 5, text: "C. Actively creates space for emotional reactions; specifically invites perspectives from quieter team members and helps the team see how different concerns connect to shared goals." }
+                    { score: 1, text: "A. They work cooperatively with others and acknowledge different viewpoints when raised. They may miss emotional cues or struggle to create an environment where all team members feel equally valued, and their approach to collaboration can be inconsistent." },
+                    { score: 3, text: "B. They consistently demonstrate empathy by actively listening and responding to others' needs. They value diverse perspectives, create an environment where team members feel heard and respected, and foster effective collaboration across different backgrounds and viewpoints." },
+                    { score: 5, text: "C. They demonstrate exceptional empathy and create a deeply inclusive environment. They proactively anticipate emotional needs, skillfully navigate sensitive situations, actively celebrate diversity, and champion inclusion in ways that make everyone feel genuinely valued and empowered to contribute fully." }
                 ]
             },
             {
-                id: "MU_HTF_4.1R",
-                pillar: "HOW DOES THE TEAM FEEL?",
-                dimension: "IMPACT",
-                type: "reflection",
-                text: "MA - Reflection on Impact 4.1: When this person leads a meeting with upset or hesitant team members, what typically happens?",
+                id: "ME_TOT_7_Q2", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Empathy & Inclusive Collaboration", type: "impact",
+                text: "When you observe the team dynamics, collaboration quality, and how team members from diverse backgrounds engage, what pattern do you typically see?",
                 options: [
-                    { score: 1, text: "A. Some team members remain visibly upset or withdrawn; despite acknowledgment, they don't open up and it is unclear whether they feel heard." },
-                    { score: 5, text: "B. More team members contribute perspectives they might not otherwise have shared; the discussion becomes more open and people engage with diverse views." },
-                    { score: 3, text: "C. Several team members share concerns after being invited; the tone improves and people seem more engaged, though not everyone speaks up." }
+                    { score: -2, text: "A. The team works together and completes joint work. Some team members may be more engaged than others, and you occasionally need to intervene to ensure all voices are heard or to address interpersonal dynamics." },
+                    { score: 0, text: "B. The team collaborates effectively with mutual respect. Team members from diverse backgrounds contribute actively, people feel comfortable sharing perspectives, and collaboration produces solid outcomes with reasonable engagement across the team." },
+                    { score: 1, text: "C. The team demonstrates exceptional collaboration and inclusion. A specific indicator: team members actively seek each other's perspectives, people from all backgrounds contribute confidently and are visibly valued, or the team's inclusive culture has become a model that others reference." }
                 ]
             },
             {
-                id: "MU_HTF_4.2C",
-                pillar: "HOW DOES THE TEAM FEEL?",
-                dimension: "IMPACT",
-                type: "core",
-                text: "MA - Core Scenario 4.2: This person has made a difficult decision that negatively affects some individuals but is necessary for the broader team. How do they typically communicate such a decision?",
+                id: "ME_TOT_7_Q3", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Empathy & Inclusive Collaboration", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 5, text: "A. Communicates transparently, explains the rationale and difficult constraints, meets with affected individuals to hear their concerns, and follows up afterward." },
-                    { score: 1, text: "B. Communicates clearly and directly, emphasizing business necessity, but does not explore the emotional impact on affected individuals in depth." },
-                    { score: 3, text: "C. Communicates with full transparency, acknowledges the impact, and offers specific support where possible; follows up with affected individuals to ensure understanding." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 8: Collaboration & Constructive Conflict
+            {
+                id: "ME_TOT_8_Q1", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Collaboration & Constructive Conflict", type: "behavioural",
+                text: "When you observe how [Name] commits to team success, shares knowledge and resources, approaches disagreements and conflicts, and maintains constructive relationships during tension, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They contribute to team efforts and work through disagreements when they arise. During conflicts, they may avoid difficult conversations or become defensive, and their commitment to shared success can be inconsistent when priorities compete." },
+                    { score: 3, text: "B. They consistently demonstrate team commitment, actively sharing knowledge and supporting collective goals. They approach conflicts constructively, viewing disagreements as opportunities for discussion, and maintain professional relationships while working through differences." },
+                    { score: 5, text: "C. They champion team success and foster highly collaborative culture. They proactively share knowledge and resources, embrace productive tension as valuable, create psychological safety for healthy disagreement, and skillfully navigate complex conflicts in ways that strengthen relationships and outcomes." }
                 ]
             },
             {
-                id: "MU_HTF_4.2R",
-                pillar: "HOW DOES THE TEAM FEEL?",
-                dimension: "IMPACT",
-                type: "reflection",
-                text: "MA - Reflection on Impact 4.2: When this person communicates a difficult decision that negatively affects some, what is typically the outcome?",
+                id: "ME_TOT_8_Q2", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Collaboration & Constructive Conflict", type: "impact",
+                text: "When you observe how the team handles disagreements, shares knowledge, and works toward collective goals, what pattern do you typically see?",
                 options: [
-                    { score: 1, text: "A. Some feel blindsided; the explanation does not address key concerns and they remain frustrated or uncertain." },
-                    { score: 3, text: "B. They understand the rationale and trade-offs; some disagree but feel heard during the discussion." },
-                    { score: 5, text: "C. They understand the decision and its connection to organizational needs; they can see that this person took their concerns into account." }
-                ]
-            },
-            // PILLAR: HOW DO THEY DRIVE ACTION?
-            {
-                id: "MU_HDA_4.3C",
-                pillar: "HOW DO THEY DRIVE ACTION?",
-                dimension: "IMPACT",
-                facet: "Visionary Inspiration, Empowerment & Accountability, Change Leadership, Strategic Influence",
-                type: "core",
-                text: "MA - Core Scenario 4.3: The team is working on a high-stakes project with some disengaged members. A key strategic initiative also requires support from another department. How does this person inspire ownership and drive collaboration?",
-                options: [
-                    { score: 3, text: "A. Actively engages on the project, communicates the importance, and offers help to colleagues who are struggling; reaches out to the other department and looks for ways to align goals." },
-                    { score: 1, text: "B. Focuses on their own responsibilities and lets others navigate their own challenges; makes cross-functional requests only when necessary." },
-                    { score: 5, text: "C. Anticipates obstacles and proactively works to remove them; helps the team understand how contributions fit into the bigger picture; frames cross-functional requests in terms of mutual benefit." }
+                    { score: -2, text: "A. The team works together and addresses conflicts when necessary. Knowledge sharing happens, though it may be uneven, and some disagreements may linger or require your intervention to resolve." },
+                    { score: 0, text: "B. The team demonstrates solid collaboration with effective knowledge sharing. Conflicts are addressed constructively, disagreements lead to better solutions, and team members maintain professional relationships while working through differences." },
+                    { score: 1, text: "C. The team demonstrates exceptional collaboration and healthy conflict dynamics. A specific indicator: team members actively seek each other's input, disagreements are viewed as opportunities for improvement, knowledge flows freely across the team, or the team's collaborative culture has measurably improved outcomes." }
                 ]
             },
             {
-                id: "MU_HDA_4.3R",
-                pillar: "HOW DO THEY DRIVE ACTION?",
-                dimension: "IMPACT",
-                type: "reflection",
-                text: "MA - Reflection on Impact 4.3: When this person tries to inspire ownership on a challenging project, what typically happens?",
+                id: "ME_TOT_8_Q3", pillar: "Towards Others", dimension: "Mindset",
+                cluster: "Collaboration & Constructive Conflict", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 5, text: "A. Team members take on more ownership; a visible increase in initiative and understanding of the bigger picture is apparent." },
-                    { score: 1, text: "B. Some remain disengaged despite efforts; this person is not always sure how to move them forward." },
-                    { score: 3, text: "C. Some people increase their engagement; a certain increase in initiative is visible, though not from everyone." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "Towards Company & Position": [
+            // Cluster 9: Accountability & Decision Ownership
+            {
+                id: "ME_TCP_9_Q1", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Accountability & Decision Ownership", type: "behavioural",
+                text: "When you observe how [Name] takes ownership of decisions and outcomes, assumes accountability for their area's impact, makes decisions with appropriate authority, and drives results, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They accept responsibility for their work and make decisions within their scope. They may need guidance on complex decisions or when outcomes fall short, and their sense of accountability can be inconsistent, sometimes attributing challenges to external factors." },
+                    { score: 3, text: "B. They consistently assume accountability for decisions, actions, and outcomes. They make informed, timely decisions with appropriate confidence, take responsibility for both successes and failures, and create a culture of accountability within their team." },
+                    { score: 5, text: "C. They demonstrate exceptional ownership and decision-making authority. They proactively assume accountability for broader organizational impact, make confident decisions that engage and influence others, anticipate challenges before they arise, and create systems that empower others to take full ownership." }
                 ]
             },
             {
-                id: "MU_HDA_4.4C",
-                pillar: "HOW DO THEY DRIVE ACTION?",
-                dimension: "IMPACT",
-                type: "core",
-                text: "MA - Core Scenario 4.4: This person identifies an ambitious strategic direction that challenges existing norms and may face resistance. How do they typically advocate for this initiative?",
+                id: "ME_TCP_9_Q2", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Accountability & Decision Ownership", type: "impact",
+                text: "When you review how [Name] handles outcomes — both positive and negative — and the decision-making culture within their team, what pattern do you typically see?",
                 options: [
-                    { score: 1, text: "A. Develops a comprehensive business case with data and risk mitigation; assumes a well-constructed argument will carry weight without building broader political support." },
-                    { score: 3, text: "B. Builds a strong business case and engages key stakeholders in shaping the proposal; presents it with stakeholder support, showing how it aligns with company goals." },
-                    { score: 5, text: "C. Carefully identifies who needs to support the initiative and engages them in developing the proposal; listens to concerns, adapts the approach, and persistently advocates for the direction they believe in." }
+                    { score: -2, text: "A. They acknowledge outcomes and work to address issues when they arise. Decision-making happens, though team members may look to them for most decisions, and accountability for results may require reinforcement." },
+                    { score: 0, text: "B. They take clear ownership of outcomes without deflecting blame. Their team makes appropriate decisions independently, and there's a solid culture of accountability where team members take responsibility for their work." },
+                    { score: 1, text: "C. They model exceptional accountability that transforms team culture. A specific indicator: when things go wrong, they focus on solutions and learning rather than blame, their team demonstrates strong decision-making autonomy, or their accountability approach has been recognized as a model for the organization." }
                 ]
             },
             {
-                id: "MU_HDA_4.4R",
-                pillar: "HOW DO THEY DRIVE ACTION?",
-                dimension: "IMPACT",
-                type: "reflection",
-                text: "MA - Reflection on Impact 4.4: When this person advocates for a strategic initiative that faces resistance, what is typically the result?",
+                id: "ME_TCP_9_Q3", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Accountability & Decision Ownership", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
                 options: [
-                    { score: 1, text: "A. The initiative is rejected or significantly delayed; stakeholders are not convinced or have competing priorities that prevent adoption." },
-                    { score: 5, text: "B. Stakeholders substantively engage with the proposal and support moving forward; they are willing to allocate resources and work on implementation." },
-                    { score: 3, text: "C. The initiative gains momentum and moves forward with enough support to be piloted, with some ongoing discussion about implementation." }
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 10: Strategic Ownership & Values Alignment
+            {
+                id: "ME_TCP_10_Q1", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Strategic Ownership & Values Alignment", type: "behavioural",
+                text: "When you observe how [Name] connects their work to organizational strategy, demonstrates commitment to company mission and values, and reflects those values in their decisions and actions, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They execute on assigned priorities and acknowledge organizational values when discussed. They may need support in connecting daily work to broader strategy or in consistently aligning decisions with company values, particularly when under pressure." },
+                    { score: 3, text: "B. They effectively communicate organizational strategy to their team, connecting work to company goals and values. They consistently reflect organizational values in their decisions, demonstrate genuine commitment to the mission, and help their team understand the \"why\" behind their work." },
+                    { score: 5, text: "C. They champion organizational strategy and embody company values in transformative ways. They proactively shape how their area contributes to strategic goals, inspire others to connect with the mission, and consistently model values-driven leadership that influences organizational culture." }
+                ]
+            },
+            {
+                id: "ME_TCP_10_Q2", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Strategic Ownership & Values Alignment", type: "impact",
+                text: "When you observe how [Name]'s team understands organizational strategy and demonstrates alignment with company values, what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. The team executes on priorities and is generally aware of company values. Strategic alignment is maintained through regular guidance, and values alignment may be inconsistent, particularly during high-pressure situations." },
+                    { score: 0, text: "B. The team demonstrates clear understanding of how their work connects to organizational strategy. Team members reflect company values in their work, and there's solid alignment between the team's actions and organizational mission." },
+                    { score: 1, text: "C. The team operates with exceptional strategic clarity and values alignment. A specific indicator: team members articulate how their work serves organizational strategy without prompting, the team's values-driven culture is visible and recognized, or [Name]'s approach to strategic and values alignment has influenced how other teams operate." }
+                ]
+            },
+            {
+                id: "ME_TCP_10_Q3", pillar: "Towards Company & Position", dimension: "Mindset",
+                cluster: "Strategic Ownership & Values Alignment", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "Personal Efficiency": [
+            // Cluster 11: Priority Management & Personal Effectiveness
+            {
+                id: "ME_PE_11_Q1", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Priority Management & Personal Effectiveness", type: "behavioural",
+                text: "When you observe how [Name] manages their time, prioritizes competing demands, solves problems independently, and adapts their personal approach to changing circumstances, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They manage their workload and address problems as they arise. They may need guidance on complex prioritization, struggle when multiple demands compete simultaneously, or require support to adjust their approach when circumstances change significantly." },
+                    { score: 3, text: "B. They effectively manage their time and consistently meet commitments. They prioritize strategically, solve most problems independently with structured approaches, and adapt their personal working style readily to changing conditions while maintaining focus on key objectives." },
+                    { score: 5, text: "C. They demonstrate exceptional personal effectiveness. They anticipate time constraints and proactively manage competing demands, solve complex problems with sophisticated analysis, and thrive in ambiguous or rapidly changing environments. Their personal efficiency enables them to focus on high-impact work and frees capacity for strategic contribution." }
+                ]
+            },
+            {
+                id: "ME_PE_11_Q2", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Priority Management & Personal Effectiveness", type: "impact",
+                text: "When you review how reliably [Name] delivers on commitments, manages their own workload, and maintains effectiveness through changing conditions, what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. They deliver on most commitments, though some may require deadline extensions or additional support. When priorities shift or problems arise, their effectiveness may dip temporarily, requiring your involvement to re-establish focus." },
+                    { score: 0, text: "B. They consistently meet commitments and maintain effectiveness through routine changes. Their personal organization allows them to deliver reliably, and they handle most priority conflicts and problems without requiring your intervention." },
+                    { score: 1, text: "C. Their personal effectiveness consistently enables high-impact delivery. A specific indicator: they routinely manage complex competing priorities without missing commitments, their problem-solving approach prevents issues from escalating, or their adaptability during recent significant changes allowed them to maintain full productivity while others struggled." }
+                ]
+            },
+            {
+                id: "ME_PE_11_Q3", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Priority Management & Personal Effectiveness", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 12: Change Tactics & Implementation Capability
+            {
+                id: "ME_PE_12_Q1", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Change Tactics & Implementation Capability", type: "behavioural",
+                text: "When you observe how [Name] applies structured approaches to implement change, manages resistance, and engages stakeholders through transitions, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They implement required changes and communicate them to their area. They apply basic change approaches, though they may need support managing complex resistance, engaging diverse stakeholders, or sustaining momentum through longer-term transitions." },
+                    { score: 3, text: "B. They apply proven change management methodologies effectively, engaging stakeholders broadly and managing resistance with structured techniques. They implement complex changes successfully, maintain engagement through transitions, and adapt their approach based on stakeholder feedback." },
+                    { score: 5, text: "C. They demonstrate sophisticated change management capability. They design comprehensive change frameworks, build strong stakeholder coalitions that transform resistance into active advocacy, and create lasting organizational capability to handle future changes more effectively." }
+                ]
+            },
+            {
+                id: "ME_PE_12_Q2", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Change Tactics & Implementation Capability", type: "impact",
+                text: "When you review the outcomes of changes [Name] has implemented — including adoption rates, stakeholder engagement, and sustainability — what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. Changes are implemented and the organization adapts over time. Adoption may be partial or take longer than planned, and some stakeholder resistance may persist, requiring your involvement to fully embed new ways of working." },
+                    { score: 0, text: "B. Changes achieve solid adoption with meaningful stakeholder engagement. Transitions are managed effectively, resistance is addressed constructively, and new approaches are sustained without requiring significant ongoing reinforcement." },
+                    { score: 1, text: "C. Changes achieve exceptional adoption with strong stakeholder commitment. A specific indicator: stakeholders who initially resisted have become active advocates, adoption has been sustained without ongoing intervention, or their change management approach has been adopted as a model for other initiatives in the organization." }
+                ]
+            },
+            {
+                id: "ME_PE_12_Q3", pillar: "Personal Efficiency", dimension: "Skills",
+                cluster: "Change Tactics & Implementation Capability", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "Communication": [
+            // Cluster 13: Impactful Communication & Strategic Listening
+            {
+                id: "ME_COM_13_Q1", pillar: "Communication", dimension: "Skills",
+                cluster: "Impactful Communication & Strategic Listening", type: "behavioural",
+                text: "When you observe how [Name] communicates with stakeholders — how they frame messages, listen to understand underlying motivations, and tailor communication to connect with different audiences — which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They communicate clearly and listen to what is said. Their messages address the topic at hand, though they may not consistently frame information in terms of value to the recipient, and they may miss underlying concerns or motivations when listening." },
+                    { score: 3, text: "B. They structure communication to capture attention and clearly articulate value for the recipient. They actively listen beyond the surface to understand underlying motivations and concerns, identifying what is unspoken in order to address root causes of misalignment or resistance." },
+                    { score: 5, text: "C. They demonstrate masterful communication and strategic listening. They anticipate audience needs and potential objections before they arise, craft narratives that create deep understanding and commitment, and use listening as a strategic tool to identify subtle signals of concern or opportunity that others miss." }
+                ]
+            },
+            {
+                id: "ME_COM_13_Q2", pillar: "Communication", dimension: "Skills",
+                cluster: "Impactful Communication & Strategic Listening", type: "impact",
+                text: "When you observe how stakeholders respond to [Name]'s communication and how their listening shapes outcomes in important conversations, what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. Stakeholders receive information and understand the basic message. Key conversations address the stated issue, though some misalignment may persist, and you occasionally need to follow up to ensure important messages have landed as intended." },
+                    { score: 0, text: "B. Stakeholders consistently understand the purpose and value of [Name]'s messages and engage meaningfully. Their listening enables them to address real concerns, and conversations produce outcomes where people feel genuinely heard and clear on next steps." },
+                    { score: 1, text: "C. Stakeholders demonstrate notable commitment — not just understanding — after interactions with [Name]. A specific indicator: people who were initially skeptical have changed position after conversations with them, their listening has surfaced concerns that prevented a significant issue, or their communication has changed how stakeholders think about a topic, not just what they do." }
+                ]
+            },
+            {
+                id: "ME_COM_13_Q3", pillar: "Communication", dimension: "Skills",
+                cluster: "Impactful Communication & Strategic Listening", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 14: Influence & Stakeholder Navigation
+            {
+                id: "ME_COM_14_Q1", pillar: "Communication", dimension: "Skills",
+                cluster: "Influence & Stakeholder Navigation", type: "behavioural",
+                text: "When you observe how [Name] influences stakeholders, removes barriers to action, builds coalitions, and navigates complex organizational dynamics, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They present their ideas and requests to stakeholders and work to gain support. Their influence approach is direct, though they may not consistently address stakeholder-specific concerns, remove friction that creates resistance, or navigate complex organizational dynamics effectively." },
+                    { score: 3, text: "B. They influence stakeholders effectively by framing requests in terms of mutual benefit and proactively addressing barriers to action. They map stakeholder interests, build productive relationships across the organization, and navigate complex dynamics to achieve desired outcomes." },
+                    { score: 5, text: "C. They demonstrate sophisticated influence and stakeholder navigation. They design communication strategies that make desired actions the path of least resistance, build powerful coalitions that mobilize broad support, and navigate organizational dynamics with exceptional skill that transforms the way initiatives gain traction." }
+                ]
+            },
+            {
+                id: "ME_COM_14_Q2", pillar: "Communication", dimension: "Skills",
+                cluster: "Influence & Stakeholder Navigation", type: "impact",
+                text: "When you review the outcomes of [Name]'s influence efforts — including stakeholder support gained, initiatives advanced, and coalitions built — what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. They gain support for straightforward initiatives and build functional working relationships. Complex influence situations or significant organizational resistance may require your involvement or take longer than anticipated to resolve." },
+                    { score: 0, text: "B. They consistently achieve stakeholder buy-in for their initiatives through well-planned influence strategies. They navigate organizational dynamics effectively, build coalitions that sustain momentum, and move important initiatives forward with solid stakeholder support." },
+                    { score: 1, text: "C. They achieve exceptional stakeholder alignment and build powerful coalitions. A specific indicator: they've advanced a complex initiative through significant organizational resistance, built cross-functional support that accelerated strategic decisions, or their influence approach has created lasting relationships that continue to generate value beyond specific initiatives." }
+                ]
+            },
+            {
+                id: "ME_COM_14_Q3", pillar: "Communication", dimension: "Skills",
+                cluster: "Influence & Stakeholder Navigation", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "Team & People Development": [
+            // Cluster 15: Delegation & Performance Development
+            {
+                id: "ME_TPD_15_Q1", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Delegation & Performance Development", type: "behavioural",
+                text: "When you observe how [Name] delegates responsibilities, sets performance expectations, monitors progress, and develops team members through feedback, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They assign tasks and provide feedback when performance issues arise. Their delegation gives team members basic direction, though they may retain too much work themselves, provide insufficient guidance for growth, or avoid addressing performance issues promptly." },
+                    { score: 3, text: "B. They delegate effectively with clear expectations and appropriate support, matching tasks to individual strengths and development needs. They monitor performance consistently, provide regular constructive feedback, and address performance issues promptly with structured improvement approaches." },
+                    { score: 5, text: "C. They demonstrate sophisticated delegation and performance development. They delegate strategically to build capability and ownership, create comprehensive development frameworks, implement advanced coaching approaches, and build a performance culture where team members proactively seek feedback and take ownership of their own growth." }
+                ]
+            },
+            {
+                id: "ME_TPD_15_Q2", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Delegation & Performance Development", type: "impact",
+                text: "When you review how [Name]'s team members are developing and how performance is managed across the team, what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. Team members generally understand their responsibilities and performance meets basic expectations. Some team members may be underperforming without structured improvement plans, and development may be reactive rather than proactive." },
+                    { score: 0, text: "B. Team members demonstrate steady capability growth and clear performance ownership. Feedback is received and acted upon, performance issues are addressed with appropriate structure, and team members show measurable improvement over time." },
+                    { score: 1, text: "C. The team demonstrates exceptional performance ownership and development trajectory. A specific indicator: team members proactively manage their own development, performance conversations happen without requiring your prompting, or the team's capability growth rate has become a reference point for other teams." }
+                ]
+            },
+            {
+                id: "ME_TPD_15_Q3", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Delegation & Performance Development", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 16: Recognition & Difficult Conversations
+            {
+                id: "ME_TPD_16_Q1", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Recognition & Difficult Conversations", type: "behavioural",
+                text: "When you observe how [Name] recognizes team accomplishments and handles difficult conversations with team members, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They acknowledge significant achievements and address performance issues when they become necessary. Their recognition is generally positive though sometimes generic, and they may delay or avoid difficult conversations, particularly when topics are sensitive." },
+                    { score: 3, text: "B. They provide consistent, personalized recognition that meaningfully acknowledges both individual and team contributions. They handle difficult conversations with appropriate structure and emotional balance, addressing sensitive topics directly while maintaining professional relationships." },
+                    { score: 5, text: "C. They demonstrate exceptional recognition practices and masterful difficult conversation management. They find creative, personalized ways to celebrate achievements that build lasting engagement, and they navigate complex interpersonal conversations with sophistication — creating psychological safety that makes even the most challenging discussions productive." }
+                ]
+            },
+            {
+                id: "ME_TPD_16_Q2", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Recognition & Difficult Conversations", type: "impact",
+                text: "When you observe team engagement, how team members respond to recognition, and the outcomes of difficult conversations [Name] has managed, what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. Team members receive recognition and performance issues are eventually addressed. Engagement is reasonable, though recognition may not consistently feel meaningful, and some difficult conversations may leave unresolved tension or require your follow-up." },
+                    { score: 0, text: "B. Team members demonstrate solid engagement and respond positively to recognition. Difficult conversations produce constructive outcomes, professional relationships are maintained through challenging discussions, and performance issues are resolved with appropriate follow-through." },
+                    { score: 1, text: "C. The team demonstrates exceptional engagement and a culture where honest conversation is normal. A specific indicator: team members actively appreciate the recognition culture, difficult conversations have strengthened rather than damaged key relationships, or their approach to recognition and feedback has become a model that others reference." }
+                ]
+            },
+            {
+                id: "ME_TPD_16_Q3", pillar: "Team & People Development", dimension: "Skills",
+                cluster: "Recognition & Difficult Conversations", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "How Do I Make My Team Feel?": [
+            // Cluster 17: Authentic Presence & Emotional Impact
+            {
+                id: "ME_HTF_17_Q1", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Authentic Presence & Emotional Impact", type: "behavioural",
+                text: "When you observe how [Name] shows up in interactions with their team — their authenticity, emotional awareness, ability to create genuine connection, and impact on the emotional climate — which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They are professionally present and manage emotions adequately in most situations. Their interactions with the team are generally positive, though they may miss emotional cues or create connections that feel transactional rather than genuinely supportive." },
+                    { score: 3, text: "B. They create genuine connection with team members, demonstrating consistent emotional awareness and authentic engagement. They read emotional dynamics accurately, manage their own emotions effectively, and create a positive emotional climate that supports team performance and wellbeing." },
+                    { score: 5, text: "C. They demonstrate exceptional authentic presence and emotional intelligence. They proactively create an environment of psychological safety where team members feel deeply valued, navigate complex emotional dynamics with sophistication, and inspire emotional intelligence in others in ways that transform team culture." }
+                ]
+            },
+            {
+                id: "ME_HTF_17_Q2", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Authentic Presence & Emotional Impact", type: "impact",
+                text: "When you observe how team members engage with [Name] and the overall emotional climate of their team, what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. Team members work with [Name] professionally and the team maintains reasonable cohesion. The emotional climate is generally functional, though engagement may vary and some team members may not feel deeply connected or fully supported." },
+                    { score: 0, text: "B. Team members demonstrate genuine engagement and visible comfort sharing perspectives and concerns. The team's emotional climate is positive and supportive, with people feeling appropriately valued and understood." },
+                    { score: 1, text: "C. The team demonstrates exceptional engagement and psychological safety. A specific indicator: team members actively seek [Name]'s perspective and support, people share concerns and vulnerabilities openly, or the team's emotional culture has become visibly stronger — with measurable impact on collaboration and performance quality." }
+                ]
+            },
+            {
+                id: "ME_HTF_17_Q3", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Authentic Presence & Emotional Impact", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 18: Inclusion, Belonging & Trust
+            {
+                id: "ME_HTF_18_Q1", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Inclusion, Belonging & Trust", type: "behavioural",
+                text: "When you observe how [Name] creates an environment where all team members feel valued, builds trust through consistent and transparent behavior, and ensures diverse voices contribute meaningfully, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They treat team members fairly and are generally consistent in their commitments. They may miss opportunities to actively create belonging for all team members, and trust-building behaviors may be inconsistent, particularly under pressure." },
+                    { score: 3, text: "B. They actively promote inclusion, ensuring diverse contributions are valued and recognized. They build trust consistently through transparent communication and reliable follow-through, creating an environment where team members feel secure sharing perspectives and taking appropriate risks." },
+                    { score: 5, text: "C. They create a deeply inclusive culture and exceptional trust environment. They proactively address barriers to belonging, celebrate diversity in meaningful and specific ways, and build trust so effectively that team members feel confident raising concerns, challenging ideas, and taking risks that drive innovation." }
+                ]
+            },
+            {
+                id: "ME_HTF_18_Q2", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Inclusion, Belonging & Trust", type: "impact",
+                text: "When you observe how team members from diverse backgrounds participate and how trust manifests in the team's behavior, what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. Team members participate and the team maintains reasonable trust. Some voices may be more prominent than others, and trust may be more transactional than deep — present enough to function but not strong enough to support significant vulnerability or risk-taking." },
+                    { score: 0, text: "B. Team members from diverse backgrounds contribute actively, and the team demonstrates solid trust. People share genuine perspectives, commitments are honored consistently, and team members feel secure in their relationship with [Name]." },
+                    { score: 1, text: "C. The team demonstrates exceptional inclusion and deep trust. A specific indicator: team members from all backgrounds contribute with equal confidence and visibility, people openly challenge ideas and raise concerns without hesitation, or the team's inclusive and trusting culture has been recognized and referenced by others in the organization." }
+                ]
+            },
+            {
+                id: "ME_HTF_18_Q3", pillar: "How Do I Make My Team Feel?", dimension: "Influence",
+                cluster: "Inclusion, Belonging & Trust", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            }
+        ],
+        "How Do I Induce Action?": [
+            // Cluster 19: Visionary Inspiration & Empowerment
+            {
+                id: "ME_HIA_19_Q1", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Visionary Inspiration & Empowerment", type: "behavioural",
+                text: "When you observe how [Name] communicates vision, connects individual work to larger purpose, and creates an environment where team members take ownership and drive results, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They communicate organizational goals to their team and delegate tasks with basic direction. Team members understand their responsibilities, though the connection to broader purpose may not always be clear, and team members may rely on [Name] to drive progress rather than taking ownership." },
+                    { score: 3, text: "B. They articulate a compelling vision that connects team work to organizational purpose. They delegate with clear outcomes in mind, trust their team to deliver, and create a culture where team members feel empowered to take initiative and own their results." },
+                    { score: 5, text: "C. They inspire through vision that makes the team genuinely feel connected to something larger than their immediate work. They create an environment where empowerment leads to innovation, team members take full ownership of outcomes, and people proactively drive improvement without waiting to be asked." }
+                ]
+            },
+            {
+                id: "ME_HIA_19_Q2", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Visionary Inspiration & Empowerment", type: "impact",
+                text: "When you observe how [Name]'s team responds to direction and how independently team members drive their own work, what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. Team members understand their tasks and complete assigned work. Progress often requires [Name]'s active involvement to maintain momentum, and the team may not consistently demonstrate initiative beyond their defined responsibilities." },
+                    { score: 0, text: "B. Team members demonstrate clear sense of purpose and take meaningful ownership of their work. They proactively address issues within their scope, make appropriate decisions independently, and show genuine engagement with the team's goals." },
+                    { score: 1, text: "C. The team demonstrates exceptional ownership and initiative. A specific indicator: team members drive innovation and improvement without being prompted, they make strategic decisions within their scope with confidence, or the team's empowerment culture has become a visible differentiator in how they perform compared to other teams." }
+                ]
+            },
+            {
+                id: "ME_HIA_19_Q3", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Visionary Inspiration & Empowerment", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
+                ]
+            },
+            // Cluster 20: Change Leadership & Strategic Influence
+            {
+                id: "ME_HIA_20_Q1", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Change Leadership & Strategic Influence", type: "behavioural",
+                text: "When you observe how [Name] challenges the status quo, inspires others through organizational change, and creates lasting strategic impact through thoughtful influence, which description best fits what you typically see?",
+                options: [
+                    { score: 1, text: "A. They implement required changes and work within established influence channels. They may accept existing processes without actively questioning them and use direct or positional approaches to influence, rather than building the coalitions and strategic narratives needed for transformational impact." },
+                    { score: 3, text: "B. They actively challenge existing processes to enhance effectiveness, lead change initiatives with momentum, and influence stakeholders through well-designed strategies. They build coalitions, navigate organizational dynamics skilfully, and create positive momentum for important initiatives." },
+                    { score: 5, text: "C. They drive a culture of innovation and strategic influence at an organizational level. They challenge the status quo with compelling rationale, inspire others to lead change themselves, build transformative coalitions that mobilize broad support, and create lasting strategic impact that shapes how the organization thinks and operates." }
+                ]
+            },
+            {
+                id: "ME_HIA_20_Q2", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Change Leadership & Strategic Influence", type: "impact",
+                text: "When you review the organizational impact of [Name]'s change leadership and strategic influence efforts, what pattern do you typically see?",
+                options: [
+                    { score: -2, text: "A. Their change efforts are implemented and their influence achieves functional outcomes. Organizational change happens within their area, and influence efforts achieve results in straightforward situations, though complex organizational dynamics may limit broader impact." },
+                    { score: 0, text: "B. Their change leadership creates meaningful organizational momentum. They successfully influence beyond their formal authority, gain broad stakeholder support for important initiatives, and their strategic influence consistently advances key priorities." },
+                    { score: 1, text: "C. Their change leadership and strategic influence have created lasting organizational impact. A specific indicator: an initiative they championed has changed how the organization operates, they've influenced strategic decisions significantly beyond their formal scope, or their approach to change and influence has become a model that others in the organization reference and adopt." }
+                ]
+            },
+            {
+                id: "ME_HIA_20_Q3", pillar: "How Do I Induce Action?", dimension: "Influence",
+                cluster: "Change Leadership & Strategic Influence", type: "frequency",
+                text: "Thinking about the behaviours you described in the previous two questions, how consistently have you observed this pattern in your interactions with [Name]?",
+                options: [
+                    { score: 0.70, text: "A. Rarely — I've observed this occasionally, but it's not a consistent pattern in how they typically work" },
+                    { score: 0.85, text: "B. Sometimes — I've observed this in roughly half of the relevant situations I can recall" },
+                    { score: 1.00, text: "C. Consistently — This is how I typically experience this person across most relevant situations" }
                 ]
             }
         ]

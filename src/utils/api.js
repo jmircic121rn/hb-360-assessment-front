@@ -50,17 +50,18 @@ export const api = {
   // Manager
   manager: {
     getDashboard: () => request('/api/360/manager/dashboard', {}, 'manager'),
-    getEmployees: () => request('/api/360/manager/employees', {}, 'manager'),
+    getEmployees: (companyId) => request(`/api/360/manager/employees${companyId ? `?companyId=${companyId}` : ''}`, {}, 'manager'),
     createEmployee: (data) => request('/api/360/manager/employees', { method: 'POST', body: JSON.stringify(data) }, 'manager'),
     updateEmployee: (id, data) => request(`/api/360/manager/employees/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'manager'),
     deleteEmployee: (id) => request(`/api/360/manager/employees/${id}`, { method: 'DELETE' }, 'manager'),
     getCampaigns: () => request('/api/360/manager/cycles', {}, 'manager'),
     getCampaign: (id) => request(`/api/360/manager/cycles/${id}`, {}, 'manager'),
+    getCycleData: (id) => request(`/api/360/manager/cycles/${id}/data`, {}, 'manager'),
     createCampaign: (data) => request('/api/360/manager/cycles', { method: 'POST', body: JSON.stringify(data) }, 'manager'),
     // Group campaign — backend kreira po jedan cycle za svakog employee-a
     createCampaignBatch: (data) => request('/api/360/manager/cycles/batch', { method: 'POST', body: JSON.stringify(data) }, 'manager'),
     updateCampaign: (id, data) => request(`/api/360/manager/cycles/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'manager'),
-    generateReport1: (campaignId) => request(`/api/360/manager/cycles/${campaignId}/report/1`, { method: 'POST', body: JSON.stringify({ sendToEmployee: true }) }, 'manager'),
+    generateReport1: (campaignId) => request(`/api/360/manager/cycles/${campaignId}/report/1`, { method: 'POST', body: JSON.stringify({ sendToEmployee: true, forceIfIncomplete: true }) }, 'manager'),
     generateReport2: (campaignId) => request(`/api/360/manager/cycles/${campaignId}/report/2`, { method: 'POST', body: JSON.stringify({ sendToEmployee: true }) }, 'manager'),
     getReports: () => request('/api/360/manager/reports', {}, 'manager'),
     deleteReport: (id) => request(`/api/360/manager/reports/${id}`, { method: 'DELETE' }, 'manager'),
@@ -76,6 +77,11 @@ export const api = {
       return res.blob();
     },
     getManagersList: () => request('/api/360/manager/managers-list', {}, 'manager'),
+    // Companies
+    getCompanies: () => request('/api/360/manager/companies', {}, 'manager'),
+    createCompany: (data) => request('/api/360/manager/companies', { method: 'POST', body: JSON.stringify(data) }, 'manager'),
+    updateCompany: (id, data) => request(`/api/360/manager/companies/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'manager'),
+    deleteCompany: (id) => request(`/api/360/manager/companies/${id}`, { method: 'DELETE' }, 'manager'),
     // Peers i Direct Reports po zaposlenom
     getEmployeePeers: (employeeId) => request(`/api/360/manager/employees/${employeeId}/peers`, {}, 'manager'),
     addEmployeePeer: (employeeId, data) => request(`/api/360/manager/employees/${employeeId}/peers`, { method: 'POST', body: JSON.stringify(data) }, 'manager'),

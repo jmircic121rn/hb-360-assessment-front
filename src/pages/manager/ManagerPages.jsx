@@ -10,6 +10,7 @@ import {
 const NAV = [
   { href: '/manager/dashboard', icon: '📊', label: 'Dashboard' },
   { href: '/manager/employees', icon: '👥', label: 'Employees' },
+  { href: '/manager/companies', icon: '🏢', label: 'Companies' },
   { href: '/manager/campaigns/new', icon: '🔄', label: 'New Campaign' },
 ];
 
@@ -76,23 +77,46 @@ export function ManagerWelcome() {
 // ── Dashboard ──────────────────────────────────────────────────────────────
 export function ManagerDashboard() {
   const [campaigns, setCampaigns] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [filterCompany, setFilterCompany] = useState('');
 
   useEffect(() => {
-    api.manager.getCampaigns()
-      .then(data => setCampaigns(Array.isArray(data) ? data : []))
-      .catch(e => setError(e.message))
+    Promise.all([
+      api.manager.getCampaigns(),
+      api.manager.getEmployees(),
+      api.manager.getCompanies().catch(() => []),
+    ]).then(([cData, empData, compData]) => {
+      const compList = Array.isArray(compData) ? compData : [];
+      setCompanies(compList);
+      // Build employeeId → company lookup
+      const empMap = {};
+      (Array.isArray(empData) ? empData : []).forEach(e => {
+        if (e.CompanyID) empMap[e.EmployeeID] = { CompanyID: e.CompanyID, CompanyName: e.CompanyName || `Company #${e.CompanyID}` };
+      });
+      // Enrich campaigns with company info from employee map
+      const enriched = (Array.isArray(cData) ? cData : []).map(c => ({
+        ...c,
+        CompanyID: c.CompanyID ?? empMap[c.EmployeeID]?.CompanyID,
+        CompanyName: c.CompanyName ?? empMap[c.EmployeeID]?.CompanyName,
+      }));
+      setCampaigns(enriched);
+    }).catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  const active = campaigns.filter(c => c.Status === 'in_progress').length;
-  const completed = campaigns.filter(c => c.Status === 'completed').length;
+  const filtered = filterCompany
+    ? campaigns.filter(c => String(c.CompanyID) === filterCompany)
+    : campaigns;
+
+  const active = filtered.filter(c => c.Status === 'in_progress').length;
+  const completed = filtered.filter(c => c.Status === 'completed').length;
 
   const stats = [
     { label: 'Active Campaigns', value: loading ? '—' : active },
     { label: 'Completed Campaigns', value: loading ? '—' : completed },
-    { label: 'Total Campaigns', value: loading ? '—' : campaigns.length },
+    { label: 'Total Campaigns', value: loading ? '—' : filtered.length },
   ];
 
   return (
@@ -112,14 +136,23 @@ export function ManagerDashboard() {
             ))}
           </div>
           <Card style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
               <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem' }}>Assessment Campaigns</h3>
-              <Link to="/manager/campaigns/new"><Btn size="sm" variant="teal">+ New Campaign</Btn></Link>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                {companies.length > 0 && (
+                  <Select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} style={{ minWidth: 180 }}>
+                    <option value="">All companies</option>
+                    {companies.map(c => <option key={c.CompanyID || c.id} value={String(c.CompanyID || c.id)}>{c.CompanyName || c.name}</option>)}
+                  </Select>
+                )}
+                <Link to="/manager/campaigns/new"><Btn size="sm" variant="teal">+ New Campaign</Btn></Link>
+              </div>
             </div>
             <Table
-              headers={['Employee', 'Status', 'Progress', 'Started', 'Actions']}
-              rows={campaigns.map(c => [
+              headers={['Employee', 'Company', 'Status', 'Progress', 'Started', 'Actions']}
+              rows={filtered.map(c => [
                 <strong>{c.FirstName} {c.LastName}</strong>,
+                <span style={{ color: 'var(--ink-soft)', fontSize: '0.84rem' }}>{c.CompanyName || '—'}</span>,
                 <Badge status={c.Status === 'in_progress' ? 'active' : c.Status}>{c.Status}</Badge>,
                 `${c.CompletedLinks}/${c.TotalLinks}`,
                 new Date(c.CreatedAt).toLocaleDateString(),
@@ -147,6 +180,7 @@ export function ManagerEmployees() {
   const [error, setError] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [filterCompany, setFilterCompany] = useState('');
 
   const load = useCallback(() => {
     setLoading(true);
@@ -166,6 +200,24 @@ export function ManagerEmployees() {
     finally { setDeleting(false); }
   }
 
+  // Derive unique companies from employee data
+  const empCompanies = [...new Map(
+    employees.filter(e => e.CompanyID)
+      .map(e => [String(e.CompanyID), { id: e.CompanyID, name: e.CompanyName || `Company #${e.CompanyID}` }])
+  ).values()];
+
+  // Group employees by company, applying filter
+  const grouped = employees
+    .filter(e => !filterCompany || String(e.CompanyID) === filterCompany)
+    .reduce((acc, e) => {
+      const key = e.CompanyID ? String(e.CompanyID) : '__none__';
+      const label = e.CompanyName || (e.CompanyID ? `Company #${e.CompanyID}` : 'No Company');
+      if (!acc[key]) acc[key] = { label, rows: [] };
+      acc[key].rows.push(e);
+      return acc;
+    }, {});
+  const groups = Object.values(grouped);
+
   return (
     <Layout>
       <PageHeader
@@ -174,27 +226,44 @@ export function ManagerEmployees() {
         action={<Link to="/manager/employees/new"><Btn variant="teal">+ Add Employee</Btn></Link>}
       />
       {error && <div style={{ marginBottom: '16px' }}><Alert type="error">{error}</Alert></div>}
-      <Card>
-        {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner size={28} /></div>
-        ) : employees.length === 0 ? (
-          <EmptyState icon="👥" title="No employees yet" message="Add your first employee to get started." action={<Link to="/manager/employees/new"><Btn variant="teal">Add Employee</Btn></Link>} />
-        ) : (
-          <Table
-            headers={['Name', 'Email', 'Job Title', 'Language', 'Actions']}
-            rows={employees.map(e => [
-              <strong>{e.FirstName} {e.LastName}</strong>,
-              <span style={{ color: 'var(--ink-soft)' }}>{e.Email}</span>,
-              e.JobTitle || '—',
-              <Badge status="default">{e.Lang || 'EN'}</Badge>,
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <Btn size="sm" variant="outline" onClick={() => navigate(`/manager/employees/${e.EmployeeID}/edit`)}>Edit</Btn>
-                <Btn size="sm" variant="danger" onClick={() => setDeleteId(e.EmployeeID)}>Delete</Btn>
-              </div>,
-            ])}
-          />
-        )}
-      </Card>
+      {empCompanies.length > 0 && (
+        <div style={{ marginBottom: '16px' }}>
+          <Select value={filterCompany} onChange={e => setFilterCompany(e.target.value)} style={{ maxWidth: 240 }}>
+            <option value="">All companies</option>
+            {empCompanies.map(c => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
+          </Select>
+        </div>
+      )}
+      {loading ? (
+        <Card><div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner size={28} /></div></Card>
+      ) : employees.length === 0 ? (
+        <Card><EmptyState icon="👥" title="No employees yet" message="Add your first employee to get started." action={<Link to="/manager/employees/new"><Btn variant="teal">Add Employee</Btn></Link>} /></Card>
+      ) : groups.length === 0 ? (
+        <Card><EmptyState icon="👥" title="No employees found" message="No employees match the selected company." /></Card>
+      ) : (
+        groups.map(group => (
+          <div key={group.label} style={{ marginBottom: '24px' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-soft)', marginBottom: '8px', padding: '0 2px' }}>
+              🏢 {group.label}
+            </div>
+            <Card>
+              <Table
+                headers={['Name', 'Email', 'Job Title', 'Language', 'Actions']}
+                rows={group.rows.map(e => [
+                  <strong>{e.FirstName} {e.LastName}</strong>,
+                  <span style={{ color: 'var(--ink-soft)' }}>{e.Email}</span>,
+                  e.JobTitle || '—',
+                  <Badge status="default">{e.Lang || 'EN'}</Badge>,
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <Btn size="sm" variant="outline" onClick={() => navigate(`/manager/employees/${e.EmployeeID}/edit`)}>Edit</Btn>
+                    <Btn size="sm" variant="danger" onClick={() => setDeleteId(e.EmployeeID)}>Delete</Btn>
+                  </div>,
+                ])}
+              />
+            </Card>
+          </div>
+        ))
+      )}
       <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Employee">
         <p style={{ color: 'var(--ink-soft)', marginBottom: '24px' }}>Are you sure you want to delete this employee? This action cannot be undone.</p>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
@@ -215,29 +284,60 @@ export function EmployeeForm({ editMode }) {
     jobTitle: '', jobTitleCustom: '',
     lang: 'en',
     managerId: '',
+    companyId: '',
   });
-  const [allEmployees, setAllEmployees] = useState([]);
+  const [managerList, setManagerList] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Initial load: companies + employee data for edit mode
   useEffect(() => {
-    api.manager.getEmployees().then(list => {
-      setAllEmployees(list);
+    Promise.all([
+      api.manager.getEmployees(),
+      api.manager.getCompanies().catch(() => []),
+    ]).then(([list, comps]) => {
+      setCompanies(Array.isArray(comps) ? comps : []);
       if (editMode && id) {
         const emp = list.find(e => String(e.EmployeeID) === id);
         if (emp) {
           const knownTitle = JOB_TITLES.slice(0, -1).includes(emp.JobTitle);
+          const companyId = emp.CompanyID ? String(emp.CompanyID) : '';
           setForm({
             firstName: emp.FirstName, lastName: emp.LastName, email: emp.Email,
             jobTitle: knownTitle ? emp.JobTitle : (emp.JobTitle ? 'Other' : ''),
             jobTitleCustom: knownTitle ? '' : (emp.JobTitle || ''),
             lang: emp.Lang || 'en',
             managerId: emp.ManagerID ? String(emp.ManagerID) : '',
+            companyId,
           });
+          // Load managers scoped to this company
+          const filtered = companyId ? list.filter(e => String(e.CompanyID) === companyId && String(e.EmployeeID) !== id) : list.filter(e => String(e.EmployeeID) !== id);
+          setManagerList(filtered);
         }
+      } else {
+        setManagerList(list);
       }
     }).catch(() => {});
   }, [editMode, id]);
+
+  // Re-fetch manager list when company changes
+  useEffect(() => {
+    if (!form.companyId) {
+      api.manager.getEmployees().then(list => setManagerList(list.filter(e => String(e.EmployeeID) !== id))).catch(() => {});
+      return;
+    }
+    api.manager.getEmployees(form.companyId)
+      .then(list => {
+        setManagerList(list.filter(e => String(e.EmployeeID) !== id));
+        // Clear manager if no longer in list
+        setForm(f => ({
+          ...f,
+          managerId: list.some(e => String(e.EmployeeID) === f.managerId) ? f.managerId : '',
+        }));
+      })
+      .catch(() => {});
+  }, [form.companyId, id]);
 
   const set = k => e => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -250,6 +350,7 @@ export function EmployeeForm({ editMode }) {
         jobTitle: form.jobTitle === 'Other' ? form.jobTitleCustom : form.jobTitle,
         lang: form.lang,
         managerEmployeeId: form.managerId ? Number(form.managerId) : null,
+        companyId: form.companyId ? Number(form.companyId) : null,
       };
       if (editMode) await api.manager.updateEmployee(id, payload);
       else await api.manager.createEmployee(payload);
@@ -270,6 +371,17 @@ export function EmployeeForm({ editMode }) {
           </div>
           <FormField label="Email" required><Input type="email" value={form.email} onChange={set('email')} required /></FormField>
 
+          <FormField label="Company" required>
+            <Select value={form.companyId} onChange={set('companyId')} required>
+              <option value="">— Select company —</option>
+              {companies.map(c => (
+                <option key={c.CompanyID || c.id} value={c.CompanyID || c.id}>
+                  {c.CompanyName || c.name}
+                </option>
+              ))}
+            </Select>
+          </FormField>
+
           <FormField label="Job Title">
             <Select value={form.jobTitle} onChange={set('jobTitle')}>
               <option value="">— Select job title —</option>
@@ -283,7 +395,7 @@ export function EmployeeForm({ editMode }) {
           <FormField label="Manager" hint="Select the employee's direct manager">
             <Select value={form.managerId} onChange={set('managerId')}>
               <option value="">— No manager —</option>
-              {allEmployees.filter(e => String(e.EmployeeID) !== id).map(e => (
+              {managerList.map(e => (
                 <option key={e.EmployeeID} value={e.EmployeeID}>
                   {e.FirstName} {e.LastName}
                 </option>
@@ -310,8 +422,8 @@ export function EmployeeForm({ editMode }) {
 
 // ── People Picker (Peers / Direct Reports) ─────────────────────────────────
 // Uvek generiše I shared link I individualne linkove za izabrane iz baze
-function PeoplePicker({ label, employees, selected, onToggle, onSelectAll, newPersons, onAddPerson, onRemovePerson, addModalOpen, setAddModalOpen }) {
-  const [newPerson, setNewPerson] = useState({ firstName: '', lastName: '', email: '', jobTitle: '', lang: 'en' });
+function PeoplePicker({ label, employees, selected, onToggle, onSelectAll, newPersons, onAddPerson, onRemovePerson, addModalOpen, setAddModalOpen, managerEmployeeId, companies }) {
+  const [newPerson, setNewPerson] = useState({ firstName: '', lastName: '', email: '', jobTitle: '', lang: 'en', companyId: '' });
   const [addLoading, setAddLoading] = useState(false);
   const [addError, setAddError] = useState(null);
 
@@ -322,10 +434,12 @@ function PeoplePicker({ label, employees, selected, onToggle, onSelectAll, newPe
       const created = await api.manager.createEmployee({
         firstName: newPerson.firstName, lastName: newPerson.lastName,
         email: newPerson.email, jobTitle: newPerson.jobTitle || undefined, lang: newPerson.lang,
+        companyId: newPerson.companyId ? Number(newPerson.companyId) : null,
+        ...(managerEmployeeId ? { managerEmployeeId } : {}),
       });
       const createdId = created.employeeId || created.id || created.EmployeeID;
       onAddPerson({ id: createdId, firstName: newPerson.firstName, lastName: newPerson.lastName, email: newPerson.email });
-      setNewPerson({ firstName: '', lastName: '', email: '', jobTitle: '', lang: 'en' });
+      setNewPerson({ firstName: '', lastName: '', email: '', jobTitle: '', lang: 'en', companyId: '' });
       setAddModalOpen(false);
     } catch (err) { setAddError(err.message); }
     finally { setAddLoading(false); }
@@ -392,8 +506,6 @@ function PeoplePicker({ label, employees, selected, onToggle, onSelectAll, newPe
                   <div style={{ fontSize: '0.75rem', color: 'var(--ink-soft)' }}>{p.email}</div>
                 </div>
                 <span style={{ fontSize: '0.71rem', color: '#0a9', fontWeight: 600, flexShrink: 0 }}>✉ email</span>
-                <Btn type="button" size="sm" variant="outline" onClick={() => onRemovePerson(i)}
-                  style={{ color: 'var(--danger)', borderColor: 'var(--danger)', padding: '2px 7px', fontSize: '0.76rem', flexShrink: 0 }}>✕</Btn>
               </div>
             ))}
           </div>
@@ -410,7 +522,7 @@ function PeoplePicker({ label, employees, selected, onToggle, onSelectAll, newPe
         <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '16px', lineHeight: 1.6 }}>
           This person will be saved to the database and will receive an individual email with their assessment link.
         </p>
-        <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+<div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <FormField label="First Name" required>
               <Input value={newPerson.firstName} onChange={e => setNewPerson(f => ({ ...f, firstName: e.target.value }))} required autoFocus />
@@ -422,6 +534,16 @@ function PeoplePicker({ label, employees, selected, onToggle, onSelectAll, newPe
           <FormField label="Email" required hint="Invitation will be sent to this address">
             <Input type="email" value={newPerson.email} onChange={e => setNewPerson(f => ({ ...f, email: e.target.value }))} required />
           </FormField>
+          {companies && companies.length > 0 && (
+            <FormField label="Company">
+              <Select value={newPerson.companyId} onChange={e => setNewPerson(f => ({ ...f, companyId: e.target.value }))}>
+                <option value="">— Select company —</option>
+                {companies.map(c => (
+                  <option key={c.CompanyID || c.id} value={c.CompanyID || c.id}>{c.CompanyName || c.name}</option>
+                ))}
+              </Select>
+            </FormField>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <FormField label="Job Title">
               <Select value={newPerson.jobTitle} onChange={e => setNewPerson(f => ({ ...f, jobTitle: e.target.value }))}>
@@ -438,9 +560,9 @@ function PeoplePicker({ label, employees, selected, onToggle, onSelectAll, newPe
           </div>
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingTop: '4px' }}>
             <Btn variant="outline" type="button" onClick={() => { setAddModalOpen(false); setAddError(null); }}>Cancel</Btn>
-            <Btn type="submit" variant="teal" loading={addLoading}>Save & Add</Btn>
+<Btn type="button" variant="teal" loading={addLoading} onClick={handleAdd}>Save & Add</Btn>
           </div>
-        </form>
+        </div>
       </Modal>
     </div>
   );
@@ -451,6 +573,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
   const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
   const [profiles, setProfiles] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [mode, setMode] = useState(initialData?.mode || 'individual');
   const [form, setForm] = useState({
     name: '', employeeId: '', employeeIds: [], profilId: '',
@@ -465,7 +588,8 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
   const [showAddEmp, setShowAddEmp] = useState(false);
   const [showAddPeer, setShowAddPeer] = useState(false);
   const [showAddDr, setShowAddDr] = useState(false);
-  const [addEmpForm, setAddEmpForm] = useState({ firstName: '', lastName: '', email: '', jobTitle: '', lang: 'en' });
+  const [addEmpForm, setAddEmpForm] = useState({ firstName: '', lastName: '', email: '', jobTitle: '', lang: 'en', companyId: '' });
+  const [filterEmpCompany, setFilterEmpCompany] = useState('');
   const [addEmpLoading, setAddEmpLoading] = useState(false);
   const [addEmpError, setAddEmpError] = useState(null);
   // Odvojene liste za peer i DR pickere, učitane iz relationships tabele
@@ -476,6 +600,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
   useEffect(() => {
     api.manager.getEmployees().then(setEmployees).catch(() => {});
     api.manager.getProfiles().then(setProfiles).catch(() => {});
+    api.manager.getCompanies().then(r => setCompanies(Array.isArray(r) ? r : [])).catch(() => {});
     if (!lockMode) {
       api.manager.getCampaigns()
         .then(campaigns => {
@@ -517,12 +642,13 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
       const created = await api.manager.createEmployee({
         firstName: addEmpForm.firstName, lastName: addEmpForm.lastName,
         email: addEmpForm.email, jobTitle: addEmpForm.jobTitle || undefined, lang: addEmpForm.lang,
+        companyId: addEmpForm.companyId ? Number(addEmpForm.companyId) : null,
       });
       const newEmp = { EmployeeID: created.employeeId || created.id || created.EmployeeID, FirstName: addEmpForm.firstName, LastName: addEmpForm.lastName, Email: addEmpForm.email, JobTitle: addEmpForm.jobTitle };
       setEmployees(prev => [...prev, newEmp]);
       setForm(f => ({ ...f, employeeId: String(newEmp.EmployeeID) }));
       setShowAddEmp(false);
-      setAddEmpForm({ firstName: '', lastName: '', email: '', jobTitle: '', lang: 'en' });
+      setAddEmpForm({ firstName: '', lastName: '', email: '', jobTitle: '', lang: 'en', companyId: '' });
     } catch (err) { setAddEmpError(err.message); }
     finally { setAddEmpLoading(false); }
   }
@@ -593,55 +719,75 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
       )}
 
       {/* Employee selection — hidden in edit mode */}
-      {!lockMode && mode === 'individual' ? (
-        <FormField label="Select Employee" required>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-            <Select value={form.employeeId} onChange={e => {
-              setForm(f => ({ ...f, employeeId: e.target.value, peerEmployeeIds: [], drEmployeeIds: [], peerNewPersons: [], drNewPersons: [] }));
-              setPeerEmployees([]);
-              setDrEmployees([]);
-            }} required style={{ flex: 1 }}>
-              <option value="">— Choose employee —</option>
-              {employees.map(emp => <option key={emp.EmployeeID} value={emp.EmployeeID}>{emp.FirstName} {emp.LastName} ({emp.JobTitle || emp.Email})</option>)}
-            </Select>
-            <Btn type="button" variant="outline" size="sm" onClick={() => setShowAddEmp(true)} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>+ Add New</Btn>
-          </div>
-        </FormField>
-      ) : !lockMode ? (
-        <FormField label="Select Employees" hint="Select all employees for this batch campaign" required>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-            <label style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--ink-soft)' }}>
-              <input
-                type="checkbox"
-                checked={employees.length > 0 && form.employeeIds.length === employees.length}
-                onChange={() => {
-                  const allSelected = form.employeeIds.length === employees.length;
-                  setForm(f => ({ ...f, employeeIds: allSelected ? [] : employees.map(e => e.EmployeeID) }));
-                }}
-                style={{ accentColor: 'var(--ink)' }}
-              />
-              Select all
-            </label>
-            {form.employeeIds.length > 0 && <div style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>{form.employeeIds.length} selected</div>}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: 220, overflowY: 'auto', border: '1.5px solid var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '6px' }}>
-            {employees.map(emp => (
-              <label key={emp.EmployeeID} style={{
-                display: 'flex', gap: '10px', alignItems: 'center', padding: '8px 10px',
-                borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                background: form.employeeIds.includes(emp.EmployeeID) ? 'var(--canvas-warm)' : 'transparent',
-              }}>
-                <input type="checkbox" checked={form.employeeIds.includes(emp.EmployeeID)}
-                  onChange={() => toggleId('employeeIds', emp.EmployeeID)} style={{ accentColor: 'var(--ink)' }} />
-                <div>
-                  <div style={{ fontWeight: 500, fontSize: '0.88rem' }}>{emp.FirstName} {emp.LastName}</div>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>{emp.JobTitle || emp.Email}</div>
-                </div>
+      {!lockMode && (() => {
+        const filteredEmps = filterEmpCompany
+          ? employees.filter(e => String(e.CompanyID) === filterEmpCompany)
+          : employees;
+        const companyFilter = companies.length > 0 ? (
+          <Select value={filterEmpCompany} onChange={e => setFilterEmpCompany(e.target.value)} style={{ marginBottom: '8px', width: '100%' }}>
+            <option value="">All companies</option>
+            {companies.map(c => <option key={c.CompanyID || c.id} value={String(c.CompanyID || c.id)}>{c.CompanyName || c.name}</option>)}
+          </Select>
+        ) : null;
+        if (mode === 'individual') return (
+          <FormField label="Select Employee" required>
+            {companyFilter}
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+              <Select value={form.employeeId} onChange={e => {
+                setForm(f => ({ ...f, employeeId: e.target.value, peerEmployeeIds: [], drEmployeeIds: [], peerNewPersons: [], drNewPersons: [] }));
+                setPeerEmployees([]);
+                setDrEmployees([]);
+              }} required style={{ flex: 1 }}>
+                <option value="">— Choose employee —</option>
+                {filteredEmps.map(emp => <option key={emp.EmployeeID} value={emp.EmployeeID}>{emp.FirstName} {emp.LastName} ({emp.JobTitle || emp.Email})</option>)}
+              </Select>
+              <Btn type="button" variant="outline" size="sm" onClick={() => setShowAddEmp(true)} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>+ Add New</Btn>
+            </div>
+          </FormField>
+        );
+        return (
+          <FormField label="Select Employees" hint="Select all employees for this batch campaign" required>
+            {companyFilter}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label style={{ display: 'flex', gap: '8px', alignItems: 'center', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--ink-soft)' }}>
+                <input
+                  type="checkbox"
+                  checked={filteredEmps.length > 0 && filteredEmps.every(e => form.employeeIds.includes(e.EmployeeID))}
+                  onChange={() => {
+                    const allSelected = filteredEmps.every(e => form.employeeIds.includes(e.EmployeeID));
+                    const filteredIds = filteredEmps.map(e => e.EmployeeID);
+                    setForm(f => ({
+                      ...f,
+                      employeeIds: allSelected
+                        ? f.employeeIds.filter(id => !filteredIds.includes(id))
+                        : [...new Set([...f.employeeIds, ...filteredIds])],
+                    }));
+                  }}
+                  style={{ accentColor: 'var(--ink)' }}
+                />
+                Select all{filterEmpCompany ? ' in company' : ''}
               </label>
-            ))}
-          </div>
-        </FormField>
-      ) : null}
+              {form.employeeIds.length > 0 && <div style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>{form.employeeIds.length} selected</div>}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: 220, overflowY: 'auto', border: '1.5px solid var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '6px' }}>
+              {filteredEmps.map(emp => (
+                <label key={emp.EmployeeID} style={{
+                  display: 'flex', gap: '10px', alignItems: 'center', padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                  background: form.employeeIds.includes(emp.EmployeeID) ? 'var(--canvas-warm)' : 'transparent',
+                }}>
+                  <input type="checkbox" checked={form.employeeIds.includes(emp.EmployeeID)}
+                    onChange={() => toggleId('employeeIds', emp.EmployeeID)} style={{ accentColor: 'var(--ink)' }} />
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '0.88rem' }}>{emp.FirstName} {emp.LastName}</div>
+                    <div style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>{emp.CompanyName ? `${emp.CompanyName} · ` : ''}{emp.JobTitle || emp.Email}</div>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </FormField>
+        );
+      })()}
 
       {/* Profile */}
       {profiles.length > 0 && (
@@ -695,6 +841,8 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
             onRemovePerson={i => setForm(f => ({ ...f, peerNewPersons: f.peerNewPersons.filter((_, idx) => idx !== i) }))}
             addModalOpen={showAddPeer}
             setAddModalOpen={setShowAddPeer}
+            managerEmployeeId={employees.find(e => String(e.EmployeeID) === String(form.employeeId))?.ManagerID || null}
+            companies={companies}
           />
           )}
         </FormField>
@@ -723,6 +871,8 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
             onRemovePerson={i => setForm(f => ({ ...f, drNewPersons: f.drNewPersons.filter((_, idx) => idx !== i) }))}
             addModalOpen={showAddDr}
             setAddModalOpen={setShowAddDr}
+            managerEmployeeId={form.employeeId ? Number(form.employeeId) : null}
+            companies={companies}
           />
           )}
         </FormField>
@@ -761,6 +911,16 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
         <FormField label="Email" required>
           <Input type="email" value={addEmpForm.email} onChange={e => setAddEmpForm(f => ({ ...f, email: e.target.value }))} required />
         </FormField>
+        {companies.length > 0 && (
+          <FormField label="Company">
+            <Select value={addEmpForm.companyId} onChange={e => setAddEmpForm(f => ({ ...f, companyId: e.target.value }))}>
+              <option value="">— Select company —</option>
+              {companies.map(c => (
+                <option key={c.CompanyID || c.id} value={c.CompanyID || c.id}>{c.CompanyName || c.name}</option>
+              ))}
+            </Select>
+          </FormField>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
           <FormField label="Job Title">
             <Select value={addEmpForm.jobTitle} onChange={e => setAddEmpForm(f => ({ ...f, jobTitle: e.target.value }))}>
@@ -813,7 +973,7 @@ export function NewCampaign() {
   return (
     <Layout>
       <PageHeader title="New Assessment Campaign" subtitle="Configure and launch an HB Compass campaign" />
-      <Card style={{ padding: '32px', maxWidth: 680 }}>
+      <Card style={{ padding: '32px', maxWidth: 1000 }}>
         <CampaignForm onSubmit={handleSubmit} submitLoading={loading} submitError={error} />
       </Card>
     </Layout>
@@ -878,6 +1038,136 @@ export function CampaignEdit() {
   );
 }
 
+// ── Pillar Score Chart ───────────────────────────────────────────────────────
+function pillarDim(pillar) {
+  const p = (pillar || '').toUpperCase().trim();
+  if (p.includes('CILJEVI') || p.includes('PROMEN') || p.includes('SHORT-TERM') || p.includes('LONG-TERM') || p === 'STG' || p === 'LTC') return 'rezultati';
+  if (p.includes('PREMA') || p.includes('TOWARDS') || p === 'TO' || p === 'TOO' || p === 'TCP' || p === 'CP') return 'mindset';
+  if (p.includes('EFIKASNOST') || p.includes('KOMUNIKACIJA') || p.includes('RAZVOJ TIMA') || p.includes('EFFICIENCY') || p.includes('COMMUNICATION') || p.includes('PEOPLE DEVELOPMENT') || p === 'PE' || p === 'CO' || p === 'TPD') return 'vestine';
+  return 'uticaj';
+}
+
+const CHART_DIM_COLORS = { rezultati: '#c62828', mindset: '#00695c', vestine: '#1565c0', uticaj: '#ef6c00' };
+const CHART_DIM_LABELS = { rezultati: 'RESULTS', mindset: 'MINDSET', vestine: 'SKILLS', uticaj: 'INFLUENCE' };
+const ASSESSOR_COLORS = { manager: '#9c27b0', peer: '#00897b', directreport: '#f57c00', direct_report: '#f57c00', external: '#546e7a' };
+const ASSESSOR_LABELS = { manager: 'Manager', peer: 'Peers avg', directreport: 'Direct Reports avg', direct_report: 'Direct Reports avg', external: 'External avg' };
+const PILLAR_DISPLAY = {
+  STG: 'Short-term Goals', LTC: 'Long-term Change', TO: 'Towards Oneself',
+  TOO: 'Towards Others', TCP: 'Towards Company & Position', CP: 'Towards Company & Position',
+  PE: 'Personal Efficiency', CO: 'Communication', TPD: 'Team & People Development',
+  MTF: 'How do I make my team feel?', HIA: 'How do I induce action?',
+};
+
+function PillarScoreChart({ data: chartData, selfDone }) {
+  const byAssessorType = chartData?.byAssessorType || {};
+  const selfScores = byAssessorType.self || [];
+
+  if (selfScores.length === 0) {
+    return (
+      <Card style={{ padding: '24px' }}>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '4px' }}>Competency Profile</h3>
+        <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '0', lineHeight: 1.6 }}>
+          {selfDone
+            ? 'Score data is loading…'
+            : 'Complete the self-assessment to see the competency profile chart.'}
+        </p>
+      </Card>
+    );
+  }
+
+  // Aggregate self scores by pillar (average if multiple facets per pillar)
+  const selfByPillar = {};
+  selfScores.forEach(r => {
+    if (!selfByPillar[r.pillar]) selfByPillar[r.pillar] = { sum: 0, count: 0, dimension: pillarDim(r.pillar) };
+    selfByPillar[r.pillar].sum += r.score;
+    selfByPillar[r.pillar].count++;
+  });
+
+  // Build lookup: pillar → avg score for each other assessor type (also aggregate by pillar)
+  const otherTypes = ['manager', 'peer', 'directreport', 'external'];
+  const otherAcc = {};
+  otherTypes.forEach(aType => {
+    (byAssessorType[aType] || []).forEach(r => {
+      if (!otherAcc[r.pillar]) otherAcc[r.pillar] = {};
+      if (!otherAcc[r.pillar][aType]) otherAcc[r.pillar][aType] = { sum: 0, count: 0 };
+      otherAcc[r.pillar][aType].sum += r.score;
+      otherAcc[r.pillar][aType].count++;
+    });
+  });
+  const otherLookup = {};
+  Object.keys(otherAcc).forEach(pillar => {
+    otherLookup[pillar] = {};
+    otherTypes.forEach(aType => {
+      const e = otherAcc[pillar][aType];
+      if (e) otherLookup[pillar][aType] = e.sum / e.count;
+    });
+  });
+
+  // Group aggregated pillar scores by dimension
+  const dimGroups = { rezultati: [], mindset: [], vestine: [], uticaj: [] };
+  Object.entries(selfByPillar).forEach(([pillar, { sum, count, dimension }]) => {
+    const dim = dimension.toLowerCase();
+    if (dimGroups[dim]) dimGroups[dim].push({ pillar, selfScore: sum / count, otherScores: otherLookup[pillar] || {} });
+  });
+
+  const usedOtherTypes = [...new Set(
+    Object.values(dimGroups).flatMap(g => g.flatMap(p => Object.keys(p.otherScores)))
+  )];
+
+  return (
+    <Card style={{ padding: '24px' }}>
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '4px' }}>Competency Profile</h3>
+      <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '16px', lineHeight: 1.6 }}>
+        Self-assessment scores by pillar (bars). Vertical markers show averages from other completed assessors.
+      </p>
+      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <div style={{ width: 24, height: 8, background: 'var(--ink)', borderRadius: 2, opacity: 0.7 }} />
+          <span style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>Self</span>
+        </div>
+        {usedOtherTypes.map(t => (
+          <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ width: 3, height: 16, background: ASSESSOR_COLORS[t] || '#888', borderRadius: 1 }} />
+            <span style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>{ASSESSOR_LABELS[t] || t}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        {['rezultati', 'mindset', 'vestine', 'uticaj'].map(dim => {
+          const pillars = dimGroups[dim];
+          if (pillars.length === 0) return null;
+          const color = CHART_DIM_COLORS[dim];
+          return (
+            <div key={dim} style={{ border: '1px solid var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '14px 16px', background: 'var(--canvas-white)' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', color, marginBottom: '12px' }}>{CHART_DIM_LABELS[dim]}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {pillars.map(({ pillar, selfScore, otherScores }) => (
+                  <div key={pillar}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ink)' }}>{PILLAR_DISPLAY[pillar] || pillar}</span>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--ink-soft)' }}>{selfScore.toFixed(1)}</span>
+                    </div>
+                    <div style={{ position: 'relative', height: 8, background: 'var(--canvas-warm)', borderRadius: 4 }}>
+                      <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${(selfScore / 5) * 100}%`, background: color, borderRadius: 4, opacity: 0.75 }} />
+                      {Object.entries(otherScores).map(([aType, score]) => (
+                        <div key={aType} title={`${ASSESSOR_LABELS[aType] || aType}: ${score.toFixed(1)}`} style={{
+                          position: 'absolute', left: `calc(${(score / 5) * 100}% - 1.5px)`,
+                          top: -3, height: 14, width: 3,
+                          background: ASSESSOR_COLORS[aType] || '#666', borderRadius: 2,
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 // ── Campaign Detail ─────────────────────────────────────────────────────────
 export function CampaignDetail() {
   const { id } = useParams();
@@ -897,6 +1187,7 @@ export function CampaignDetail() {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiStatus, setAiStatus] = useState('');
   const [aiError, setAiError] = useState(null);
+  const [cycleData, setCycleData] = useState(null);
 
   function fetchReports() {
     api.manager.getReports()
@@ -908,6 +1199,7 @@ export function CampaignDetail() {
     api.manager.getCampaign(id)
       .then(setData).catch(e => setError(e.message)).finally(() => setLoading(false));
     fetchReports();
+    api.manager.getCycleData(id).then(setCycleData).catch(() => {});
   }, [id]);
 
   const campaign = data?.cycle;
@@ -921,7 +1213,6 @@ export function CampaignDetail() {
 
   const selfDone = selfLink?.Status === 'completed';
   const managerDone = managerLink?.Status === 'completed';
-  const selfManagerDone = selfDone && managerDone;
   const completedCount = links.filter(l => l.Status === 'completed').length;
 
   async function generateFullReport() {
@@ -989,7 +1280,12 @@ export function CampaignDetail() {
             <Btn size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(publicUrl)}>Copy</Btn>
           </div>
         ) : (link.AssessorEmail || <em style={{ color: 'var(--ink-faint)' }}>—</em>)}
-        <Badge status={link.Status === 'completed' ? 'completed' : 'pending'}>{link.Status}</Badge>
+        {link.IsShared
+          ? (link.ResponseCount > 0
+              ? <Badge status="completed">{link.ResponseCount} {link.ResponseCount === 1 ? 'response' : 'responses'}</Badge>
+              : <Badge status="pending">Pending</Badge>)
+          : <Badge status={link.Status === 'completed' ? 'completed' : 'pending'}>{link.Status}</Badge>
+        }
         <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)' }}>{link.CompletedAt ? new Date(link.CompletedAt).toLocaleString() : '—'}</span>
       </div>
     );
@@ -1009,7 +1305,10 @@ export function CampaignDetail() {
             <span style={{ fontWeight: 600, fontSize: '0.86rem', minWidth: 140 }}>{label} — shared</span>
             <span style={{ fontSize: '0.79rem', color: 'var(--ink-soft)', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharedPublicUrl}</span>
             <Btn size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(sharedPublicUrl)}>Copy</Btn>
-            <Badge status={sharedLink.Status === 'completed' ? 'completed' : 'pending'}>{sharedLink.Status}</Badge>
+            {sharedLink.ResponseCount > 0
+              ? <Badge status="completed">{sharedLink.ResponseCount} {sharedLink.ResponseCount === 1 ? 'response' : 'responses'}</Badge>
+              : <Badge status="pending">Pending</Badge>
+            }
           </div>
         )}
         {/* Individualni — collapsible, samo ime + status */}
@@ -1102,12 +1401,12 @@ export function CampaignDetail() {
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '4px' }}>Reports</h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.6 }}>
               Reports are visible to you and the employee.
-              {!selfManagerDone && <span style={{ color: 'var(--danger)', marginLeft: '4px' }}>Self and manager assessments must be completed first.</span>}
+              {!selfDone && <span style={{ color: 'var(--danger)', marginLeft: '4px' }}>Self assessment must be completed first.</span>}
             </p>
             {reportSuccess && <div style={{ marginBottom: '16px' }}><Alert type="success">{reportSuccess}</Alert></div>}
             {reportError && <div style={{ marginBottom: '16px' }}><Alert type="error">{reportError}</Alert></div>}
             {aiError && <div style={{ marginBottom: '16px' }}><Alert type="error">{aiError}</Alert></div>}
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: reports.length > 0 ? '24px' : 0 }}>
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <Btn variant={selfDone ? 'primary' : 'outline'} loading={generating === 1}
                   disabled={!selfDone || generating !== null} onClick={() => doGenerateReport(1)}
@@ -1117,24 +1416,47 @@ export function CampaignDetail() {
                 {!selfDone && <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Requires: self complete</span>}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Btn variant={selfManagerDone ? 'teal' : 'outline'} loading={generating === 2}
-                  disabled={!selfManagerDone || generating !== null} onClick={() => doGenerateReport(2)}
-                  style={!selfManagerDone ? { opacity: 0.45, cursor: 'not-allowed' } : {}}>
-                  HB Compass Development Report
-                </Btn>
-                {!selfManagerDone && <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Requires: self + manager complete</span>}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <Btn variant={selfDone ? 'primary' : 'outline'} loading={aiGenerating}
                   disabled={!selfDone || aiGenerating || generating !== null} onClick={generateFullReport}
                   style={!selfDone ? { opacity: 0.45, cursor: 'not-allowed' } : {}}>
-                  {aiGenerating ? (aiStatus || 'Generating AI Report…') : 'Generate Full AI Report'}
+                  {aiGenerating ? (aiStatus || 'Generating Personal Development Plan...') : 'Personal Development Plan'}
                 </Btn>
                 {!selfDone
                   ? <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Requires: self assessment complete</span>
                   : <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>AI analysis · downloads as PDF</span>
                 }
               </div>
+            </div>
+
+            {/* 360 inclusions — in development */}
+            <div style={{ borderTop: '1px solid var(--canvas-warm)', paddingTop: '16px' }}>
+              <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-soft)', marginBottom: '10px' }}>
+                Include in report
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+                {[
+                  { label: 'Manager', done: managerDone },
+                  { label: 'Peers', done: peerLinks.some(l => l.Status === 'completed') },
+                  { label: 'Direct Reports', done: drLinks.some(l => l.Status === 'completed') },
+                  { label: 'External', done: otherLinks.some(l => l.Status === 'completed') },
+                ].map(({ label, done }) => (
+                  <div key={label} title="Coming soon — multi-assessor reports are currently in development" style={{
+                    padding: '5px 12px', borderRadius: 'var(--radius-md)',
+                    border: `1px solid ${done ? 'var(--canvas-warm)' : 'var(--canvas-warm)'}`,
+                    background: done ? 'var(--canvas-warm)' : 'var(--canvas)',
+                    fontSize: '0.78rem', fontWeight: 500,
+                    color: done ? 'var(--ink-soft)' : 'var(--ink-faint)',
+                    cursor: 'not-allowed', userSelect: 'none',
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                  }}>
+                    {done && <span style={{ color: 'var(--success)', fontSize: '0.7rem' }}>●</span>}
+                    {label}
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: '0.76rem', color: 'var(--ink-faint)', lineHeight: 1.5 }}>
+                Multi-assessor reports are currently in development. Reports currently use self-assessment data only.
+              </p>
             </div>
 
             {/* Generated reports list */}
@@ -1162,6 +1484,8 @@ export function CampaignDetail() {
               </div>
             )}
           </Card>
+
+          <PillarScoreChart data={cycleData} selfDone={selfDone} />
         </div>
       )}
 
@@ -1203,6 +1527,133 @@ export function CampaignDetail() {
             <Btn variant="primary" loading={generating !== null} onClick={() => doGenerateReport(confirmModal.type, true)}>Generate Anyway</Btn>
           </div>
         </>}
+      </Modal>
+    </Layout>
+  );
+}
+
+// ── Companies ──────────────────────────────────────────────────────────────
+export function ManagerCompanies() {
+  const [companies, setCompanies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [newName, setNewName] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [actionError, setActionError] = useState(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    api.manager.getCompanies()
+      .then(r => setCompanies(Array.isArray(r) ? r : []))
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(load, [load]);
+
+  async function handleCreate(e) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setCreating(true); setActionError(null);
+    try {
+      await api.manager.createCompany({ companyName: newName.trim() });
+      setNewName('');
+      load();
+    } catch (err) { setActionError(err.message); }
+    finally { setCreating(false); }
+  }
+
+  async function handleRename(e) {
+    e.preventDefault();
+    if (!editName.trim()) return;
+    setSaving(true); setActionError(null);
+    try {
+      await api.manager.updateCompany(editId, { companyName: editName.trim() });
+      setEditId(null); setEditName('');
+      load();
+    } catch (err) { setActionError(err.message); }
+    finally { setSaving(false); }
+  }
+
+  async function handleDelete() {
+    setDeleting(true); setActionError(null);
+    try {
+      await api.manager.deleteCompany(deleteId);
+      setDeleteId(null);
+      load();
+    } catch (err) { setActionError(err.message); setDeleteId(null); }
+    finally { setDeleting(false); }
+  }
+
+  return (
+    <Layout>
+      <PageHeader title="Companies" subtitle="Manage your client companies" />
+      {error && <div style={{ marginBottom: '16px' }}><Alert type="error">{error}</Alert></div>}
+      {actionError && <div style={{ marginBottom: '16px' }}><Alert type="error">{actionError}</Alert></div>}
+
+      <Card style={{ padding: '24px', maxWidth: 600, marginBottom: '24px' }}>
+        <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '12px' }}>Add New Company</div>
+        <form onSubmit={handleCreate} style={{ display: 'flex', gap: '10px' }}>
+          <Input
+            value={newName}
+            onChange={e => setNewName(e.target.value)}
+            placeholder="Company name..."
+            required
+            style={{ flex: 1 }}
+          />
+          <Btn type="submit" variant="teal" loading={creating}>Add</Btn>
+        </form>
+      </Card>
+
+      <Card style={{ maxWidth: 600 }}>
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '48px' }}><Spinner size={28} /></div>
+        ) : companies.length === 0 ? (
+          <EmptyState icon="🏢" title="No companies yet" message="Add your first company above." />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {companies.map(c => {
+              const cId = c.CompanyID || c.id;
+              const cName = c.CompanyName || c.name;
+              return (
+                <div key={cId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: 'var(--radius-sm)', background: 'var(--canvas)' }}>
+                  {editId === cId ? (
+                    <form onSubmit={handleRename} style={{ display: 'flex', gap: '8px', flex: 1 }}>
+                      <Input
+                        value={editName}
+                        onChange={e => setEditName(e.target.value)}
+                        required
+                        autoFocus
+                        style={{ flex: 1 }}
+                      />
+                      <Btn type="submit" size="sm" variant="teal" loading={saving}>Save</Btn>
+                      <Btn type="button" size="sm" variant="outline" onClick={() => { setEditId(null); setEditName(''); }}>Cancel</Btn>
+                    </form>
+                  ) : (
+                    <>
+                      <span style={{ flex: 1, fontWeight: 500 }}>{cName}</span>
+                      <Btn size="sm" variant="outline" onClick={() => { setEditId(cId); setEditName(cName); setActionError(null); }}>Rename</Btn>
+                      <Btn size="sm" variant="danger" onClick={() => { setDeleteId(cId); setActionError(null); }}>Delete</Btn>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="Delete Company">
+        <p style={{ color: 'var(--ink-soft)', marginBottom: '24px' }}>Are you sure? This will fail if the company has employees assigned to it.</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <Btn variant="outline" onClick={() => setDeleteId(null)}>Cancel</Btn>
+          <Btn variant="danger" loading={deleting} onClick={handleDelete}>Delete</Btn>
+        </div>
       </Modal>
     </Layout>
   );

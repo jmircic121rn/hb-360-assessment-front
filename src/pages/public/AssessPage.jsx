@@ -22,7 +22,16 @@ export default function AssessPage() {
   useEffect(() => {
     api.getAssessment(token)
       .then(setData)
-      .catch(e => setError(e.message))
+      .catch(e => {
+        const msg = e.message || '';
+        if (msg.includes('već popunjen') || msg.includes('completed')) {
+          setError('This assessment has already been completed.');
+        } else if (msg.includes('istekao') || msg.includes('pronađen') || msg.includes('404')) {
+          setError('This link is invalid or has expired.');
+        } else {
+          setError(msg);
+        }
+      })
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -56,6 +65,8 @@ export default function AssessPage() {
   );
 
   const assessmentType = data?.assessmentType || data?.type || 'self';
+  // First name used to replace [Name] placeholders in questions
+  const subjectFirstName = (data?.employeeName || '').split(' ')[0] || '[Name]';
   // requiresIdentity = true kada je shared link (peer/DR/external bez poznate osobe)
   // Backend šalje data.requiresIdentity: true za shared linkove, false za individualne
   const needsIdentity = data?.requiresIdentity === true ||
@@ -127,13 +138,13 @@ export default function AssessPage() {
   }
 
   // Select question set based on assessment type, then language
-  const rawLang = data?.language || data?.lang || 'sr';
+  const rawLang = data?.language || data?.lang || 'en';
   const lang = rawLang === 'en' ? 'eng' : rawLang;
   const questionBank =
     assessmentType === 'manager' ? managerQuestions :
-    assessmentType === 'peer' || assessmentType === 'other' ? peerQuestions :
+    ['peer', 'directreport', 'direct_report', 'external', 'other'].includes(assessmentType) ? peerQuestions :
     leaderQuestions40;
-  const langQuestions = questionBank[lang] || questionBank['sr'];
+  const langQuestions = questionBank[lang] || questionBank['eng'];
   const questions = langQuestions ? Object.values(langQuestions).flat() : [];
   const pillars = [...new Set(questions.map(q => q.pillar))];
   const pillarQuestions = questions.filter(q => q.pillar === pillars[currentPillar]);
@@ -141,10 +152,24 @@ export default function AssessPage() {
   const allAnswered = totalAnswered === questions.length;
   const pillarAnswered = pillarQuestions.every(q => answers[q.id] !== undefined);
 
+  function pillarDim(pillar) {
+    const p = (pillar || '').toUpperCase().trim();
+    if (p.includes('CILJEVI') || p.includes('PROMEN') || p.includes('SHORT-TERM') || p.includes('LONG-TERM')) return 'rezultati';
+    if (p.includes('PREMA') || p.includes('TOWARDS')) return 'mindset';
+    if (p.includes('EFIKASNOST') || p.includes('KOMUNIKACIJA') || p.includes('RAZVOJ TIMA') || p.includes('EFFICIENCY') || p.includes('COMMUNICATION') || p.includes('PEOPLE DEVELOPMENT')) return 'vestine';
+    return 'uticaj';
+  }
+
   async function handleSubmit() {
     setSubmitting(true);
     try {
-      const payload = { answers };
+      const questionsPayload = questions.map(q => ({
+        id: q.id,
+        pillar: q.pillar,
+        dimension: q.dimension || pillarDim(q.pillar),
+      }));
+      console.log('[submit] questions count:', questionsPayload.length, '| sample:', questionsPayload.slice(0, 2));
+      const payload = { answers, questions: questionsPayload };
       if (needsIdentity) payload.assessorInfo = assessorInfo;
       await api.submitAssessment(token, payload);
       setSubmitted(true);
@@ -234,7 +259,7 @@ export default function AssessPage() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.65, marginBottom: '20px' }}>
-                    {q.text.includes(':') ? q.text.split(':').slice(1).join(':').trim() : q.text}
+                    {(q.text.includes(':') ? q.text.split(':').slice(1).join(':').trim() : q.text).replace(/\[Name\]/g, subjectFirstName)}
                   </p>
 
                   {/* Options (A/B/C radio style) */}
@@ -261,7 +286,7 @@ export default function AssessPage() {
                             />
                             <div>
                               <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : 'var(--ink-soft)', fontSize: '0.82rem', marginRight: '8px' }}>{optLabel}.</span>
-                              <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.6 }}>{opt.text.replace(/^[A-Z]\.\s*/, '')}</span>
+                              <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.6 }}>{opt.text.replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
                             </div>
                           </label>
                         );
