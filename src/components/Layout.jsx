@@ -19,16 +19,35 @@ export function Logo({ size = 'md', light }) {
   );
 }
 
+// ── useMobile hook ────────────────────────────────────────────────────────
+function useMobile(breakpoint = 768) {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < breakpoint);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const handler = e => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 // ── Portal layout (sidebar + content) ────────────────────────────────────
 export function PortalLayout({ role, navItems, children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const isMobile = useMobile();
 
   useEffect(() => {
     api.getMe(role).then(setUser).catch(() => {});
   }, [role]);
+
+  // Close mobile nav on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
   function handleLogout() {
     clearToken(role);
@@ -37,19 +56,40 @@ export function PortalLayout({ role, navItems, children }) {
 
   const displayName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
 
+  const sidebarWidth = isMobile ? 260 : (collapsed ? 56 : 220);
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--canvas)' }}>
+
+      {/* Mobile backdrop */}
+      {isMobile && mobileOpen && (
+        <div
+          onClick={() => setMobileOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            zIndex: 99, backdropFilter: 'blur(2px)',
+          }}
+        />
+      )}
+
       {/* Sidebar */}
       <aside style={{
-        width: collapsed ? 56 : 220, flexShrink: 0,
+        width: sidebarWidth, flexShrink: 0,
         background: 'var(--ink)', display: 'flex', flexDirection: 'column',
-        transition: 'width var(--transition)', overflow: 'hidden',
-        position: 'sticky', top: 0, height: '100vh',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        transition: 'width var(--transition), transform var(--transition)',
+        overflow: 'hidden',
+        ...(isMobile ? {
+          position: 'fixed', left: 0, top: 0, bottom: 0,
+          zIndex: 100,
+          transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+        } : {
+          position: 'sticky', top: 0, height: '100vh',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+        }),
       }}>
         {/* Logo area */}
-        <div style={{ padding: collapsed ? '18px 12px' : '22px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)', minHeight: 64, display: 'flex', alignItems: 'center' }}>
-          {collapsed ? (
+        <div style={{ padding: collapsed && !isMobile ? '18px 12px' : '22px 18px', borderBottom: '1px solid rgba(255,255,255,0.08)', minHeight: 64, display: 'flex', alignItems: 'center' }}>
+          {collapsed && !isMobile ? (
             <img src="/whitetransparent.png" alt="HB" style={{ height: 18, width: 'auto' }} />
           ) : (
             <Logo light />
@@ -57,7 +97,7 @@ export function PortalLayout({ role, navItems, children }) {
         </div>
 
         {/* Role badge */}
-        {!collapsed && (
+        {(!collapsed || isMobile) && (
           <div style={{ padding: '10px 18px 6px' }}>
             <span style={{
               fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
@@ -73,21 +113,25 @@ export function PortalLayout({ role, navItems, children }) {
           {navItems.map(item => {
             const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
             return (
-              <Link key={item.href} to={item.href} style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: collapsed ? '10px 8px' : '9px 10px',
-                borderRadius: 'var(--radius-sm)',
-                background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
-                color: active ? '#fff' : 'rgba(255,255,255,0.45)',
-                fontSize: '0.85rem', fontWeight: active ? 600 : 400,
-                transition: 'all var(--transition)',
-                whiteSpace: 'nowrap', overflow: 'hidden',
-                borderLeft: active ? '2px solid #fff' : '2px solid transparent',
-                justifyContent: collapsed ? 'center' : 'flex-start',
-                letterSpacing: '0.01em',
-              }}>
-                <span style={{ fontSize: '0.95rem', flexShrink: 0 }}>{item.icon}</span>
-                {!collapsed && item.label}
+              <Link
+                key={item.href}
+                to={item.href}
+                onClick={() => isMobile && setMobileOpen(false)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: collapsed && !isMobile ? '10px 8px' : '11px 12px',
+                  borderRadius: 'var(--radius-sm)',
+                  background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
+                  color: active ? '#fff' : 'rgba(255,255,255,0.45)',
+                  fontSize: '0.88rem', fontWeight: active ? 600 : 400,
+                  transition: 'all var(--transition)',
+                  whiteSpace: 'nowrap', overflow: 'hidden',
+                  borderLeft: active ? '2px solid #fff' : '2px solid transparent',
+                  justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
+                  letterSpacing: '0.01em',
+                }}>
+                <span style={{ fontSize: '1rem', flexShrink: 0 }}>{item.icon}</span>
+                {(!collapsed || isMobile) && item.label}
               </Link>
             );
           })}
@@ -95,8 +139,7 @@ export function PortalLayout({ role, navItems, children }) {
 
         {/* Footer */}
         <div style={{ padding: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {/* User info */}
-          {!collapsed && (
+          {(!collapsed || isMobile) && (
             <div style={{
               display: 'flex', alignItems: 'center', gap: '10px',
               padding: '10px 10px', borderRadius: 'var(--radius-sm)',
@@ -107,7 +150,7 @@ export function PortalLayout({ role, navItems, children }) {
                 background: 'rgba(255,255,255,0.15)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="8" r="4" fill="rgba(255,255,255,0.8)" />
                   <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" fill="none" />
                 </svg>
@@ -122,16 +165,14 @@ export function PortalLayout({ role, navItems, children }) {
               </div>
             </div>
           )}
-          {collapsed && (
-            <div style={{
-              display: 'flex', justifyContent: 'center', padding: '6px 0',
-            }}>
+          {collapsed && !isMobile && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '6px 0' }}>
               <div style={{
                 width: 30, height: 30, borderRadius: '50%',
                 background: 'rgba(255,255,255,0.15)', display: 'flex',
                 alignItems: 'center', justifyContent: 'center',
               }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="8" r="4" fill="rgba(255,255,255,0.8)" />
                   <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round" fill="none" />
                 </svg>
@@ -139,33 +180,59 @@ export function PortalLayout({ role, navItems, children }) {
             </div>
           )}
 
-          {/* Collapse toggle */}
-          <button onClick={() => setCollapsed(!collapsed)} style={{
-            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
-            gap: '8px', padding: '7px 10px', borderRadius: 'var(--radius-sm)',
-            color: 'rgba(255,255,255,0.3)', fontSize: '0.78rem', background: 'none', border: 'none',
-            cursor: 'pointer', transition: 'color var(--transition)', fontFamily: 'var(--font-body)',
-          }}>
-            <span style={{ fontSize: '0.9rem' }}>{collapsed ? '→' : '←'}</span>
-            {!collapsed && 'Collapse'}
-          </button>
+          {/* Collapse toggle — desktop only */}
+          {!isMobile && (
+            <button onClick={() => setCollapsed(!collapsed)} style={{
+              display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+              gap: '8px', padding: '7px 10px', borderRadius: 'var(--radius-sm)',
+              color: 'rgba(255,255,255,0.3)', fontSize: '0.78rem', background: 'none', border: 'none',
+              cursor: 'pointer', transition: 'color var(--transition)', fontFamily: 'var(--font-body)',
+            }}>
+              <span style={{ fontSize: '0.9rem' }}>{collapsed ? '→' : '←'}</span>
+              {!collapsed && 'Collapse'}
+            </button>
+          )}
 
           {/* Logout */}
           <button onClick={handleLogout} style={{
-            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+            display: 'flex', alignItems: 'center', justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
             gap: '8px', padding: '8px 10px', borderRadius: 'var(--radius-sm)',
             color: 'rgba(255,100,100,0.75)', fontSize: '0.82rem', fontWeight: 500,
             background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.15)',
             cursor: 'pointer', transition: 'all var(--transition)', fontFamily: 'var(--font-body)',
           }}>
             <span style={{ fontSize: '0.95rem' }}>↩</span>
-            {!collapsed && 'Logout'}
+            {(!collapsed || isMobile) && 'Logout'}
           </button>
         </div>
       </aside>
 
+      {/* Mobile top bar */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, height: 52,
+          background: 'var(--ink)', display: 'flex', alignItems: 'center',
+          padding: '0 16px', gap: '14px', zIndex: 98,
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+        }}>
+          <button
+            onClick={() => setMobileOpen(o => !o)}
+            style={{ color: '#fff', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '5px' }}
+            aria-label="Toggle menu"
+          >
+            <span style={{ width: 20, height: 2, background: '#fff', display: 'block', transition: 'transform var(--transition)', transformOrigin: 'center', transform: mobileOpen ? 'rotate(45deg) translate(5px, 5px)' : 'none' }} />
+            <span style={{ width: 20, height: 2, background: '#fff', display: 'block', transition: 'opacity var(--transition)', opacity: mobileOpen ? 0 : 1 }} />
+            <span style={{ width: 20, height: 2, background: '#fff', display: 'block', transition: 'transform var(--transition)', transformOrigin: 'center', transform: mobileOpen ? 'rotate(-45deg) translate(5px, -5px)' : 'none' }} />
+          </button>
+          <Logo light size="sm" />
+        </div>
+      )}
+
       {/* Main content */}
-      <main style={{ flex: 1, padding: '36px 40px', minWidth: 0, overflowX: 'auto' }}>
+      <main style={{
+        flex: 1, minWidth: 0, overflowX: 'auto',
+        padding: isMobile ? '68px 16px 32px' : '36px 40px',
+      }}>
         {children}
       </main>
     </div>
@@ -221,7 +288,7 @@ export function PublicNav() {
   return (
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-      padding: '14px 40px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       background: scrolled ? 'rgba(0,0,0,0.95)' : 'transparent',
       backdropFilter: scrolled ? 'blur(12px)' : 'none',
       borderBottom: scrolled ? '1px solid rgba(255,255,255,0.08)' : 'none',

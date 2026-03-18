@@ -44,51 +44,50 @@ export const api = {
 
   // Auth
   login: (creds) => request('/api/360/auth/login', { method: 'POST', body: JSON.stringify(creds) }),
-  loginAdmin: (creds) => request('/api/360/auth/login/admin', { method: 'POST', body: JSON.stringify({ password: creds.password }) }),
   getMe: (role) => request('/api/360/auth/me', {}, role),
 
   // Manager
   manager: {
-    getDashboard: () => request('/api/360/manager/dashboard', {}, 'manager'),
-    getEmployees: (companyId) => request(`/api/360/manager/employees${companyId ? `?companyId=${companyId}` : ''}`, {}, 'manager'),
-    createEmployee: (data) => request('/api/360/manager/employees', { method: 'POST', body: JSON.stringify(data) }, 'manager'),
-    updateEmployee: (id, data) => request(`/api/360/manager/employees/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'manager'),
-    deleteEmployee: (id) => request(`/api/360/manager/employees/${id}`, { method: 'DELETE' }, 'manager'),
-    getCampaigns: () => request('/api/360/manager/cycles', {}, 'manager'),
-    getCampaign: (id) => request(`/api/360/manager/cycles/${id}`, {}, 'manager'),
-    getCycleData: (id) => request(`/api/360/manager/cycles/${id}/data`, {}, 'manager'),
-    createCampaign: (data) => request('/api/360/manager/cycles', { method: 'POST', body: JSON.stringify(data) }, 'manager'),
+    getDashboard: () => request('/api/360/manager/dashboard', {}, 'admin'),
+    getEmployees: (companyId) => request(`/api/360/manager/employees${companyId ? `?companyId=${companyId}` : ''}`, {}, 'admin'),
+    createEmployee: (data) => request('/api/360/manager/employees', { method: 'POST', body: JSON.stringify(data) }, 'admin'),
+    updateEmployee: (id, data) => request(`/api/360/manager/employees/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'admin'),
+    deleteEmployee: (id) => request(`/api/360/manager/employees/${id}`, { method: 'DELETE' }, 'admin'),
+    getCampaigns: () => request('/api/360/manager/cycles', {}, 'admin'),
+    getCampaign: (id) => request(`/api/360/manager/cycles/${id}`, {}, 'admin'),
+    getCycleData: (id) => request(`/api/360/manager/cycles/${id}/data`, {}, 'admin'),
+    createCampaign: (data) => request('/api/360/manager/cycles', { method: 'POST', body: JSON.stringify(data) }, 'admin'),
     // Group campaign — backend kreira po jedan cycle za svakog employee-a
-    createCampaignBatch: (data) => request('/api/360/manager/cycles/batch', { method: 'POST', body: JSON.stringify(data) }, 'manager'),
-    updateCampaign: (id, data) => request(`/api/360/manager/cycles/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'manager'),
-    generateReport1: (campaignId) => request(`/api/360/manager/cycles/${campaignId}/report/1`, { method: 'POST', body: JSON.stringify({ sendToEmployee: true, forceIfIncomplete: true }) }, 'manager'),
-    generateReport2: (campaignId) => request(`/api/360/manager/cycles/${campaignId}/report/2`, { method: 'POST', body: JSON.stringify({ sendToEmployee: true }) }, 'manager'),
-    getReports: () => request('/api/360/manager/reports', {}, 'manager'),
-    deleteReport: (id) => request(`/api/360/manager/reports/${id}`, { method: 'DELETE' }, 'manager'),
+    createCampaignBatch: (data) => request('/api/360/manager/cycles/batch', { method: 'POST', body: JSON.stringify(data) }, 'admin'),
+    updateCampaign: (id, data) => request(`/api/360/manager/cycles/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'admin'),
+    generateReport1: (campaignId) => request(`/api/360/manager/cycles/${campaignId}/report/1`, { method: 'POST', body: JSON.stringify({ sendToEmployee: true, forceIfIncomplete: true }) }, 'admin'),
+    generateReport2: (campaignId) => request(`/api/360/manager/cycles/${campaignId}/report/2`, { method: 'POST', body: JSON.stringify({ sendToEmployee: true }) }, 'admin'),
+    getReports: () => request('/api/360/manager/reports', {}, 'admin'),
+    deleteReport: (id) => request(`/api/360/manager/reports/${id}`, { method: 'DELETE' }, 'admin'),
     // Novi endpointi
-    getProfiles: () => request('/api/360/manager/profiles', {}, 'manager'),
-    generateAIReport: (cycleId) => request(`/api/360/manager/cycles/${cycleId}/generate-ai-report`, { method: 'POST' }, 'manager'),
-    getAIReportStatus: (cycleId, jobId) => request(`/api/360/manager/cycles/${cycleId}/report-status/${jobId}`, {}, 'manager'),
-    saveAIReport: (cycleId, report) => request(`/api/360/manager/cycles/${cycleId}/save-ai-report`, { method: 'POST', body: JSON.stringify({ report }) }, 'manager'),
+    getProfiles: () => request('/api/360/manager/profiles', {}, 'admin'),
+    generateAIReport: (cycleId) => request(`/api/360/manager/cycles/${cycleId}/generate-ai-report`, { method: 'POST' }, 'admin'),
+    getAIReportStatus: (cycleId, jobId) => request(`/api/360/manager/cycles/${cycleId}/report-status/${jobId}`, {}, 'admin'),
+    saveAIReport: (cycleId, report) => request(`/api/360/manager/cycles/${cycleId}/save-ai-report`, { method: 'POST', body: JSON.stringify({ report }) }, 'admin'),
     downloadAIReportPdf: async (reportId) => {
-      const token = localStorage.getItem('compass_token_manager');
+      const token = localStorage.getItem('compass_token_admin');
       const res = await fetch(`${BASE}/api/360/manager/reports/${reportId}/ai-pdf`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) throw new Error('Failed to download PDF');
       return res.blob();
     },
-    getManagersList: () => request('/api/360/manager/managers-list', {}, 'manager'),
+    getManagersList: () => request('/api/360/manager/managers-list', {}, 'admin'),
     // Companies
-    getCompanies: () => request('/api/360/manager/companies', {}, 'manager'),
-    createCompany: (data) => request('/api/360/manager/companies', { method: 'POST', body: JSON.stringify(data) }, 'manager'),
-    updateCompany: (id, data) => request(`/api/360/manager/companies/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'manager'),
-    deleteCompany: (id) => request(`/api/360/manager/companies/${id}`, { method: 'DELETE' }, 'manager'),
+    getCompanies: () => request('/api/360/manager/companies', {}, 'admin'),
+    createCompany: (data) => request('/api/360/manager/companies', { method: 'POST', body: JSON.stringify(data) }, 'admin'),
+    updateCompany: (id, data) => request(`/api/360/manager/companies/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'admin'),
+    deleteCompany: (id) => request(`/api/360/manager/companies/${id}`, { method: 'DELETE' }, 'admin'),
     // Peers i Direct Reports po zaposlenom
-    getEmployeePeers: (employeeId) => request(`/api/360/manager/employees/${employeeId}/peers`, {}, 'manager'),
-    addEmployeePeer: (employeeId, data) => request(`/api/360/manager/employees/${employeeId}/peers`, { method: 'POST', body: JSON.stringify(data) }, 'manager'),
-    removeEmployeePeer: (employeeId, peerId) => request(`/api/360/manager/employees/${employeeId}/peers/${peerId}`, { method: 'DELETE' }, 'manager'),
-    getEmployeeDirectReports: (employeeId) => request(`/api/360/manager/employees/${employeeId}/direct-reports`, {}, 'manager'),
-    addEmployeeDirectReport: (employeeId, data) => request(`/api/360/manager/employees/${employeeId}/direct-reports`, { method: 'POST', body: JSON.stringify(data) }, 'manager'),
-    removeEmployeeDirectReport: (employeeId, drId) => request(`/api/360/manager/employees/${employeeId}/direct-reports/${drId}`, { method: 'DELETE' }, 'manager'),
+    getEmployeePeers: (employeeId) => request(`/api/360/manager/employees/${employeeId}/peers`, {}, 'admin'),
+    addEmployeePeer: (employeeId, data) => request(`/api/360/manager/employees/${employeeId}/peers`, { method: 'POST', body: JSON.stringify(data) }, 'admin'),
+    removeEmployeePeer: (employeeId, peerId) => request(`/api/360/manager/employees/${employeeId}/peers/${peerId}`, { method: 'DELETE' }, 'admin'),
+    getEmployeeDirectReports: (employeeId) => request(`/api/360/manager/employees/${employeeId}/direct-reports`, {}, 'admin'),
+    addEmployeeDirectReport: (employeeId, data) => request(`/api/360/manager/employees/${employeeId}/direct-reports`, { method: 'POST', body: JSON.stringify(data) }, 'admin'),
+    removeEmployeeDirectReport: (employeeId, drId) => request(`/api/360/manager/employees/${employeeId}/direct-reports/${drId}`, { method: 'DELETE' }, 'admin'),
   },
 
   // Employee
@@ -97,18 +96,5 @@ export const api = {
     getCampaigns: () => request('/api/360/employee/cycles', {}, 'employee'),
     getSelfToken: (campaignId) => request(`/api/360/employee/cycles/${campaignId}/self-token`, {}, 'employee'),
     getReports: () => request('/api/360/employee/reports', {}, 'employee'),
-  },
-
-  // Admin
-  admin: {
-    getManagers: () => request('/api/360/admin/managers', {}, 'admin'),
-    getCampaigns: (status) => request(`/api/360/admin/cycles${status ? `?status=${status}` : ''}`, {}, 'admin'),
-    getCampaignData: (id) => request(`/api/360/admin/cycles/${id}/data`, {}, 'admin'),
-    // options: { reportType: 'self' | '360', forceIfIncomplete: bool }
-    generateReport1: (campaignId, data) => request(`/api/360/admin/cycles/${campaignId}/report/1`, { method: 'POST', body: JSON.stringify(data) }, 'admin'),
-    generateReport2: (campaignId, data) => request(`/api/360/admin/cycles/${campaignId}/report/2`, { method: 'POST', body: JSON.stringify(data) }, 'admin'),
-    getReports: () => request('/api/360/admin/reports', {}, 'admin'),
-    generateGroupReport: (data) => request('/api/360/admin/reports/group', { method: 'POST', body: JSON.stringify(data) }, 'admin'),
-    getGroupReports: () => request('/api/360/admin/group-reports', {}, 'admin'),
   },
 };

@@ -5,13 +5,13 @@ import { AuthLayout } from '../../components/Layout';
 import { Btn, FormField, Input, Alert } from '../../components/UI';
 
 function LoginForm({ title, subtitle, onSubmit, loading, error }) {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   function handleSubmit(e) {
     e.preventDefault();
-    onSubmit({ email, password });
+    onSubmit({ username, password });
   }
 
   return (
@@ -22,8 +22,8 @@ function LoginForm({ title, subtitle, onSubmit, loading, error }) {
       {error && <div style={{ marginBottom: '16px' }}><Alert type="error">{error}</Alert></div>}
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <FormField label="Email address" required>
-          <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" required autoFocus />
+        <FormField label="Username" required>
+          <Input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="your username" required autoFocus />
         </FormField>
         <FormField label="Password" required>
           <div style={{ position: 'relative' }}>
@@ -72,7 +72,7 @@ export function UnifiedLogin() {
     try {
       const res = await api.login(creds);
       setToken(res.user.role, res.token);
-      navigate(res.user.role === 'manager' ? '/manager/welcome' : '/employee/dashboard');
+      navigate(res.user.role === 'admin' ? '/manager/welcome' : '/employee/dashboard');
     } catch (e) {
       setError(e.message);
     } finally {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { api } from '../../utils/api';
 import { Logo } from '../../components/Layout';
@@ -15,7 +15,6 @@ export default function AssessPage() {
   const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [currentPillar, setCurrentPillar] = useState(0);
   const [assessorInfo, setAssessorInfo] = useState({ firstName: '', lastName: '', email: '' });
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
 
@@ -146,11 +145,22 @@ export default function AssessPage() {
     leaderQuestions40;
   const langQuestions = questionBank[lang] || questionBank['eng'];
   const questions = langQuestions ? Object.values(langQuestions).flat() : [];
-  const pillars = [...new Set(questions.map(q => q.pillar))];
-  const pillarQuestions = questions.filter(q => q.pillar === pillars[currentPillar]);
+
+  // Shuffle all question types once when questions load
+  const shuffledQuestions = useMemo(() => {
+    if (questions.length === 0) return questions;
+    const arr = [...questions];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [questions.length]); // eslint-disable-line
+
+  const [currentQ, setCurrentQ] = useState(0);
+
   const totalAnswered = Object.keys(answers).length;
   const allAnswered = totalAnswered === questions.length;
-  const pillarAnswered = pillarQuestions.every(q => answers[q.id] !== undefined);
 
   function pillarDim(pillar) {
     const p = (pillar || '').toUpperCase().trim();
@@ -167,9 +177,26 @@ export default function AssessPage() {
         id: q.id,
         pillar: q.pillar,
         dimension: q.dimension || pillarDim(q.pillar),
+        type: q.type, // 'core' | 'reflection'
       }));
-      console.log('[submit] questions count:', questionsPayload.length, '| sample:', questionsPayload.slice(0, 2));
-      const payload = { answers, questions: questionsPayload };
+
+      // For self-assessment: remap reflection answer scores
+      // Reflection: 1 → -2 (contradicts), 3 → 0 (neutral), 5 → +1 (affirms)
+      let processedAnswers = answers;
+      if (assessmentType === 'self') {
+        const REFLECTION_MAP = { 1: -2, 3: 0, 5: 1 };
+        const qMap = {};
+        questions.forEach(q => { qMap[q.id] = q; });
+        processedAnswers = {};
+        Object.entries(answers).forEach(([qId, score]) => {
+          const q = qMap[qId];
+          processedAnswers[qId] = (q?.type === 'reflection' && REFLECTION_MAP[score] !== undefined)
+            ? REFLECTION_MAP[score]
+            : score;
+        });
+      }
+
+      const payload = { answers: processedAnswers, questions: questionsPayload };
       if (needsIdentity) payload.assessorInfo = assessorInfo;
       await api.submitAssessment(token, payload);
       setSubmitted(true);
@@ -209,157 +236,81 @@ export default function AssessPage() {
       </div>
 
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '32px 24px' }}>
-        {/* Pillar nav */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '32px', flexWrap: 'wrap' }}>
-          {pillars.map((p, i) => {
-            const pQuestions = questions.filter(q => q.pillar === p);
-            const pAnswered = pQuestions.every(q => answers[q.id] !== undefined);
-            return (
-              <button key={p} onClick={() => setCurrentPillar(i)} style={{
-                padding: '7px 16px', borderRadius: 'var(--radius-md)',
-                border: 'none', cursor: 'pointer', fontSize: '0.83rem', fontWeight: 500,
-                background: currentPillar === i ? 'var(--ink)' : pAnswered ? 'var(--success-pale)' : 'var(--canvas-white)',
-                color: currentPillar === i ? '#fff' : pAnswered ? 'var(--success)' : 'var(--ink-soft)',
-                boxShadow: 'var(--shadow-sm)',
-                transition: 'all var(--transition)',
-              }}>
-                {pAnswered && currentPillar !== i && '✓ '}{p}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Pillar title */}
-        <div style={{ marginBottom: '28px' }}>
-          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--ink)', marginBottom: '4px' }}>
-            {pillars[currentPillar]}
-          </h2>
-          {data?.type && (
-            <p style={{ fontSize: '0.83rem', color: 'var(--ink-soft)' }}>
-              {data.type} · {data.language === 'sr' ? 'Srpski' : 'English'}
-            </p>
-          )}
-        </div>
 
         {error && <div style={{ marginBottom: '20px' }}><Alert type="error">{error}</Alert></div>}
 
-        {/* Questions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {pillarQuestions.map((q, qi) => (
-            <Card key={q.id} style={{ padding: '24px' }}>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                <div style={{
-                  flexShrink: 0, width: 28, height: 28, borderRadius: '50%',
-                  background: answers[q.id] !== undefined ? 'var(--success-pale)' : 'var(--canvas-warm)',
-                  color: answers[q.id] !== undefined ? 'var(--success)' : 'var(--ink-faint)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '0.75rem', fontWeight: 700,
-                }}>
-                  {answers[q.id] !== undefined ? '✓' : qi + 1}
+        {(() => {
+            const q = shuffledQuestions[currentQ];
+            if (!q) return null;
+            return (
+              <>
+                {/* Question counter */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', fontWeight: 500 }}>
+                    Question {currentQ + 1} <span style={{ color: 'var(--ink-faint)' }}>of {shuffledQuestions.length}</span>
+                  </span>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--ink-faint)' }}>
+                    {totalAnswered} answered
+                  </span>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.65, marginBottom: '20px' }}>
+
+                <Card style={{ padding: '28px' }}>
+                  <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.65, marginBottom: '24px' }}>
                     {(q.text.includes(':') ? q.text.split(':').slice(1).join(':').trim() : q.text).replace(/\[Name\]/g, subjectFirstName)}
                   </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {q.options.map((opt, oi) => {
+                      const optLabel = String.fromCharCode(65 + oi);
+                      const selected = answers[q.id] === opt.score;
+                      return (
+                        <label key={oi} style={{
+                          display: 'flex', gap: '12px', alignItems: 'flex-start',
+                          padding: '12px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                          border: `1.5px solid ${selected ? 'var(--ink)' : 'var(--canvas-warm)'}`,
+                          background: selected ? 'var(--canvas-warm)' : 'var(--canvas)',
+                          transition: 'all var(--transition)',
+                        }}>
+                          <input
+                            type="radio"
+                            name={q.id}
+                            value={opt.score}
+                            checked={selected}
+                            onChange={() => {
+                              setAnswers(prev => ({ ...prev, [q.id]: opt.score }));
+                              if (currentQ < shuffledQuestions.length - 1) {
+                                setTimeout(() => setCurrentQ(i => i + 1), 350);
+                              }
+                            }}
+                            style={{ marginTop: '2px', accentColor: 'var(--ink)', flexShrink: 0 }}
+                          />
+                          <div>
+                            <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : 'var(--ink-soft)', fontSize: '0.82rem', marginRight: '8px' }}>{optLabel}.</span>
+                            <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.6 }}>{opt.text.replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </Card>
 
-                  {/* Options (A/B/C radio style) */}
-                  {q.options ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                      {q.options.map((opt, oi) => {
-                        const optLabel = String.fromCharCode(65 + oi);
-                        const selected = answers[q.id] === opt.score;
-                        return (
-                          <label key={oi} style={{
-                            display: 'flex', gap: '12px', alignItems: 'flex-start',
-                            padding: '12px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                            border: `1.5px solid ${selected ? 'var(--ink)' : 'var(--canvas-warm)'}`,
-                            background: selected ? 'var(--canvas-warm)' : 'var(--canvas)',
-                            transition: 'all var(--transition)',
-                          }}>
-                            <input
-                              type="radio"
-                              name={q.id}
-                              value={opt.score}
-                              checked={selected}
-                              onChange={() => setAnswers(prev => ({ ...prev, [q.id]: opt.score }))}
-                              style={{ marginTop: '2px', accentColor: 'var(--ink)' }}
-                            />
-                            <div>
-                              <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : 'var(--ink-soft)', fontSize: '0.82rem', marginRight: '8px' }}>{optLabel}.</span>
-                              <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.6 }}>{opt.text.replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', gap: '12px' }}>
+                  <Btn variant="outline" onClick={() => setCurrentQ(i => Math.max(0, i - 1))} disabled={currentQ === 0}>
+                    ← Previous
+                  </Btn>
+                  {currentQ < shuffledQuestions.length - 1 ? (
+                    <Btn onClick={() => setCurrentQ(i => i + 1)}>
+                      Next →
+                    </Btn>
                   ) : (
-                    /* 1-5 scale for simple rating questions */
-                    <div>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'space-between', maxWidth: 360 }}>
-                        {[1, 2, 3, 4, 5].map(n => (
-                          <label key={n} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                            <input
-                              type="radio"
-                              name={q.id}
-                              value={n}
-                              checked={answers[q.id] === n}
-                              onChange={() => setAnswers(prev => ({ ...prev, [q.id]: n }))}
-                              style={{ width: 20, height: 20, accentColor: 'var(--teal)', cursor: 'pointer' }}
-                            />
-                            <span style={{
-                              fontSize: '0.75rem', fontWeight: 600,
-                              color: answers[q.id] === n ? 'var(--teal)' : 'var(--ink-faint)',
-                            }}>{n}</span>
-                          </label>
-                        ))}
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', maxWidth: 360, marginTop: '4px' }}>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--ink-faint)' }}>Strongly Disagree</span>
-                        <span style={{ fontSize: '0.7rem', color: 'var(--ink-faint)' }}>Strongly Agree</span>
-                      </div>
-                    </div>
+                    <Btn onClick={handleSubmit} loading={submitting} disabled={!allAnswered}>
+                      {allAnswered ? 'Submit Assessment' : `${shuffledQuestions.length - totalAnswered} remaining`}
+                    </Btn>
                   )}
                 </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+              </>
+            );
+          })()}
 
-        {/* Navigation */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '32px', gap: '12px' }}>
-          <Btn
-            variant="outline"
-            onClick={() => setCurrentPillar(p => Math.max(0, p - 1))}
-            disabled={currentPillar === 0}
-          >
-            ← Previous
-          </Btn>
-
-          {currentPillar < pillars.length - 1 ? (
-            <Btn
-              variant="primary"
-              onClick={() => setCurrentPillar(p => p + 1)}
-            >
-              Next: {pillars[currentPillar + 1]} →
-            </Btn>
-          ) : (
-            <Btn
-              variant="teal"
-              onClick={handleSubmit}
-              loading={submitting}
-              disabled={!allAnswered}
-              style={{ minWidth: 180 }}
-            >
-              Submit Assessment
-            </Btn>
-          )}
-        </div>
-
-        {!allAnswered && currentPillar === pillars.length - 1 && (
-          <p style={{ textAlign: 'center', marginTop: '12px', fontSize: '0.82rem', color: 'var(--ink-soft)' }}>
-            Please answer all questions before submitting. {questions.length - totalAnswered} remaining.
-          </p>
-        )}
       </div>
     </div>
   );

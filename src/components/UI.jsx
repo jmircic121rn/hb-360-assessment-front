@@ -166,21 +166,20 @@ export function Badge({ status, children }) {
 export function Modal({ open, onClose, title, children }) {
   if (!open) return null;
   return (
-    <div style={{
+    <div className="modal-overlay" style={{
       position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)',
-      backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center',
-      justifyContent: 'center', zIndex: 1000, padding: '24px',
+      backdropFilter: 'blur(4px)', zIndex: 1000, padding: '24px',
     }} onClick={onClose}>
-      <div style={{
+      <div className="modal-box" style={{
         background: 'var(--canvas-white)', borderRadius: 'var(--radius-xl)',
         boxShadow: 'var(--shadow-lg)', width: '100%', maxWidth: '520px',
         maxHeight: '90vh', overflow: 'auto',
       }} onClick={e => e.stopPropagation()}>
-        <div style={{ padding: '24px 28px', borderBottom: '1px solid var(--canvas-warm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--canvas-warm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem' }}>{title}</h3>
           <button onClick={onClose} style={{ color: 'var(--ink-soft)', fontSize: '1.4rem', cursor: 'pointer', background: 'none', border: 'none', lineHeight: 1 }}>×</button>
         </div>
-        <div style={{ padding: '24px 28px' }}>{children}</div>
+        <div style={{ padding: '20px 24px' }}>{children}</div>
       </div>
     </div>
   );

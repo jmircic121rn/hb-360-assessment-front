@@ -87,3 +87,34 @@ input, select, textarea {
 ::-webkit-scrollbar-track { background: var(--canvas-warm); }
 ::-webkit-scrollbar-thumb { background: #cccccc; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #888888; }
+
+/* ── Responsive grid ─────────────────────────────────────────── */
+.grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* ── Modal responsive ────────────────────────────────────────── */
+.modal-overlay {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 767px) {
+  .grid-2col {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  .modal-box {
+    border-radius: 16px 16px 0 0 !important;
+    max-width: 100% !important;
+    max-height: 92vh !important;
+    width: 100% !important;
+  }
+}
