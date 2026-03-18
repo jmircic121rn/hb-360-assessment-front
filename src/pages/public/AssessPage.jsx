@@ -17,6 +17,7 @@ export default function AssessPage() {
   const [submitted, setSubmitted] = useState(false);
   const [assessorInfo, setAssessorInfo] = useState({ firstName: '', lastName: '', email: '' });
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
+  const [currentQ, setCurrentQ] = useState(0);
 
   useEffect(() => {
     api.getAssessment(token)
@@ -33,6 +34,80 @@ export default function AssessPage() {
       })
       .finally(() => setLoading(false));
   }, [token]);
+
+  // Derive question set here (before early returns) so useMemo is always called
+  const assessmentType = data?.assessmentType || data?.type || 'self';
+  const subjectFirstName = (data?.employeeName || '').split(' ')[0] || '[Name]';
+  const needsIdentity = data?.requiresIdentity === true ||
+    (data?.requiresIdentity === undefined && ['external'].includes(assessmentType));
+
+  const rawLang = data?.language || data?.lang || 'en';
+  const lang = rawLang === 'en' ? 'eng' : rawLang;
+  const questionBank =
+    assessmentType === 'manager' ? managerQuestions :
+    ['peer', 'directreport', 'direct_report', 'external', 'other'].includes(assessmentType) ? peerQuestions :
+    leaderQuestions40;
+  const langQuestions = questionBank[lang] || questionBank['eng'];
+  const questions = langQuestions ? Object.values(langQuestions).flat() : [];
+
+  // Shuffle once when questions load — must be before any early returns
+  const shuffledQuestions = useMemo(() => {
+    if (questions.length === 0) return questions;
+    const arr = [...questions];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [questions.length]); // eslint-disable-line
+
+  const totalAnswered = Object.keys(answers).length;
+  const allAnswered = totalAnswered === questions.length;
+
+  function pillarDim(pillar) {
+    const p = (pillar || '').toUpperCase().trim();
+    if (p.includes('CILJEVI') || p.includes('PROMEN') || p.includes('SHORT-TERM') || p.includes('LONG-TERM')) return 'rezultati';
+    if (p.includes('PREMA') || p.includes('TOWARDS')) return 'mindset';
+    if (p.includes('EFIKASNOST') || p.includes('KOMUNIKACIJA') || p.includes('RAZVOJ TIMA') || p.includes('EFFICIENCY') || p.includes('COMMUNICATION') || p.includes('PEOPLE DEVELOPMENT')) return 'vestine';
+    return 'uticaj';
+  }
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    try {
+      const questionsPayload = questions.map(q => ({
+        id: q.id,
+        pillar: q.pillar,
+        dimension: q.dimension || pillarDim(q.pillar),
+        type: q.type,
+      }));
+
+      let processedAnswers = answers;
+      if (assessmentType === 'self') {
+        const REFLECTION_MAP = { 1: -2, 3: 0, 5: 1 };
+        const qMap = {};
+        questions.forEach(q => { qMap[q.id] = q; });
+        processedAnswers = {};
+        Object.entries(answers).forEach(([qId, score]) => {
+          const q = qMap[qId];
+          processedAnswers[qId] = (q?.type === 'reflection' && REFLECTION_MAP[score] !== undefined)
+            ? REFLECTION_MAP[score]
+            : score;
+        });
+      }
+
+      const payload = { answers: processedAnswers, questions: questionsPayload };
+      if (needsIdentity) payload.assessorInfo = assessorInfo;
+      await api.submitAssessment(token, payload);
+      setSubmitted(true);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // ── Early returns (after all hooks) ──────────────────────────────────────
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px', background: 'var(--canvas)' }}>
@@ -63,16 +138,8 @@ export default function AssessPage() {
     </div>
   );
 
-  const assessmentType = data?.assessmentType || data?.type || 'self';
-  // First name used to replace [Name] placeholders in questions
-  const subjectFirstName = (data?.employeeName || '').split(' ')[0] || '[Name]';
-  // requiresIdentity = true kada je shared link (peer/DR/external bez poznate osobe)
-  // Backend šalje data.requiresIdentity: true za shared linkove, false za individualne
-  const needsIdentity = data?.requiresIdentity === true ||
-    (data?.requiresIdentity === undefined && ['external'].includes(assessmentType));
-
-  // Identity step — prikazuje se samo za shared linkove
-  if (!loading && !error && !submitted && needsIdentity && !identityConfirmed) {
+  // Identity step
+  if (needsIdentity && !identityConfirmed) {
     function handleIdentitySubmit(e) {
       e.preventDefault();
       setIdentityConfirmed(true);
@@ -136,80 +203,10 @@ export default function AssessPage() {
     );
   }
 
-  // Select question set based on assessment type, then language
-  const rawLang = data?.language || data?.lang || 'en';
-  const lang = rawLang === 'en' ? 'eng' : rawLang;
-  const questionBank =
-    assessmentType === 'manager' ? managerQuestions :
-    ['peer', 'directreport', 'direct_report', 'external', 'other'].includes(assessmentType) ? peerQuestions :
-    leaderQuestions40;
-  const langQuestions = questionBank[lang] || questionBank['eng'];
-  const questions = langQuestions ? Object.values(langQuestions).flat() : [];
-
-  // Shuffle all question types once when questions load
-  const shuffledQuestions = useMemo(() => {
-    if (questions.length === 0) return questions;
-    const arr = [...questions];
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }, [questions.length]); // eslint-disable-line
-
-  const [currentQ, setCurrentQ] = useState(0);
-
-  const totalAnswered = Object.keys(answers).length;
-  const allAnswered = totalAnswered === questions.length;
-
-  function pillarDim(pillar) {
-    const p = (pillar || '').toUpperCase().trim();
-    if (p.includes('CILJEVI') || p.includes('PROMEN') || p.includes('SHORT-TERM') || p.includes('LONG-TERM')) return 'rezultati';
-    if (p.includes('PREMA') || p.includes('TOWARDS')) return 'mindset';
-    if (p.includes('EFIKASNOST') || p.includes('KOMUNIKACIJA') || p.includes('RAZVOJ TIMA') || p.includes('EFFICIENCY') || p.includes('COMMUNICATION') || p.includes('PEOPLE DEVELOPMENT')) return 'vestine';
-    return 'uticaj';
-  }
-
-  async function handleSubmit() {
-    setSubmitting(true);
-    try {
-      const questionsPayload = questions.map(q => ({
-        id: q.id,
-        pillar: q.pillar,
-        dimension: q.dimension || pillarDim(q.pillar),
-        type: q.type, // 'core' | 'reflection'
-      }));
-
-      // For self-assessment: remap reflection answer scores
-      // Reflection: 1 → -2 (contradicts), 3 → 0 (neutral), 5 → +1 (affirms)
-      let processedAnswers = answers;
-      if (assessmentType === 'self') {
-        const REFLECTION_MAP = { 1: -2, 3: 0, 5: 1 };
-        const qMap = {};
-        questions.forEach(q => { qMap[q.id] = q; });
-        processedAnswers = {};
-        Object.entries(answers).forEach(([qId, score]) => {
-          const q = qMap[qId];
-          processedAnswers[qId] = (q?.type === 'reflection' && REFLECTION_MAP[score] !== undefined)
-            ? REFLECTION_MAP[score]
-            : score;
-        });
-      }
-
-      const payload = { answers: processedAnswers, questions: questionsPayload };
-      if (needsIdentity) payload.assessorInfo = assessorInfo;
-      await api.submitAssessment(token, payload);
-      setSubmitted(true);
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  // ── Main assessment UI ────────────────────────────────────────────────────
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--canvas)' }}>
-      {/* Header */}
       <header style={{
         background: 'var(--ink)', padding: '16px 24px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -226,7 +223,6 @@ export default function AssessPage() {
         </div>
       </header>
 
-      {/* Progress bar */}
       <div style={{ height: '3px', background: 'var(--canvas-warm)' }}>
         <div style={{
           height: '100%', background: 'var(--accent)',
@@ -240,76 +236,75 @@ export default function AssessPage() {
         {error && <div style={{ marginBottom: '20px' }}><Alert type="error">{error}</Alert></div>}
 
         {(() => {
-            const q = shuffledQuestions[currentQ];
-            if (!q) return null;
-            return (
-              <>
-                {/* Question counter */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                  <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', fontWeight: 500 }}>
-                    Question {currentQ + 1} <span style={{ color: 'var(--ink-faint)' }}>of {shuffledQuestions.length}</span>
-                  </span>
-                  <span style={{ fontSize: '0.78rem', color: 'var(--ink-faint)' }}>
-                    {totalAnswered} answered
-                  </span>
+          const q = shuffledQuestions[currentQ];
+          if (!q) return null;
+          return (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', fontWeight: 500 }}>
+                  Question {currentQ + 1} <span style={{ color: 'var(--ink-faint)' }}>of {shuffledQuestions.length}</span>
+                </span>
+                <span style={{ fontSize: '0.78rem', color: 'var(--ink-faint)' }}>
+                  {totalAnswered} answered
+                </span>
+              </div>
+
+              <Card style={{ padding: '28px' }}>
+                <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.65, marginBottom: '24px' }}>
+                  {(q.text.includes(':') ? q.text.split(':').slice(1).join(':').trim() : q.text).replace(/\[Name\]/g, subjectFirstName)}
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {q.options.map((opt, oi) => {
+                    const optLabel = String.fromCharCode(65 + oi);
+                    const selected = answers[q.id] === opt.score;
+                    return (
+                      <label key={oi} style={{
+                        display: 'flex', gap: '12px', alignItems: 'flex-start',
+                        padding: '12px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                        border: `1.5px solid ${selected ? 'var(--ink)' : 'var(--canvas-warm)'}`,
+                        background: selected ? 'var(--canvas-warm)' : 'var(--canvas)',
+                        transition: 'all var(--transition)',
+                      }}>
+                        <input
+                          type="radio"
+                          name={q.id}
+                          value={opt.score}
+                          checked={selected}
+                          onChange={() => {
+                            setAnswers(prev => ({ ...prev, [q.id]: opt.score }));
+                            if (currentQ < shuffledQuestions.length - 1) {
+                              setTimeout(() => setCurrentQ(i => i + 1), 350);
+                            }
+                          }}
+                          style={{ marginTop: '2px', accentColor: 'var(--ink)', flexShrink: 0 }}
+                        />
+                        <div>
+                          <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : 'var(--ink-soft)', fontSize: '0.82rem', marginRight: '8px' }}>{optLabel}.</span>
+                          <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.6 }}>{opt.text.replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
+              </Card>
 
-                <Card style={{ padding: '28px' }}>
-                  <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.65, marginBottom: '24px' }}>
-                    {(q.text.includes(':') ? q.text.split(':').slice(1).join(':').trim() : q.text).replace(/\[Name\]/g, subjectFirstName)}
-                  </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {q.options.map((opt, oi) => {
-                      const optLabel = String.fromCharCode(65 + oi);
-                      const selected = answers[q.id] === opt.score;
-                      return (
-                        <label key={oi} style={{
-                          display: 'flex', gap: '12px', alignItems: 'flex-start',
-                          padding: '12px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                          border: `1.5px solid ${selected ? 'var(--ink)' : 'var(--canvas-warm)'}`,
-                          background: selected ? 'var(--canvas-warm)' : 'var(--canvas)',
-                          transition: 'all var(--transition)',
-                        }}>
-                          <input
-                            type="radio"
-                            name={q.id}
-                            value={opt.score}
-                            checked={selected}
-                            onChange={() => {
-                              setAnswers(prev => ({ ...prev, [q.id]: opt.score }));
-                              if (currentQ < shuffledQuestions.length - 1) {
-                                setTimeout(() => setCurrentQ(i => i + 1), 350);
-                              }
-                            }}
-                            style={{ marginTop: '2px', accentColor: 'var(--ink)', flexShrink: 0 }}
-                          />
-                          <div>
-                            <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : 'var(--ink-soft)', fontSize: '0.82rem', marginRight: '8px' }}>{optLabel}.</span>
-                            <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.6 }}>{opt.text.replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
-                          </div>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </Card>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', gap: '12px' }}>
-                  <Btn variant="outline" onClick={() => setCurrentQ(i => Math.max(0, i - 1))} disabled={currentQ === 0}>
-                    ← Previous
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', gap: '12px' }}>
+                <Btn variant="outline" onClick={() => setCurrentQ(i => Math.max(0, i - 1))} disabled={currentQ === 0}>
+                  ← Previous
+                </Btn>
+                {currentQ < shuffledQuestions.length - 1 ? (
+                  <Btn onClick={() => setCurrentQ(i => i + 1)}>
+                    Next →
                   </Btn>
-                  {currentQ < shuffledQuestions.length - 1 ? (
-                    <Btn onClick={() => setCurrentQ(i => i + 1)}>
-                      Next →
-                    </Btn>
-                  ) : (
-                    <Btn onClick={handleSubmit} loading={submitting} disabled={!allAnswered}>
-                      {allAnswered ? 'Submit Assessment' : `${shuffledQuestions.length - totalAnswered} remaining`}
-                    </Btn>
-                  )}
-                </div>
-              </>
-            );
-          })()}
+                ) : (
+                  <Btn onClick={handleSubmit} loading={submitting} disabled={!allAnswered}>
+                    {allAnswered ? 'Submit Assessment' : `${shuffledQuestions.length - totalAnswered} remaining`}
+                  </Btn>
+                )}
+              </div>
+            </>
+          );
+        })()}
 
       </div>
     </div>

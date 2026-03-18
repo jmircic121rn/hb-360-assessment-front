@@ -251,8 +251,7 @@ export function ManagerDashboard() {
             />
           </Card>
 
-          {deleteId && (
-            <Modal title="Delete Campaign" onClose={() => setDeleteId(null)}>
+          <Modal open={!!deleteId} title="Delete Campaign" onClose={() => setDeleteId(null)}>
               <p style={{ color: 'var(--ink-soft)', marginBottom: '24px' }}>
                 Are you sure you want to delete this campaign? This will permanently remove all responses and assessment links.
               </p>
@@ -263,7 +262,6 @@ export function ManagerDashboard() {
                 </Btn>
               </div>
             </Modal>
-          )}
         </>
       )}
     </Layout>
