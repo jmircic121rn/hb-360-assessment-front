@@ -18,6 +18,7 @@ export default function AssessPage() {
   const [assessorInfo, setAssessorInfo] = useState({ firstName: '', lastName: '', email: '' });
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
   const [currentQ, setCurrentQ] = useState(0);
+  const [introStep, setIntroStep] = useState(1); // 1=compass, 2=leader, 3=intro, 4=questions
 
   useEffect(() => {
     api.getAssessment(token)
@@ -198,6 +199,158 @@ export default function AssessPage() {
               </Btn>
             </form>
           </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Intro pages ──────────────────────────────────────────────────────────
+
+  const introPages = [
+    {
+      key: 'compass',
+      title: 'HB Compass',
+      subtitle: 'A framework for measuring what matters most in leadership',
+      body: (
+        <>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '24px' }}>
+            HB Compass is a 360° leadership assessment framework designed to give leaders a clear, honest picture of how they show up — from their own perspective and from those around them.
+          </p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '28px' }}>
+            It measures four core dimensions of leadership effectiveness:
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+            {[
+              { label: 'Mindset', desc: 'How the leader thinks, approaches challenges, and orients toward growth and accountability.' },
+              { label: 'Skills', desc: 'The practical capabilities that enable effective communication, team development, and execution.' },
+              { label: 'Results', desc: 'The ability to set direction, drive performance, and deliver meaningful outcomes.' },
+              { label: 'Influence', desc: 'The leader\'s broader impact — on culture, on others\' growth, and on the organization.' },
+            ].map(({ label, desc }) => (
+              <div key={label} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, width: 8, height: 8, borderRadius: '50%', background: 'var(--ink)', marginTop: '7px' }} />
+                <p style={{ color: 'var(--ink)', lineHeight: 1.65, fontSize: '0.9rem' }}>
+                  <strong>{label}:</strong> {desc}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, fontSize: '0.88rem' }}>
+            Together, these dimensions form a complete compass — pointing leaders toward the behaviors and mindsets that drive lasting impact.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'leader',
+      title: 'The Leader Others Choose to Follow',
+      subtitle: 'What HB Compass is designed to develop',
+      body: (
+        <>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '24px' }}>
+            At the heart of HB Compass is a specific leadership ideal: not the leader with the most authority, but the one people genuinely choose to follow.
+          </p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
+            This leader demonstrates four interconnected capabilities:
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '28px' }}>
+            {[
+              { label: 'They know where they\'re going', desc: 'They set a clear direction and can articulate it in a way that motivates others.' },
+              { label: 'They bring people with them', desc: 'They build trust, communicate effectively, and create conditions for others to contribute fully.' },
+              { label: 'They deliver', desc: 'They follow through, hold themselves accountable, and focus on what actually matters.' },
+              { label: 'They grow others', desc: 'They invest in the people around them, developing capability and leadership in others.' },
+            ].map(({ label, desc }) => (
+              <div key={label} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, width: 8, height: 8, borderRadius: '50%', background: 'var(--ink)', marginTop: '7px' }} />
+                <p style={{ color: 'var(--ink)', lineHeight: 1.65, fontSize: '0.9rem' }}>
+                  <strong>{label}:</strong> {desc}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, fontSize: '0.88rem' }}>
+            HB Compass assesses leaders across five development levels — from foundational awareness to modeling excellence — giving a nuanced view of where they are and where they can grow.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'intro',
+      title: 'Before You Begin',
+      subtitle: 'How to get the most from this assessment',
+      body: (
+        <>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '24px' }}>
+            You are about to complete a self-assessment as part of the HB Compass 360° process. Here's how to approach it:
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', marginBottom: '28px' }}>
+            {[
+              { label: 'Be honest', desc: 'This assessment is most valuable when it reflects how you actually show up — not how you aspire to. There are no right or wrong answers.' },
+              { label: 'Think in patterns, not exceptions', desc: 'Consider your typical behavior, not your best day or worst day. What do you consistently do?' },
+              { label: 'Go with your first instinct', desc: 'Overthinking often leads to idealized answers. Trust your initial response — it\'s usually the most accurate.' },
+              { label: 'It\'s about growth, not judgment', desc: 'The results will be used to support your development, not to evaluate your worth as a leader.' },
+            ].map(({ label, desc }) => (
+              <div key={label} style={{ display: 'flex', gap: '14px', alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, width: 8, height: 8, borderRadius: '50%', background: 'var(--ink)', marginTop: '7px' }} />
+                <p style={{ color: 'var(--ink)', lineHeight: 1.65, fontSize: '0.9rem' }}>
+                  <strong>{label}:</strong> {desc}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, fontSize: '0.88rem' }}>
+            Take your time, find a quiet moment, and approach this as an honest reflection. Your self-awareness is the starting point for everything that follows.
+          </p>
+        </>
+      ),
+    },
+  ];
+
+  if (introStep <= 3) {
+    const page = introPages[introStep - 1];
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--canvas)' }}>
+        <header style={{
+          background: 'var(--ink)', padding: '16px 24px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          position: 'sticky', top: 0, zIndex: 10,
+        }}>
+          <Logo light size="sm" />
+          {data?.employeeName && (
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
+              Assessment for <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{data.employeeName}</strong>
+            </div>
+          )}
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem' }}>
+            {introStep} of 3
+          </div>
+        </header>
+
+        <div style={{ height: '3px', background: 'var(--canvas-warm)' }}>
+          <div style={{
+            height: '100%', background: 'var(--accent)',
+            width: `${(introStep / 3) * 100}%`,
+            transition: 'width 0.4s ease',
+          }} />
+        </div>
+
+        <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 24px' }}>
+          <div style={{ marginBottom: '32px' }}>
+            <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '8px' }}>
+              {introStep === 1 ? 'The Framework' : introStep === 2 ? 'Leadership Model' : 'Instructions'}
+            </p>
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', marginBottom: '8px', lineHeight: 1.25 }}>{page.title}</h1>
+            <p style={{ color: 'var(--ink-soft)', fontSize: '0.95rem' }}>{page.subtitle}</p>
+          </div>
+
+          <Card style={{ padding: '32px' }}>
+            {page.body}
+          </Card>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px' }}>
+            <Btn onClick={() => setIntroStep(s => s + 1)}>
+              {introStep < 3 ? 'Continue →' : 'Start Assessment →'}
+            </Btn>
+          </div>
         </div>
       </div>
     );
