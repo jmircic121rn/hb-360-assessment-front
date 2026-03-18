@@ -85,7 +85,7 @@ const FAQ = () => {
   const toggleFAQ = (index) => setOpenIndex(openIndex === index ? null : index);
 
   return (
-    <PortalLayout role="manager" navItems={managerNav}>
+    <PortalLayout role="admin" navItems={managerNav}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         
         {/* Header Section */}

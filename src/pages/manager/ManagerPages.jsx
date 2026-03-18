@@ -85,6 +85,21 @@ export function ManagerDashboard() {
   const [filterEmployee, setFilterEmployee] = useState('');
   const [filterCampaignName, setFilterCampaignName] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDeleteCampaign() {
+    setDeleting(true);
+    try {
+      await api.manager.deleteCampaign(deleteId);
+      setCampaigns(prev => prev.filter(c => c.CycleID !== deleteId));
+      setDeleteId(null);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => {
     Promise.all([
@@ -229,11 +244,26 @@ export function ManagerDashboard() {
                   {c.Status !== 'completed' && (
                     <Link to={`/manager/campaigns/${c.CycleID}/edit`}><Btn size="sm" variant="outline">Edit</Btn></Link>
                   )}
+                  <Btn size="sm" variant="outline" onClick={() => setDeleteId(c.CycleID)} style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>Delete</Btn>
                 </div>,
               ])}
               emptyMessage="No campaigns yet. Start your first assessment campaign."
             />
           </Card>
+
+          {deleteId && (
+            <Modal title="Delete Campaign" onClose={() => setDeleteId(null)}>
+              <p style={{ color: 'var(--ink-soft)', marginBottom: '24px' }}>
+                Are you sure you want to delete this campaign? This will permanently remove all responses and assessment links.
+              </p>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <Btn variant="outline" onClick={() => setDeleteId(null)}>Cancel</Btn>
+                <Btn onClick={handleDeleteCampaign} loading={deleting} style={{ background: 'var(--danger)', color: '#fff', borderColor: 'var(--danger)' }}>
+                  Yes, Delete
+                </Btn>
+              </div>
+            </Modal>
+          )}
         </>
       )}
     </Layout>

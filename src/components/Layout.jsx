@@ -41,7 +41,7 @@ export function PortalLayout({ role, navItems, children }) {
   const isMobile = useMobile();
 
   useEffect(() => {
-    api.getMe(role).then(setUser).catch(() => {});
+    api.getMe(role).then(d => setUser(d?.user || d)).catch(() => {});
   }, [role]);
 
   // Close mobile nav on route change
@@ -54,7 +54,8 @@ export function PortalLayout({ role, navItems, children }) {
     navigate(`/${role}/login`);
   }
 
-  const displayName = user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '';
+  const username = user?.username || user?.Username || '';
+  const fullName = user?.name || user?.Name || '';
 
   const sidebarWidth = isMobile ? 260 : (collapsed ? 56 : 220);
 
@@ -157,10 +158,10 @@ export function PortalLayout({ role, navItems, children }) {
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: '0.82rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {displayName || role}
+                  {username || role}
                 </div>
-                <div style={{ fontSize: '0.69rem', color: 'rgba(255,255,255,0.35)', textTransform: 'capitalize' }}>
-                  {role}
+                <div style={{ fontSize: '0.69rem', color: 'rgba(255,255,255,0.35)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {fullName}
                 </div>
               </div>
             </div>
