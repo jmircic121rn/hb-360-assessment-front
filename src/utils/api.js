@@ -65,6 +65,8 @@ export const api = {
     generateReport2: (campaignId) => request(`/api/360/manager/cycles/${campaignId}/report/2`, { method: 'POST', body: JSON.stringify({ sendToEmployee: true }) }, 'admin'),
     getReports: () => request('/api/360/manager/reports', {}, 'admin'),
     deleteCampaign: (id) => request(`/api/360/manager/cycles/${id}`, { method: 'DELETE' }, 'admin'),
+    completeCampaign: (id) => request(`/api/360/manager/cycles/${id}/complete`, { method: 'PATCH' }, 'admin'),
+    archiveCampaign: (id) => request(`/api/360/manager/cycles/${id}/archive`, { method: 'PATCH' }, 'admin'),
     deleteReport: (id) => request(`/api/360/manager/reports/${id}`, { method: 'DELETE' }, 'admin'),
     // Novi endpointi
     getProfiles: () => request('/api/360/manager/profiles', {}, 'admin'),

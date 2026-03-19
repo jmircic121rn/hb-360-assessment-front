@@ -18,66 +18,156 @@ const FAQ = () => {
     {
       section: "GETTING STARTED",
       questions: [
-        { q: "How do I log in for the first time?", a: "You will receive an invitation email with a link to set your password. Click the link, create your password, and use your email + password to sign in from that point forward." },
-        { q: "I forgot my password. What do I do?", a: "Use the password reset option on the login screen. A reset link will be sent to your registered email address." },
-        { q: "I can see fewer companies or employees than I expect. Why?", a: "Your access depends on your role. Company Admins see only their assigned company. Super Admins see everything. If you believe your access level is incorrect, contact your HB Foundation account manager." }
+        {
+          q: "How do I log in?",
+          a: "Go to the HB Compass portal and enter your username and password. Your credentials are provided by your HB administrator. There is no self-service registration."
+        },
+        {
+          q: "How do I change my password?",
+          a: "On the bottom-left sidebar you will find the Change Password option. You will need to enter your current password, then your new password twice. The new password must be at least 6 characters long."
+        }
       ]
     },
     {
-      section: "EMPLOYEES",
+      section: "COMPANIES & EMPLOYEES",
       questions: [
-        { q: "How do I add a new employee?", a: "Go to Employees → + Add New Employee. Fill in First Name, Last Name, Email, Company, and Job Title. Email must be unique in the system." },
-        { q: "Can I add an employee directly during campaign creation?", a: "Yes. In For Individual mode, click + Add New next to the employee dropdown to create a record without leaving the campaign screen." },
-        { q: "What should I put in the Job Title field?", a: "Until role-specific fields are available, include the role type in the title — for example \"Sales / Senior Account Manager\" or \"Leader / Regional Director\". This helps the system apply the correct contextual language to assessments and reports." },
-        { q: "Why should I enter the Manager field even if it's just free text?", a: "When multi-assessor reports launch, managers will need to be linked as actual employee records. Entering names now means your data will be ready when that feature becomes available." },
-        { q: "Can I delete an employee?", a: "Yes, but be aware this permanently removes the employee and all their assessment history and reports. This cannot be undone. Only delete when you are certain the record is no longer needed." }
+        {
+          q: "Where do I manage companies and employees?",
+          a: "Both are managed from the same page: My Companies (sidebar → Management). Companies are listed as cards. Click the employee count on a company card to expand and see its employees, or click the campaign count to see its campaigns."
+        },
+        {
+          q: "How do I add a new company?",
+          a: "On the My Companies page, click + Add Company in the top right. Enter the company name and click Create. The company will appear immediately in the list."
+        },
+        {
+          q: "How do I add a new employee?",
+          a: "On the My Companies page, click the employee count button on a company card to expand the employee list, then click + Add Employee. Fill in First Name, Last Name, Email, Job Title, Language, and optionally Manager and Company. Email must be unique in the system."
+        },
+        {
+          q: "Can I add a new employee during campaign creation?",
+          a: "Yes. In For Individual mode on the New Campaign page, click + Add New next to the employee dropdown to create an employee record without leaving the campaign screen."
+        },
+        {
+          q: "Can I delete an employee or company?",
+          a: "Yes. Use the Delete button on the employee row or company card. Deleting an employee permanently removes their record and all associated assessment history — this cannot be undone. Deleting a company will fail if it has employees assigned to it; remove or reassign employees first."
+        },
+        {
+          q: "How do I edit an employee's details?",
+          a: "Expand the company card → employee list → click Edit next to the employee. Update any fields and save."
+        }
       ]
     },
     {
       section: "CAMPAIGNS",
       questions: [
-        { q: "What is the difference between For Individual and For Group?", a: "For Individual targets one employee and allows full configuration control. For Group targets multiple employees at once — efficient for team or cohort rollouts, but currently applies the same Assessment Profile and Types to all selected employees." },
-        { q: "The campaign name auto-fills as \"HB Compass Campaign 1\". Should I change it?", a: "Always change it to something descriptive before launching. The Dashboard currently shows employee names but not campaign names in the list view — a meaningful name is your primary reference when you open a specific campaign. Example: \"Sales Team — Q1 2026\" or \"Sandra Mirčić — Full 360 — March 2026\"." },
-        { q: "Can I run different assessment types for different employees in one group campaign?", a: "Not yet. Currently the same Assessment Types apply to all employees in Group mode. If you need different configurations, create separate campaigns per group. Per-employee overrides are planned for a future release." },
-        { q: "Can I save a campaign and finish setting it up later?", a: "Not currently — campaign configuration must be completed in one session. Save as draft functionality is planned." },
-        { q: "I launched a campaign but forgot to include a Manager Review. Can I add it?", a: "Yes. Open the Campaign Detail page → Edit Campaign → add the Manager Review type → save. A new invitation link will be generated and sent automatically." },
-        { q: "What happens the moment I click Launch?", a: "Invitation emails are sent immediately to all respondents at their registered email addresses. The campaign appears on your Dashboard as IN_PROGRESS with a 0/[total] progress counter." }
+        {
+          q: "What is the difference between For Individual and For Group?",
+          a: "For Individual targets one employee and gives full configuration control — you select which assessment types to include (Self, Manager, Peer, Direct Reports, External) and can specify individual assessors.\n\nFor Group targets multiple employees at once with the same configuration. Efficient for team rollouts, but all selected employees receive the same assessment types."
+        },
+        {
+          q: "What assessment types can I include in a campaign?",
+          a: "You can include any combination of:\n• Self — the employee assesses themselves\n• Manager — the employee's manager assesses them\n• Peer — colleagues assess them\n• Direct Reports — the employee's direct reports assess them\n• External — external contacts (e.g. clients) assess them\n\nEach type generates a separate assessment link sent to the relevant person."
+        },
+        {
+          q: "Can I set a deadline for a campaign?",
+          a: "Yes. The deadline field is available on both the New Campaign and Edit Campaign pages. When a deadline is set, assessors receive automated reminder emails at 10, 5, 2, and 1 day(s) before the deadline."
+        },
+        {
+          q: "Can I edit a campaign after it has been launched?",
+          a: "Yes, but only while the campaign is In Progress. Open the Campaign Detail page (Active Campaigns → View) and click Edit Campaign. You can update the campaign name, deadline, and assessment type settings. Changes take effect immediately. Once a campaign is marked as Completed, editing is no longer available."
+        },
+        {
+          q: "What is the campaign lifecycle?",
+          a: "Campaigns go through three stages:\n1. In Progress — the campaign is active and assessors can submit responses.\n2. Completed — click the Complete button on the campaign row to mark it as finished. Completed campaigns remain visible in Active Campaigns alongside in-progress ones.\n3. Archived — click the Archive button on a completed campaign to move it permanently to Archived Campaigns. Only archived campaigns appear on the Archived Campaigns page."
+        },
+        {
+          q: "How do I delete a campaign?",
+          a: "On the Active Campaigns or Archived Campaigns page, click the Delete button next to the campaign. A confirmation dialog will appear before anything is removed. Deletion is permanent and removes all responses and assessment links."
+        },
+        {
+          q: "What happens when a campaign is launched?",
+          a: "Invitation emails with unique assessment links are sent immediately to all assessors at their registered email addresses. The campaign appears in Active Campaigns with a progress counter (e.g. 0/3) showing how many assessments have been completed out of the total."
+        }
       ]
     },
     {
-      section: "ASSESSMENT PROFILES",
+      section: "ASSESSMENTS",
       questions: [
-        { q: "Which Assessment Profile should I choose?", a: "Currently only the Default Profile is available. It covers all four HB Compass dimensions and is suitable for most roles. Role-specific profiles (Leader, Manager, Sales, Service, Agent, Specialist) are in development." },
-        { q: "What is the difference between Assessment Profile and Assessment Type?", a: "Assessment Profile defines what is assessed — the question set and competencies covered. Assessment Type defines who is doing the assessing — Self, Manager, Peer, Direct Report, External, or Custom. They are separate settings configured independently." },
-        { q: "What does Sales/Service adaptation mean?", a: "Even on the same profile, the platform automatically adjusts question scenarios and report language based on whether the employee's role is Sales or Service. Sales employees see scenarios involving clients, deals, and pipelines. Service employees see the same competencies framed through customer support and issue resolution. No action is needed from you — it activates from the Job Role field." }
+        {
+          q: "What does the assessment experience look like for the person filling it in?",
+          a: "When someone opens their assessment link, they first see three introductory pages:\n1. HB Compass — an overview of the framework and its four dimensions (Mindset, Skills, Results, Influence)\n2. The Leader Others Choose to Follow — the leadership model and five development levels\n3. Preparation Guide — instructions on how to answer honestly\n\nAfter reading these, they proceed to the questions. Questions are shown one at a time and must be answered by clicking Next to advance — there is no auto-skip."
+        },
+        {
+          q: "Do external assessors need to identify themselves?",
+          a: "Yes. If the assessment type is External, the assessor is prompted to enter their first name, last name, and email address before starting the assessment. This information is recorded alongside their responses."
+        },
+        {
+          q: "Can an assessor go back to a previous question?",
+          a: "Yes. The ← Previous button is always available to return to earlier questions. Answers are preserved when navigating back and forward."
+        },
+        {
+          q: "Can someone pause and return to their assessment later?",
+          a: "No — the assessment must be completed in one session. If someone closes the browser before submitting, their progress is not saved. The same link remains valid and they will need to start again."
+        },
+        {
+          q: "What happens if the assessment link is already completed or expired?",
+          a: "The system shows an appropriate message. A completed link cannot be resubmitted. An invalid or expired link shows an error — contact your HB administrator to resend or regenerate the link."
+        }
       ]
     },
     {
       section: "MONITORING",
       questions: [
-        { q: "I have two campaigns for the same employee and they look identical on the Dashboard. How do I tell them apart?", a: "Use the Progress column (e.g., 0/1 vs. 0/2) and the Started date as first indicators. Then click View on each to open the Campaign Detail and confirm by campaign name and assessment types included. Campaign name display in the Dashboard table is a planned improvement." },
-        { q: "How do I know if someone has completed their assessment?", a: "Open Campaign Detail (Dashboard → View). In the Assessment Links section, each row shows PENDING or COMPLETED status for each respondent." },
-        { q: "The system doesn't send reminders. How do I follow up?", a: "Automated reminders are planned but not yet available. Follow up directly with pending respondents by email or message. A quick note works well: \"The HB Compass link was sent to your inbox — if you cannot find it, let me know and I will resend it. Deadline is [Date]. Thank you.\"" },
-        { q: "How do I mark a campaign as complete?", a: "When all assessments are submitted, the system will prompt you: \"All assessments submitted — ready to mark this campaign as complete?\" Click Mark Complete to confirm. You can also do this manually at any time from the Campaign Detail page. Do not mark complete until you are ready to support the development conversation — this is the moment the Personal Development Plan becomes ready to release." }
+        {
+          q: "How do I track who has completed their assessment?",
+          a: "Open the Campaign Detail page (Active Campaigns → View). The Assessment Links section shows each assessor with their current status: PENDING or COMPLETED."
+        },
+        {
+          q: "The progress counter hasn't updated. What should I do?",
+          a: "Refresh the Campaign Detail page. The counter updates in real time as assessments are submitted, but your browser may be showing a cached version."
+        },
+        {
+          q: "An assessor says they never received their link.",
+          a: "First check the email address on their record — typos are the most common cause. Ask them to check their spam/junk folder. If the address was wrong, correct it and resend the link from the Campaign Detail page."
+        }
       ]
     },
     {
       section: "REPORTS",
       questions: [
-        { q: "What is the difference between the two reports?", a: "There are two distinct reports:\n• Self Assessment Report (Short) — generated and sent automatically to the employee the moment they submit their self-assessment. Contains straight results: scores, proficiency levels, and a visual profile chart.\n• Personal Development Plan (Long) — a full 90-day personalized development roadmap. This is released manually by the administrator or direct manager at the right moment, and should always be accompanied by a development conversation." },
-        { q: "The employee already received a report automatically. Do I still need to release the Personal Development Plan?", a: "Yes. The auto-sent Short Report gives the employee their results immediately. The Personal Development Plan is a separate, much deeper document that you release when you are ready to have a development conversation with them. They are two different outputs serving different purposes." },
-        { q: "When should I release the Personal Development Plan?", a: "Release it no more than a week before a scheduled development conversation. The report is most effective when the employee can immediately discuss it with someone who has read it. Do not release it into a vacuum." },
-        { q: "Can the employee's manager also release the Personal Development Plan?", a: "Yes. Both the Administrator and the Direct Manager can release the Personal Development Plan to the employee." },
-        { q: "The report buttons are greyed out even though I think the assessment is done.", a: "Refresh the page first. Then check the Assessment Links section — the status must show COMPLETED, not PENDING. If it shows COMPLETED but reports are still inaccessible, contact HB Foundation support." },
-        { q: "Are there 360-degree / multi-assessor reports available?", a: "Not yet. Multi-assessor consolidated reports (combining Self, Manager, Peer, Direct Reports, and External data) are in development. Reports currently use self-assessment data only. You can include additional assessment types in campaigns now — the data will feed into consolidated reports when the feature launches." }
+        {
+          q: "What reports are available?",
+          a: "There are two reports per campaign:\n• Self Assessment Report — generated from the self-assessment data. Shows scores, proficiency levels, and a visual profile chart across all four HB Compass dimensions.\n• AI Development Report — a personalized development report generated using AI based on the assessment results. This is released manually when you are ready to have a development conversation with the employee."
+        },
+        {
+          q: "How do I generate and send a report?",
+          a: "Open the Campaign Detail page. In the Reports section, click the relevant Generate button. For the Self Assessment Report, the report is generated and sent to the employee's email automatically. For the AI Development Report, you can preview it before sending."
+        },
+        {
+          q: "Can I download reports as PDF?",
+          a: "Yes. On the Campaign Detail page and in the Reports section, PDF download buttons are available for generated reports."
+        },
+        {
+          q: "The report button is greyed out.",
+          a: "The self-assessment must be completed before reports can be generated. Check the Assessment Links section — the Self assessment status must show COMPLETED. If it shows COMPLETED but the button is still inaccessible, refresh the page or contact HB Foundation support."
+        }
       ]
     },
     {
       section: "COMMON ISSUES",
       questions: [
-        { q: "An employee says they never received their assessment link.", a: "Check their email address in the employee record — typos are the most common cause. Ask them to check spam/junk. If the address is wrong, edit it in the Employees section and resend the link." },
-        { q: "I accidentally launched the wrong campaign.", a: "Contact your HB Foundation account manager for guidance. There is no self-service campaign cancellation currently documented." },
-        { q: "I need to run assessments for a large group with different configurations. What's the best approach?", a: "Group employees by configuration type and create one campaign per group. For example: one campaign for employees needing Default Profile + Self only, a separate campaign for those needing Default Profile + Self + Manager. Use clear campaign names to keep them organized." }
+        {
+          q: "I deleted a campaign by mistake. Can it be restored?",
+          a: "No. Campaign deletion is permanent and cannot be undone. All assessment links and responses are removed. Always use the confirmation dialog carefully before confirming deletion."
+        },
+        {
+          q: "I need to run assessments for a large group with different configurations.",
+          a: "Create separate campaigns per configuration group. For example: one campaign for employees needing Self only, a separate campaign for those needing Self + Manager + Peer. Use the For Group mode within each campaign and give each campaign a clear, descriptive name."
+        },
+        {
+          q: "A campaign shows 0 completed even though I know assessments were submitted.",
+          a: "Refresh the page. If the issue persists, open the Campaign Detail and check the status of each individual assessment link. If all show COMPLETED but the counter is still 0, contact HB Foundation support."
+        }
       ]
     }
   ];

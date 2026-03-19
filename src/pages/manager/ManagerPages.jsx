@@ -87,6 +87,8 @@ export function ManagerDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('');
+  const [actionLoading, setActionLoading] = useState(null);
 
   async function handleDeleteCampaign() {
     setDeleting(true);
@@ -98,6 +100,30 @@ export function ManagerDashboard() {
       setError(e.message);
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleComplete(id) {
+    setActionLoading(id + '-complete');
+    try {
+      await api.manager.completeCampaign(id);
+      setCampaigns(prev => prev.map(c => c.CycleID === id ? { ...c, Status: 'completed' } : c));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function handleArchive(id) {
+    setActionLoading(id + '-archive');
+    try {
+      await api.manager.archiveCampaign(id);
+      setCampaigns(prev => prev.filter(c => c.CycleID !== id));
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setActionLoading(null);
     }
   }
 
@@ -120,8 +146,8 @@ export function ManagerDashboard() {
         CompanyID: c.CompanyID ?? empMap[c.EmployeeID]?.CompanyID,
         CompanyName: c.CompanyName ?? empMap[c.EmployeeID]?.CompanyName,
       }));
-      // Only show active (non-completed) on dashboard
-      setCampaigns(enriched.filter(c => c.Status !== 'completed'));
+      // Show all non-archived campaigns on dashboard
+      setCampaigns(enriched.filter(c => c.Status !== 'archived'));
     }).catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
@@ -144,7 +170,10 @@ export function ManagerDashboard() {
   const filteredByCampaignName = filteredByEmployee.filter(c =>
     filterCampaignName ? (c.Name || 'Unnamed Campaign') === filterCampaignName : true
   );
-  const filtered = filteredByCampaignName.filter(c => {
+  const filteredByStatus = filteredByCampaignName.filter(c =>
+    filterStatus ? c.Status === filterStatus : true
+  );
+  const filtered = filteredByStatus.filter(c => {
     if (!searchTerm) return true;
     const s = `${c.Name} ${empName(c)} ${c.CompanyName}`.toLowerCase();
     return s.includes(searchTerm.toLowerCase());
@@ -224,6 +253,16 @@ export function ManagerDashboard() {
                     {uniqueCampaignNames.map(name => <option key={name} value={name}>{name}</option>)}
                   </Select>
                 </div>
+
+                {/* Status Dropdown */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--ink-soft)', textTransform: 'uppercase' }}>Status</label>
+                  <Select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                    <option value="">All Statuses</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </Select>
+                </div>
               </div>
             </div>
             <Table
@@ -236,10 +275,16 @@ export function ManagerDashboard() {
                 `${c.CompletedLinks}/${c.TotalLinks}`,
                 new Date(c.CreatedAt).toLocaleDateString(),
                 fmtDeadline(c),
-                <div style={{ display: 'flex', gap: '6px' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <Link to={`/manager/campaigns/${c.CycleID}`}><Btn size="sm" variant="outline">View</Btn></Link>
-                  {c.Status !== 'completed' && (
+                  {c.Status === 'in_progress' && (
                     <Link to={`/manager/campaigns/${c.CycleID}/edit`}><Btn size="sm" variant="outline">Edit</Btn></Link>
+                  )}
+                  {c.Status === 'in_progress' && (
+                    <Btn size="sm" variant="outline" loading={actionLoading === c.CycleID + '-complete'} onClick={() => handleComplete(c.CycleID)} style={{ color: '#059669', borderColor: '#059669' }}>Complete</Btn>
+                  )}
+                  {c.Status === 'completed' && (
+                    <Btn size="sm" variant="outline" loading={actionLoading === c.CycleID + '-archive'} onClick={() => handleArchive(c.CycleID)} style={{ color: '#7c3aed', borderColor: '#7c3aed' }}>Archive</Btn>
                   )}
                   <Btn size="sm" variant="outline" onClick={() => setDeleteId(c.CycleID)} style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>Delete</Btn>
                 </div>,
@@ -308,8 +353,8 @@ export function ArchivedCampaigns() {
         CompanyID: c.CompanyID ?? empMap[c.EmployeeID]?.CompanyID,
         CompanyName: c.CompanyName ?? empMap[c.EmployeeID]?.CompanyName,
       }));
-      // Only completed campaigns
-      setCampaigns(enriched.filter(c => c.Status === 'completed'));
+      // Only archived campaigns
+      setCampaigns(enriched.filter(c => c.Status === 'archived'));
     }).catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
