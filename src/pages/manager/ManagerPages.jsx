@@ -127,6 +127,12 @@ export function ManagerDashboard() {
   }, []);
 
   const empName = c => c.FullName || `${c.FirstName || ''} ${c.LastName || ''}`.trim();
+  const fmtDeadline = c => {
+    const d = c.Deadline || c.deadline;
+    if (!d) return <span style={{ color: 'var(--ink-faint)' }}>—</span>;
+    const date = new Date(d);
+    return isNaN(date) ? <span style={{ color: 'var(--ink-faint)' }}>—</span> : date.toLocaleDateString();
+  };
 
   // Cascading filters: each step narrows options for the next dropdown
   const filteredByCompany = campaigns.filter(c =>
@@ -229,7 +235,7 @@ export function ManagerDashboard() {
                 <Badge status={c.Status === 'in_progress' ? 'active' : c.Status}>{c.Status}</Badge>,
                 `${c.CompletedLinks}/${c.TotalLinks}`,
                 new Date(c.CreatedAt).toLocaleDateString(),
-                c.Deadline ? new Date(c.Deadline).toLocaleDateString() : <span style={{ color: 'var(--ink-faint)' }}>—</span>,
+                fmtDeadline(c),
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <Link to={`/manager/campaigns/${c.CycleID}`}><Btn size="sm" variant="outline">View</Btn></Link>
                   {c.Status !== 'completed' && (
@@ -309,6 +315,12 @@ export function ArchivedCampaigns() {
   }, []);
 
   const empName = c => c.FullName || `${c.FirstName || ''} ${c.LastName || ''}`.trim();
+  const fmtDeadline = c => {
+    const d = c.Deadline || c.deadline;
+    if (!d) return <span style={{ color: 'var(--ink-faint)' }}>—</span>;
+    const date = new Date(d);
+    return isNaN(date) ? <span style={{ color: 'var(--ink-faint)' }}>—</span> : date.toLocaleDateString();
+  };
 
   const filteredByCompany = campaigns.filter(c =>
     filterCompany ? String(c.CompanyID) === filterCompany : true
@@ -395,7 +407,7 @@ export function ArchivedCampaigns() {
                 <span style={{ color: 'var(--ink-soft)', fontSize: '0.84rem' }}>{c.CompanyName || '—'}</span>,
                 `${c.CompletedLinks}/${c.TotalLinks}`,
                 new Date(c.CreatedAt).toLocaleDateString(),
-                c.Deadline ? new Date(c.Deadline).toLocaleDateString() : <span style={{ color: 'var(--ink-faint)' }}>—</span>,
+                fmtDeadline(c),
                 <div style={{ display: 'flex', gap: '6px' }}>
                   <Link to={`/manager/campaigns/${c.CycleID}`}><Btn size="sm" variant="outline">View</Btn></Link>
                   <Btn size="sm" variant="outline" onClick={() => setDeleteId(c.CycleID)} style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>Delete</Btn>
@@ -1473,6 +1485,7 @@ export function CampaignEdit() {
           includeExternal: !!cycle.IncludeExternal,
           peerEmployeeIds: [], peerNewPersons: [],
           drEmployeeIds: [], drNewPersons: [],
+          deadline: cycle.Deadline ? new Date(cycle.Deadline).toISOString().split('T')[0] : '',
         });
       })
       .catch(e => setError(e.message))
@@ -2373,7 +2386,7 @@ export function CompaniesAndEmployees() {
                           `${camp.FirstName || ''} ${camp.LastName || ''}`.trim() || '—',
                           <Badge status={camp.Status === 'in_progress' ? 'active' : camp.Status}>{camp.Status}</Badge>,
                           `${camp.CompletedLinks}/${camp.TotalLinks}`,
-                          camp.Deadline ? new Date(camp.Deadline).toLocaleDateString() : <span style={{ color: 'var(--ink-faint)' }}>—</span>,
+                          fmtDeadline(camp),
                           <Link to={`/manager/campaigns/${camp.CycleID}`}><Btn size="sm" variant="outline">View</Btn></Link>,
                         ])}
                       />

@@ -483,12 +483,7 @@ export default function AssessPage() {
                           name={q.id}
                           value={opt.score}
                           checked={selected}
-                          onChange={() => {
-                            setAnswers(prev => ({ ...prev, [q.id]: opt.score }));
-                            if (currentQ < shuffledQuestions.length - 1) {
-                              setTimeout(() => setCurrentQ(i => i + 1), 350);
-                            }
-                          }}
+                          onChange={() => setAnswers(prev => ({ ...prev, [q.id]: opt.score }))}
                           style={{ marginTop: '2px', accentColor: 'var(--ink)', flexShrink: 0 }}
                         />
                         <div>
