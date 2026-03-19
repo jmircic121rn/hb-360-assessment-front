@@ -45,6 +45,7 @@ export const api = {
   // Auth
   login: (creds) => request('/api/360/auth/login', { method: 'POST', body: JSON.stringify(creds) }),
   getMe: (role) => request('/api/360/auth/me', {}, role),
+  changePassword: (role, data) => request('/api/360/auth/change-password', { method: 'PUT', body: JSON.stringify(data) }, role),
 
   // Manager
   manager: {

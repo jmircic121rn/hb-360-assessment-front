@@ -19,6 +19,15 @@ const steps = [
 export default function LandingPage() {
   return (
     <div style={{ background: 'var(--ink)', minHeight: '100vh' }}>
+      <style>
+        {`
+          @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-10px);}
+            60% {transform: translateY(-5px);}
+          }
+        `}
+      </style>
       <PublicNav />
 
       {/* Hero */}
@@ -58,6 +67,26 @@ export default function LandingPage() {
               Sign In
             </Link>
           </div>
+          {/* 2. NOVA STRELICA NA DNU */}
+        <div 
+          onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
+          style={{
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '10px',
+              animation: 'bounce 2s infinite',
+              marginTop: '40px' // Razmak od dugmeta
+            }}
+        >
+          <span style={{ fontSize: '0.7rem', color: 'rgba(255, 255, 255, 0.68)', textTransform: 'uppercase', letterSpacing: '0.2em', fontWeight: 600 }}>
+            Explore
+          </span>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
+          </svg>
+        </div>
         </div>
       </section>
 

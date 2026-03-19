@@ -62,8 +62,8 @@ export default function AssessPage() {
     return arr;
   }, [questions.length]); // eslint-disable-line
 
-  const totalAnswered = Object.keys(answers).length;
-  const allAnswered = totalAnswered === questions.length;
+  const totalAnswered = shuffledQuestions.filter(q => answers[q.id] !== undefined).length;
+  const allAnswered = totalAnswered === shuffledQuestions.length;
 
   function pillarDim(pillar) {
     const p = (pillar || '').toUpperCase().trim();

@@ -39,6 +39,12 @@ export function PortalLayout({ role, navItems, children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
   const isMobile = useMobile();
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
+  const [pwVisible, setPwVisible] = useState({ current: false, next: false, confirm: false });
+  const [pwLoading, setPwLoading] = useState(false);
+  const [pwError, setPwError] = useState(null);
+  const [pwSuccess, setPwSuccess] = useState(false);
 
   useEffect(() => {
     api.getMe(role).then(d => setUser(d?.user || d)).catch(() => {});
@@ -52,6 +58,23 @@ export function PortalLayout({ role, navItems, children }) {
   function handleLogout() {
     clearToken(role);
     navigate(`/${role}/login`);
+  }
+
+  async function handleChangePassword(e) {
+    e.preventDefault();
+    setPwError(null);
+    if (pwForm.next !== pwForm.confirm) { setPwError('New passwords do not match.'); return; }
+    if (pwForm.next.length < 6) { setPwError('New password must be at least 6 characters.'); return; }
+    setPwLoading(true);
+    try {
+      await api.changePassword(role, { currentPassword: pwForm.current, newPassword: pwForm.next });
+      setPwSuccess(true);
+      setPwForm({ current: '', next: '', confirm: '' });
+    } catch (err) {
+      setPwError(err.message);
+    } finally {
+      setPwLoading(false);
+    }
   }
 
   const username = user?.username || user?.Username || '';
@@ -97,43 +120,44 @@ export function PortalLayout({ role, navItems, children }) {
           )}
         </div>
 
-        {/* Role badge */}
-        {(!collapsed || isMobile) && (
-          <div style={{ padding: '10px 18px 6px' }}>
-            <span style={{
-              fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-              color: 'rgba(255,255,255,0.35)', fontFamily: 'var(--font-body)',
-            }}>
-              {role} portal
-            </span>
-          </div>
-        )}
-
         {/* Nav */}
         <nav style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto' }}>
-          {navItems.map(item => {
+          {navItems.map((item, idx) => {
             const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+            const prevGroup = idx > 0 ? navItems[idx - 1].group : null;
+            const showGroupLabel = item.group && item.group !== prevGroup && (!collapsed || isMobile);
             return (
-              <Link
-                key={item.href}
-                to={item.href}
-                onClick={() => isMobile && setMobileOpen(false)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '10px',
-                  padding: collapsed && !isMobile ? '10px 8px' : '11px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
-                  color: active ? '#fff' : 'rgba(255,255,255,0.45)',
-                  fontSize: '0.88rem', fontWeight: active ? 600 : 400,
-                  transition: 'all var(--transition)',
-                  whiteSpace: 'nowrap', overflow: 'hidden',
-                  borderLeft: active ? '2px solid #fff' : '2px solid transparent',
-                  justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
-                  letterSpacing: '0.01em',
-                }}>
-                <span style={{ fontSize: '1rem', flexShrink: 0 }}>{item.icon}</span>
-                {(!collapsed || isMobile) && item.label}
-              </Link>
+              <React.Fragment key={item.href}>
+                {showGroupLabel && (
+                  <div style={{
+                    padding: idx === 0 ? '4px 10px 4px' : '14px 10px 4px',
+                    fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
+                    textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)',
+                    fontFamily: 'var(--font-body)',
+                  }}>
+                    {item.group}
+                  </div>
+                )}
+                <Link
+                  to={item.href}
+                  onClick={() => isMobile && setMobileOpen(false)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: collapsed && !isMobile ? '10px 8px' : '11px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
+                    color: active ? '#fff' : 'rgba(255,255,255,0.45)',
+                    fontSize: '0.88rem', fontWeight: active ? 600 : 400,
+                    transition: 'all var(--transition)',
+                    whiteSpace: 'nowrap', overflow: 'hidden',
+                    borderLeft: active ? '2px solid #fff' : '2px solid transparent',
+                    justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
+                    letterSpacing: '0.01em',
+                  }}>
+                  <span style={{ fontSize: '1rem', flexShrink: 0 }}>{item.icon}</span>
+                  {(!collapsed || isMobile) && item.label}
+                </Link>
+              </React.Fragment>
             );
           })}
         </nav>
@@ -181,6 +205,19 @@ export function PortalLayout({ role, navItems, children }) {
             </div>
           )}
 
+          {/* Change password */}
+          {(!collapsed || isMobile) && (
+            <button onClick={() => { setShowChangePw(true); setPwSuccess(false); setPwError(null); }} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
+              gap: '8px', padding: '7px 10px', borderRadius: 'var(--radius-sm)',
+              color: 'rgba(255,255,255,0.35)', fontSize: '0.78rem', background: 'none', border: 'none',
+              cursor: 'pointer', transition: 'color var(--transition)', fontFamily: 'var(--font-body)',
+            }}>
+              <span style={{ fontSize: '0.9rem' }}>🔑</span>
+              Change Password
+            </button>
+          )}
+
           {/* Collapse toggle — desktop only */}
           {!isMobile && (
             <button onClick={() => setCollapsed(!collapsed)} style={{
@@ -207,6 +244,101 @@ export function PortalLayout({ role, navItems, children }) {
           </button>
         </div>
       </aside>
+
+      {/* Change Password Modal */}
+      {showChangePw && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px',
+          backdropFilter: 'blur(4px)',
+        }} onClick={() => setShowChangePw(false)}>
+          <div style={{
+            background: 'var(--canvas-white)', borderRadius: 'var(--radius-lg)',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)', width: '100%', maxWidth: 400, padding: '32px',
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem' }}>Change Password</h3>
+              <button onClick={() => setShowChangePw(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--ink-faint)', lineHeight: 1 }}>×</button>
+            </div>
+
+            {pwSuccess ? (
+              <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>✓</div>
+                <p style={{ color: 'var(--success)', fontWeight: 600, marginBottom: '8px' }}>Password changed successfully.</p>
+                <button onClick={() => setShowChangePw(false)} style={{
+                  marginTop: '16px', padding: '8px 24px', borderRadius: 'var(--radius-sm)',
+                  background: 'var(--ink)', color: '#fff', border: 'none', cursor: 'pointer',
+                  fontSize: '0.88rem', fontFamily: 'var(--font-body)',
+                }}>Close</button>
+              </div>
+            ) : (
+              <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {pwError && (
+                  <div style={{ background: 'var(--danger-pale)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', color: 'var(--danger)', fontSize: '0.85rem' }}>
+                    {pwError}
+                  </div>
+                )}
+                {[
+                  { label: 'Current Password', key: 'current' },
+                  { label: 'New Password', key: 'next' },
+                  { label: 'Confirm New Password', key: 'confirm' },
+                ].map(({ label, key }) => (
+                  <div key={key}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--ink-soft)', marginBottom: '5px' }}>{label}</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={pwVisible[key] ? 'text' : 'password'}
+                        value={pwForm[key]}
+                        onChange={e => setPwForm(f => ({ ...f, [key]: e.target.value }))}
+                        required
+                        style={{
+                          width: '100%', padding: '9px 42px 9px 12px', borderRadius: 'var(--radius-sm)',
+                          border: '1.5px solid var(--canvas-warm)', fontSize: '0.9rem',
+                          fontFamily: 'var(--font-body)', outline: 'none', background: 'var(--canvas)',
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setPwVisible(v => ({ ...v, [key]: !v[key] }))}
+                        style={{
+                          position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                          background: 'none', border: 'none', cursor: 'pointer', padding: '2px',
+                          color: 'var(--ink-faint)', lineHeight: 1,
+                        }}
+                        tabIndex={-1}
+                      >
+                        {pwVisible[key] ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                            <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                            <line x1="1" y1="1" x2="23" y2="23"/>
+                          </svg>
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
+                  <button type="button" onClick={() => setShowChangePw(false)} style={{
+                    padding: '8px 18px', borderRadius: 'var(--radius-sm)', border: '1.5px solid var(--canvas-warm)',
+                    background: 'none', cursor: 'pointer', fontSize: '0.88rem', fontFamily: 'var(--font-body)', color: 'var(--ink-soft)',
+                  }}>Cancel</button>
+                  <button type="submit" disabled={pwLoading} style={{
+                    padding: '8px 18px', borderRadius: 'var(--radius-sm)', border: 'none',
+                    background: 'var(--ink)', color: '#fff', cursor: pwLoading ? 'not-allowed' : 'pointer',
+                    fontSize: '0.88rem', fontFamily: 'var(--font-body)', opacity: pwLoading ? 0.7 : 1,
+                  }}>{pwLoading ? 'Saving…' : 'Save'}</button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Mobile top bar */}
       {isMobile && (

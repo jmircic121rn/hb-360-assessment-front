@@ -7,11 +7,11 @@ const FAQ = () => {
 
   // Navigacija - prilagodi putanje ako su drugačije
   const managerNav = [
-    { href: '/manager/dashboard', icon: '📊', label: 'Dashboard' },
-  { href: '/manager/employees', icon: '👥', label: 'Employees' },
-  { href: '/manager/companies', icon: '🏢', label: 'Companies' },
-  { href: '/manager/campaigns/new', icon: '🔄', label: 'New Campaign' },
-  { href: '/faq', icon: '❓', label: 'FAQ' }
+    { group: 'My Campaigns', href: '/manager/dashboard', icon: '📊', label: 'Active Campaigns' },
+    { group: 'My Campaigns', href: '/manager/archived', icon: '🗂️', label: 'Archived Campaigns' },
+    { group: 'My Campaigns', href: '/manager/campaigns/new', icon: '➕', label: 'New Campaign' },
+  { group: 'Management', href: '/manager/companies', icon: '🏢', label: 'My Companies' },
+    { group: 'Support', href: '/faq', icon: '❓', label: 'FAQ' },
   ];
 
   const faqData = [

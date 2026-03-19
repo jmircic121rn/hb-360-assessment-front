@@ -10,8 +10,8 @@ import { UnifiedLogin } from './pages/auth/LoginPages';
 
 // Manager portal
 import {
-  ManagerWelcome, ManagerDashboard, ManagerEmployees, EmployeeForm,
-  NewCampaign, CampaignEdit, CampaignDetail, ManagerCompanies
+  ManagerWelcome, ManagerDashboard, ArchivedCampaigns, EmployeeForm,
+  NewCampaign, CampaignEdit, CampaignDetail, CompaniesAndEmployees
 } from './pages/manager/ManagerPages';
 
 // Employee portal
@@ -57,10 +57,11 @@ export default function App() {
         {/* Manager portal */}
         <Route path="/manager/welcome" element={<RequireAuth role="admin"><ManagerWelcome /></RequireAuth>} />
         <Route path="/manager/dashboard" element={<RequireAuth role="admin"><ManagerDashboard /></RequireAuth>} />
-        <Route path="/manager/employees" element={<RequireAuth role="admin"><ManagerEmployees /></RequireAuth>} />
+        <Route path="/manager/archived" element={<RequireAuth role="admin"><ArchivedCampaigns /></RequireAuth>} />
+        <Route path="/manager/employees" element={<Navigate to="/manager/companies" replace />} />
         <Route path="/manager/employees/new" element={<RequireAuth role="admin"><EmployeeForm /></RequireAuth>} />
         <Route path="/manager/employees/:id/edit" element={<RequireAuth role="admin"><EmployeeForm editMode /></RequireAuth>} />
-        <Route path="/manager/companies" element={<RequireAuth role="admin"><ManagerCompanies /></RequireAuth>} />
+        <Route path="/manager/companies" element={<RequireAuth role="admin"><CompaniesAndEmployees /></RequireAuth>} />
         <Route path="/manager/campaigns/new" element={<RequireAuth role="admin"><NewCampaign /></RequireAuth>} />
         <Route path="/manager/campaigns/:id/edit" element={<RequireAuth role="admin"><CampaignEdit /></RequireAuth>} />
         <Route path="/manager/campaigns/:id" element={<RequireAuth role="admin"><CampaignDetail /></RequireAuth>} />
