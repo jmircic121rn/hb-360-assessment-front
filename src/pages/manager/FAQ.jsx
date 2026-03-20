@@ -62,11 +62,19 @@ const FAQ = () => {
       questions: [
         {
           q: "What is the difference between For Individual and For Group?",
-          a: "For Individual targets one employee and gives full configuration control — you select which assessment types to include (Self, Manager, Peer, Direct Reports, External) and can specify individual assessors.\n\nFor Group targets multiple employees at once with the same configuration. Efficient for team rollouts, but all selected employees receive the same assessment types."
+          a: "For Individual targets one employee and gives full configuration control — you select which assessment types to include (Self, Manager, Peer, Direct Reports, External) and can specify individual assessors.\n\nFor Group targets multiple employees at once. When creating a group campaign you choose between two modes:\n• Same for all — all selected employees receive the same assessment types. Efficient for straightforward team rollouts.\n• Custom per subgroup — you divide employees into subgroups, each with its own assessment type configuration. Use this when different employees in the same rollout need different assessment combinations."
+        },
+        {
+          q: "How does the Custom per subgroup option work?",
+          a: "When you select Custom per subgroup in a group campaign, you can create multiple subgroups. Each subgroup has its own employee list and its own set of assessment types. For example: one subgroup of 4 people receives Self + Manager, a second subgroup of 6 receives Self only.\n\nEach subgroup is launched as a separate campaign behind the scenes, but you set them all up in one form. Give each subgroup a clear name to tell them apart in Active Campaigns."
         },
         {
           q: "What assessment types can I include in a campaign?",
-          a: "You can include any combination of:\n• Self — the employee assesses themselves\n• Manager — the employee's manager assesses them\n• Peer — colleagues assess them\n• Direct Reports — the employee's direct reports assess them\n• External — external contacts (e.g. clients) assess them\n\nEach type generates a separate assessment link sent to the relevant person."
+          a: "You can include any combination of:\n• Self — the employee assesses themselves\n• Manager — the employee's manager assesses them\n• Peer — colleagues assess them\n• Direct Reports — the employee's direct reports assess them\n• External — external contacts (e.g. clients) assess them\n\nEach type generates a separate assessment link sent to the relevant person.\n\nNote: if you select the Modern Employee profile, only Self Assessment is available — the other types are automatically disabled."
+        },
+        {
+          q: "What is an Assessment Profile and which ones are available?",
+          a: "The Assessment Profile determines which question set the assessors will answer. There are currently two profiles:\n\n• Inspiring Leadership — the full 360° leadership assessment. Covers four dimensions (Results, Mindset, Skills, Influence) from a leadership perspective. Supports all assessment types: Self, Manager, Peer, Direct Reports, External.\n\n• Modern Employee — an individual contributor self-assessment. Covers the same four dimensions but from an employee perspective, not a management one. Only Self Assessment is available for this profile — the other assessment types are locked out automatically when this profile is selected.\n\nIf no profile is selected, the system uses the Inspiring Leadership profile by default."
         },
         {
           q: "Can I set a deadline for a campaign?",
@@ -95,7 +103,7 @@ const FAQ = () => {
       questions: [
         {
           q: "What does the assessment experience look like for the person filling it in?",
-          a: "When someone opens their assessment link, they first see three introductory pages:\n1. HB Compass — an overview of the framework and its four dimensions (Mindset, Skills, Results, Influence)\n2. The Leader Others Choose to Follow — the leadership model and five development levels\n3. Preparation Guide — instructions on how to answer honestly\n\nAfter reading these, they proceed to the questions. Questions are shown one at a time and must be answered by clicking Next to advance — there is no auto-skip."
+          a: "When someone opens their assessment link, they first see three introductory pages that explain the framework, the profile they are being assessed on, and how to answer honestly. After reading these, they proceed to the questions. Questions are shown one at a time and must be answered by clicking Next to advance — there is no auto-skip.\n\nThe intro pages vary by profile:\n• Inspiring Leadership profile — covers the HB Compass framework, the leadership model and five development levels, and the preparation guide.\n• Modern Employee profile — covers the HB Compass framework, the Modern Employee profile and five development levels, and the preparation guide."
         },
         {
           q: "Do external assessors need to identify themselves?",

@@ -985,6 +985,10 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
   const [peerEmployees, setPeerEmployees] = useState([]);
   const [drEmployees, setDrEmployees] = useState([]);
   const [loadingRelationships, setLoadingRelationships] = useState(false);
+  const [groupStyle, setGroupStyle] = useState('same');
+  const [subgroups, setSubgroups] = useState([
+    { employeeIds: [], includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false },
+  ]);
 
   useEffect(() => {
     api.manager.getEmployees().then(setEmployees).catch(() => {});
@@ -999,6 +1003,17 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
         .catch(() => {});
     }
   }, []);
+
+  // Detect if selected profile is "modern employee" — restricts to self-only
+  const selectedProfile = profiles.find(p => String(p.id || p.ProfilID) === String(form.profilId));
+  const isEmployeeProfile = (selectedProfile?.name || selectedProfile?.Name || '').toLowerCase().includes('employee');
+
+  // When employee profile is selected, force Self-only
+  useEffect(() => {
+    if (isEmployeeProfile) {
+      setForm(f => ({ ...f, includeSelf: true, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false }));
+    }
+  }, [isEmployeeProfile]);
 
   // Kada se promeni subject employee, učitaj njegove peers i DR iz baze
   useEffect(() => {
@@ -1090,6 +1105,8 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
       // Direct reports — individualni + shared link uvek ide sa backenda
       drEmployeeIds: form.drEmployeeIds,
       drNewPersonIds: form.drNewPersons.map(p => p.id).filter(Boolean),
+      // Group subgroups
+      ...(mode === 'group' ? { groupStyle, subgroups } : {}),
     });
   }
 
@@ -1207,67 +1224,159 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
             </div>
           </FormField>
         );
-        return (
-          <FormField label="2. Select Employees" hint="Select all employees for this batch campaign" required>
-            {companyFilter}
-            <div style={{ 
-              opacity: isCompanySelected ? 1 : 0.6, 
-              pointerEvents: isCompanySelected ? 'auto' : 'none',
-              transition: 'opacity 0.2s ease'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ 
-                  display: 'flex', gap: '8px', alignItems: 'center', 
-                  cursor: isCompanySelected ? 'pointer' : 'not-allowed', 
-                  fontSize: '0.85rem', color: 'var(--ink-soft)' 
-                }}>
-                  <input
-                    type="checkbox"
-                    disabled={!isCompanySelected}
-                    checked={isCompanySelected && filteredEmps.length > 0 && filteredEmps.every(e => form.employeeIds.includes(e.EmployeeID))}
-                    onChange={() => {
-                      if (!isCompanySelected) return;
-                      const allSelected = filteredEmps.every(e => form.employeeIds.includes(e.EmployeeID));
-                      const filteredIds = filteredEmps.map(e => e.EmployeeID);
-                      setForm(f => ({
-                        ...f,
-                        employeeIds: allSelected
-                          ? f.employeeIds.filter(id => !filteredIds.includes(id))
-                          : [...new Set([...f.employeeIds, ...filteredIds])],
-                      }));
-                    }}
-                    style={{ accentColor: 'var(--ink)' }}
-                  />
-                  Select all in company
-                </label>
-                {form.employeeIds.length > 0 && <div style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>{form.employeeIds.length} selected</div>}
-              </div>
-              <div style={{ 
-                display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: 220, overflowY: 'auto', 
-                border: '1.5px solid var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '6px',
-                background: !isCompanySelected ? 'var(--canvas)' : 'transparent'
+        const employeeListUI = (
+          <div style={{
+            opacity: isCompanySelected ? 1 : 0.6,
+            pointerEvents: isCompanySelected ? 'auto' : 'none',
+            transition: 'opacity 0.2s ease'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+              <label style={{
+                display: 'flex', gap: '8px', alignItems: 'center',
+                cursor: isCompanySelected ? 'pointer' : 'not-allowed',
+                fontSize: '0.85rem', color: 'var(--ink-soft)'
               }}>
-                {isCompanySelected ? filteredEmps.map(emp => (
-                  <label key={emp.EmployeeID} style={{
-                    display: 'flex', gap: '10px', alignItems: 'center', padding: '8px 10px',
-                    borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                    background: form.employeeIds.includes(emp.EmployeeID) ? 'var(--canvas-warm)' : 'transparent',
+                <input
+                  type="checkbox"
+                  disabled={!isCompanySelected}
+                  checked={isCompanySelected && filteredEmps.length > 0 && filteredEmps.every(e => form.employeeIds.includes(e.EmployeeID))}
+                  onChange={() => {
+                    if (!isCompanySelected) return;
+                    const allSelected = filteredEmps.every(e => form.employeeIds.includes(e.EmployeeID));
+                    const filteredIds = filteredEmps.map(e => e.EmployeeID);
+                    setForm(f => ({
+                      ...f,
+                      employeeIds: allSelected
+                        ? f.employeeIds.filter(id => !filteredIds.includes(id))
+                        : [...new Set([...f.employeeIds, ...filteredIds])],
+                    }));
+                  }}
+                  style={{ accentColor: 'var(--ink)' }}
+                />
+                Select all in company
+              </label>
+              {form.employeeIds.length > 0 && <div style={{ fontSize: '0.8rem', color: 'var(--ink-soft)' }}>{form.employeeIds.length} selected</div>}
+            </div>
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: 220, overflowY: 'auto',
+              border: '1.5px solid var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '6px',
+              background: !isCompanySelected ? 'var(--canvas)' : 'transparent'
+            }}>
+              {isCompanySelected ? filteredEmps.map(emp => (
+                <label key={emp.EmployeeID} style={{
+                  display: 'flex', gap: '10px', alignItems: 'center', padding: '8px 10px',
+                  borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                  background: form.employeeIds.includes(emp.EmployeeID) ? 'var(--canvas-warm)' : 'transparent',
+                }}>
+                  <input type="checkbox" checked={form.employeeIds.includes(emp.EmployeeID)}
+                    onChange={() => toggleId('employeeIds', emp.EmployeeID)} style={{ accentColor: 'var(--ink)' }} />
+                  <div>
+                    <div style={{ fontWeight: 500, fontSize: '0.88rem' }}>{emp.FirstName} {emp.LastName}</div>
+                    <div style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>{emp.JobTitle || emp.Email}</div>
+                  </div>
+                </label>
+              )) : (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '0.85rem' }}>
+                  List is empty. Please select a company first to see employees.
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
+        const subgroupUI = (
+          <div style={{ opacity: isCompanySelected ? 1 : 0.6, pointerEvents: isCompanySelected ? 'auto' : 'none' }}>
+            {subgroups.map((sg, si) => (
+              <div key={si} style={{ border: '1px solid #e0e0e0', borderRadius: 8, padding: '16px', marginBottom: '12px', background: '#fafafa' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Subgroup {si + 1}</div>
+                  {subgroups.length > 1 && (
+                    <Btn type="button" size="sm" variant="outline" onClick={() => setSubgroups(prev => prev.filter((_, i) => i !== si))} style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>Remove</Btn>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Employees {sg.employeeIds.length > 0 ? `(${sg.employeeIds.length} selected)` : ''}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: 180, overflowY: 'auto', border: '1px solid #e5e5e5', borderRadius: 6, padding: '6px', background: '#fff', marginBottom: '12px' }}>
+                  {filteredEmps.length === 0 ? (
+                    <div style={{ padding: '12px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '0.84rem' }}>Select a company above to see employees.</div>
+                  ) : filteredEmps.map(emp => (
+                    <label key={emp.EmployeeID} style={{
+                      display: 'flex', gap: '8px', alignItems: 'center', padding: '6px 8px',
+                      borderRadius: 4, cursor: 'pointer',
+                      background: sg.employeeIds.includes(emp.EmployeeID) ? 'var(--canvas-warm)' : 'transparent',
+                    }}>
+                      <input type="checkbox" checked={sg.employeeIds.includes(emp.EmployeeID)}
+                        onChange={() => setSubgroups(prev => prev.map((g, i) => i !== si ? g : {
+                          ...g,
+                          employeeIds: g.employeeIds.includes(emp.EmployeeID)
+                            ? g.employeeIds.filter(id => id !== emp.EmployeeID)
+                            : [...g.employeeIds, emp.EmployeeID],
+                        }))}
+                        style={{ accentColor: 'var(--ink)' }} />
+                      <div>
+                        <div style={{ fontWeight: 500, fontSize: '0.85rem' }}>{emp.FirstName} {emp.LastName}</div>
+                        <div style={{ fontSize: '0.73rem', color: 'var(--ink-soft)' }}>{emp.JobTitle || emp.Email}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Assessment Types</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {[
+                    { key: 'includeSelf', label: 'Self' },
+                    { key: 'includeManager', label: 'Manager' },
+                    { key: 'includePeer', label: 'Peer' },
+                    { key: 'includeDirectReports', label: 'Direct Reports' },
+                    { key: 'includeExternal', label: 'External' },
+                  ].map(t => (
+                    <label key={t.key} style={{
+                      display: 'flex', gap: '6px', alignItems: 'center', padding: '7px 11px',
+                      borderRadius: 6, cursor: 'pointer', fontSize: '0.83rem', fontWeight: 500,
+                      border: `1.5px solid ${sg[t.key] ? 'var(--ink)' : '#e0e0e0'}`,
+                      background: sg[t.key] ? 'var(--canvas-warm)' : '#fff',
+                      transition: 'all 0.15s ease',
+                    }}>
+                      <input type="checkbox" checked={sg[t.key]}
+                        onChange={() => setSubgroups(prev => prev.map((g, i) => i !== si ? g : { ...g, [t.key]: !g[t.key] }))}
+                        style={{ accentColor: 'var(--ink)' }} />
+                      {t.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <Btn type="button" variant="outline" size="sm" onClick={() => setSubgroups(prev => [...prev, { employeeIds: [], includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false }])}>
+              + Add Subgroup
+            </Btn>
+          </div>
+        );
+
+        return (
+          <>
+            <FormField label="2. Group Configuration">
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {[
+                  { v: 'same', l: 'Same for all', d: 'All employees get the same assessment types' },
+                  { v: 'custom', l: 'Custom per subgroup', d: 'Different types for different groups of employees' },
+                ].map(opt => (
+                  <label key={opt.v} style={{
+                    flex: 1, display: 'flex', gap: '10px', padding: '14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                    border: `1.5px solid ${groupStyle === opt.v ? 'var(--ink)' : 'var(--canvas-warm)'}`,
+                    background: groupStyle === opt.v ? 'var(--canvas-warm)' : 'var(--canvas)', transition: 'all var(--transition)',
                   }}>
-                    <input type="checkbox" checked={form.employeeIds.includes(emp.EmployeeID)}
-                      onChange={() => toggleId('employeeIds', emp.EmployeeID)} style={{ accentColor: 'var(--ink)' }} />
+                    <input type="radio" name="groupStyle" value={opt.v} checked={groupStyle === opt.v} onChange={() => setGroupStyle(opt.v)} style={{ accentColor: 'var(--ink)', marginTop: '2px' }} />
                     <div>
-                      <div style={{ fontWeight: 500, fontSize: '0.88rem' }}>{emp.FirstName} {emp.LastName}</div>
-                      <div style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>{emp.JobTitle || emp.Email}</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{opt.l}</div>
+                      <div style={{ fontSize: '0.77rem', color: 'var(--ink-soft)', marginTop: '2px' }}>{opt.d}</div>
                     </div>
                   </label>
-                )) : (
-                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '0.85rem' }}>
-                    List is empty. Please select a company first to see employees.
-                  </div>
-                )}
+                ))}
               </div>
-            </div>
-          </FormField>
+            </FormField>
+            <FormField label={groupStyle === 'same' ? '3. Select Employees' : '3. Configure Subgroups'} hint={groupStyle === 'same' ? 'Select all employees for this batch campaign' : 'Each subgroup can have different employees and assessment types'} required>
+              {companyFilter}
+              {groupStyle === 'same' ? employeeListUI : subgroupUI}
+            </FormField>
+          </>
         );
       })()}
 
@@ -1282,7 +1391,8 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
       )}
 
       {/* Assessment types */}
-      <FormField label="Assessment Types" required>
+      {!(mode === 'group' && groupStyle === 'custom') && (
+      <FormField label="Assessment Types" required hint={isEmployeeProfile ? 'This profile only supports Self Assessment' : undefined}>
         <div className="grid-2col" style={{ gap: '10px' }}>
           {[
             { key: 'includeSelf', label: 'Self Assessment', desc: 'Employee rates themselves' },
@@ -1290,21 +1400,29 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
             { key: 'includePeer', label: 'Peer Review', desc: 'Individual links + shared link' },
             { key: 'includeDirectReports', label: 'Direct Reports', desc: 'Individual links + shared link' },
             { key: 'includeExternal', label: 'External', desc: 'One shared link for external assessors' },
-          ].map(t => (
+          ].map(t => {
+            const lockedOff = isEmployeeProfile && t.key !== 'includeSelf';
+            const lockedOn  = isEmployeeProfile && t.key === 'includeSelf';
+            return (
             <label key={t.key} style={{
-              display: 'flex', gap: '12px', padding: '14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+              display: 'flex', gap: '12px', padding: '14px', borderRadius: 'var(--radius-md)',
+              cursor: (lockedOff || lockedOn) ? 'not-allowed' : 'pointer',
               border: `1.5px solid ${form[t.key] ? 'var(--ink)' : 'var(--canvas-warm)'}`,
-              background: form[t.key] ? 'var(--canvas-warm)' : 'var(--canvas)', transition: 'all var(--transition)',
+              background: lockedOff ? '#f9f9f9' : form[t.key] ? 'var(--canvas-warm)' : 'var(--canvas)',
+              opacity: lockedOff ? 0.45 : 1,
+              transition: 'all var(--transition)',
             }}>
-              <input type="checkbox" checked={form[t.key]} onChange={() => toggle(t.key)} style={{ accentColor: 'var(--ink)', marginTop: '2px' }} />
+              <input type="checkbox" checked={form[t.key]} onChange={() => { if (!lockedOff && !lockedOn) toggle(t.key); }} disabled={lockedOff || lockedOn} style={{ accentColor: 'var(--ink)', marginTop: '2px' }} />
               <div>
                 <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.label}</div>
                 <div style={{ fontSize: '0.77rem', color: 'var(--ink-soft)', marginTop: '2px' }}>{t.desc}</div>
               </div>
             </label>
-          ))}
+            );
+          })}
         </div>
       </FormField>
+      )}
 
       {/* Peer picker — individual mode only */}
       {form.includePeer && mode === 'individual' && (
@@ -1330,7 +1448,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
         </FormField>
       )}
 
-      {form.includePeer && mode === 'group' && (
+      {form.includePeer && mode === 'group' && groupStyle === 'same' && (
         <div style={{ padding: '12px 16px', background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.6 }}>
           <strong style={{ color: 'var(--ink)' }}>Peer Review:</strong> In group mode, one shared link per employee will be generated.
         </div>
@@ -1360,7 +1478,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
         </FormField>
       )}
 
-      {form.includeDirectReports && mode === 'group' && (
+      {form.includeDirectReports && mode === 'group' && groupStyle === 'same' && (
         <div style={{ padding: '12px 16px', background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: 'var(--ink-soft)', lineHeight: 1.6 }}>
           <strong style={{ color: 'var(--ink)' }}>Direct Reports:</strong> In group mode, one shared link per employee will be generated.
         </div>
@@ -1476,14 +1594,41 @@ export function NewCampaign() {
 
   async function handleSubmit(payload) {
     if (payload.mode === 'individual' && !payload.employeeId) { setError('Please select an employee.'); return; }
-    if (payload.mode === 'group' && (!payload.employeeIds || payload.employeeIds.length < 2)) { setError('Select at least 2 employees for a group campaign.'); return; }
-    if (!payload.includeSelf && !payload.includeManager && !payload.includePeer && !payload.includeDirectReports && !payload.includeExternal) {
-      setError('Select at least one assessment type.'); return;
+    if (payload.mode === 'group' && payload.groupStyle === 'custom') {
+      if (!payload.subgroups || payload.subgroups.length === 0) { setError('Add at least one subgroup.'); return; }
+      for (let i = 0; i < payload.subgroups.length; i++) {
+        const sg = payload.subgroups[i];
+        if (!sg.employeeIds || sg.employeeIds.length === 0) { setError(`Subgroup ${i + 1} has no employees selected.`); return; }
+        if (!sg.includeSelf && !sg.includeManager && !sg.includePeer && !sg.includeDirectReports && !sg.includeExternal) {
+          setError(`Subgroup ${i + 1} has no assessment types selected.`); return;
+        }
+      }
+    } else {
+      if (payload.mode === 'group' && (!payload.employeeIds || payload.employeeIds.length < 2)) { setError('Select at least 2 employees for a group campaign.'); return; }
+      if (!payload.includeSelf && !payload.includeManager && !payload.includePeer && !payload.includeDirectReports && !payload.includeExternal) {
+        setError('Select at least one assessment type.'); return;
+      }
     }
     setLoading(true); setError(null);
     try {
       if (payload.mode === 'group') {
-        await api.manager.createCampaignBatch(payload);
+        if (payload.groupStyle === 'custom') {
+          for (const sg of payload.subgroups) {
+            await api.manager.createCampaignBatch({
+              name: payload.name,
+              employeeIds: sg.employeeIds,
+              profilId: payload.profilId,
+              deadline: payload.deadline,
+              includeSelf: sg.includeSelf,
+              includeManager: sg.includeManager,
+              includePeer: sg.includePeer,
+              includeDirectReports: sg.includeDirectReports,
+              includeExternal: sg.includeExternal,
+            });
+          }
+        } else {
+          await api.manager.createCampaignBatch(payload);
+        }
         navigate('/manager/dashboard');
       } else {
         const res = await api.manager.createCampaign(payload);

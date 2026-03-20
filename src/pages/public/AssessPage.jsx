@@ -4,6 +4,7 @@ import { api } from '../../utils/api';
 import { Logo } from '../../components/Layout';
 import { Btn, Spinner, Alert, Card, FormField, Input } from '../../components/UI';
 import { leaderQuestions40 } from '../../data/leaderQuestions40';
+import { employeeQuestions40 } from '../../data/employeeQuestions40';
 import { managerQuestions } from '../../data/managerQuestions';
 import { peerQuestions } from '../../data/peerQuestions';
 
@@ -44,9 +45,14 @@ export default function AssessPage() {
 
   const rawLang = data?.language || data?.lang || 'en';
   const lang = rawLang === 'en' ? 'eng' : rawLang;
+
+  const profileName = (data?.profileName || data?.profilName || data?.profile?.name || data?.ProfilName || '').toLowerCase();
+  const isEmployeeProfile = profileName.includes('employee') || profileName.includes('modern');
+
   const questionBank =
     assessmentType === 'manager' ? managerQuestions :
     ['peer', 'directreport', 'direct_report', 'external', 'other'].includes(assessmentType) ? peerQuestions :
+    isEmployeeProfile ? employeeQuestions40 :
     leaderQuestions40;
   const langQuestions = questionBank[lang] || questionBank['eng'];
   const questions = langQuestions ? Object.values(langQuestions).flat() : [];
@@ -206,7 +212,157 @@ export default function AssessPage() {
 
   // ── Intro pages ──────────────────────────────────────────────────────────
 
-  const introPages = [
+  const employeeIntroPages = [
+    {
+      key: 'compass',
+      title: 'HB Compass — Know Where You Stand. Know Where to Grow.',
+      subtitle: null,
+      body: (
+        <>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
+            Most professionals have a genuine but incomplete picture of themselves. You know your strengths — at least the ones you are aware of. You know the areas you find challenging. But the gap between how you see yourself and how your work actually lands with others, how your thinking shapes your decisions, how your presence influences the people around you — that gap is where the most valuable development insight lives. The HB Compass self-assessment is designed to close that gap.
+          </p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '24px' }}>
+            HB Compass is a professional development framework built on a simple but powerful idea: what makes someone genuinely excellent at their work is not one thing — it is four interconnected things, working together. Most development tools focus on skills or results. HB Compass goes further, assessing the full picture of what drives professional effectiveness.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
+            {[
+              { label: 'Mindset — The Foundation', desc: 'How you think shapes everything else. Your beliefs about your own capacity to grow, your resilience when things get difficult, your openness to feedback, your relationship with your work and your organisation — these are not fixed traits. They are patterns that can be understood, developed, and deliberately changed.' },
+              { label: 'Skills — The Toolkit', desc: 'Skills are the practical capabilities you bring to your role — how you manage your time and priorities, how you communicate, how you organise your work, how you collaborate and solve problems. The Skills dimension assesses not just whether you have a capability, but how reliably and effectively you apply it in real situations.' },
+              { label: 'Results — The Measure', desc: 'Results are the outcomes you create — in the short term through effective execution and goal achievement, and in the long term through your contribution to change and improvement. The Results dimension connects your day-to-day work to the larger impact you make.' },
+              { label: 'Influence — The Multiplier', desc: 'How you affect the people around you determines whether your professional contribution stays with you or extends to others. The Influence dimension examines how you collaborate, build trust, support colleagues, and contribute to a positive and productive environment.' },
+            ].map(({ label, desc }) => (
+              <div key={label} style={{ borderLeft: '3px solid var(--canvas-warm)', paddingLeft: '16px' }}>
+                <p style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: '6px', color: 'var(--ink)' }}>{label}</p>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, fontSize: '0.88rem' }}>
+            Understanding where you currently are is the most practical thing you can do for your professional development. Not where you hope you are — where you actually are, honestly assessed against a clear description of what excellent looks like. When you know that, development stops being vague. You have a starting point.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'employee',
+      title: 'The Modern Employee',
+      subtitle: 'HB Compass — Modern Employee Profile',
+      body: (
+        <>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '16px' }}>
+            There is a difference between showing up and actually contributing. Most people who have worked in teams understand this instinctively — because they have experienced both kinds of colleague themselves. They have worked alongside someone who made the team stronger just by being present, and they have worked alongside someone who technically did their job but never quite connected with the work or the people around them. The difference between those two experiences is not intelligence or technical ability. It is how someone shows up.
+          </p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
+            The Modern Employee profile describes what genuinely effective professional contribution looks like today — not as an abstract ideal, but as a set of observable, developable capabilities that professionals at any level can understand, assess, and grow.
+          </p>
+          <p style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '8px', color: 'var(--ink)' }}>What Does a Modern Employee Look Like?</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '28px' }}>
+            {[
+              {
+                title: 'They Deliver Results — and Build Their Own Capacity to Keep Delivering',
+                text: 'A modern employee gets things done. They set clear goals for themselves, manage their workload effectively, and follow through on commitments. When problems arise, they address them systematically — not just patching symptoms, but understanding root causes. And they do not stop at short-term delivery. They look for ways to work smarter, embrace change, and build skills that keep them effective as the environment around them evolves.',
+              },
+              {
+                title: 'They Bring the Right Mindset',
+                text: 'How someone thinks shapes everything about how they work. A modern employee approaches their role with self-awareness — understanding their own strengths and the edges of those strengths. They seek feedback and genuinely use it. They take ownership of their work without deflecting responsibility. And they stay open to growth — believing that capability is built through effort and learning, not fixed by circumstance.',
+              },
+              {
+                title: 'They Have the Skills That Professional Life Actually Requires',
+                text: 'Technical knowledge gets people hired. What keeps them effective is a different set of capabilities entirely. A modern employee manages their time and priorities with real discipline — focusing consistently on what matters most. They communicate in ways that land with different audiences. They organise their work to produce reliable, quality outputs. And they bring genuine problem-solving ability to the challenges they face each day.',
+              },
+              {
+                title: 'They Make the Environment Around Them Better',
+                text: 'The final dimension of effective professional contribution is perhaps the least visible — and the most powerful. It is the effect someone has on the people and culture around them. A modern employee collaborates in ways that make collective work easier. They build trust through consistency and care. They support colleagues genuinely, not performatively. And they bring a presence that adds to the environment rather than subtracting from it.',
+              },
+            ].map(({ title, text }) => (
+              <div key={title} style={{ borderLeft: '3px solid var(--canvas-warm)', paddingLeft: '16px' }}>
+                <p style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: '6px', color: 'var(--ink)' }}>{title}</p>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>{text}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '8px', color: 'var(--ink)' }}>The Five Development Levels</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+            {[
+              { name: 'Emerging', text: 'You are building foundational understanding and beginning to develop this capability. Your approach may be inconsistent, and you benefit from guidance and structured support.' },
+              { name: 'Developing', text: 'You are growing in this area and demonstrating the capability in straightforward situations. You are building confidence and consistency, though more complex situations may still stretch you.' },
+              { name: 'Proficient', text: 'You demonstrate this capability reliably and effectively across most situations. This is a genuine strength you can build on and that others can depend on.' },
+              { name: 'Advanced', text: 'You demonstrate sophisticated, nuanced capability that goes beyond effective performance. You anticipate complexity, adapt skilfully, and often help others around you develop in this area.' },
+              { name: 'Expert', text: 'You demonstrate masterful, distinctive capability that shapes how others think about and approach this aspect of professional work. You are a recognised resource and a model for others.' },
+            ].map(({ name, text }) => (
+              <div key={name} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ flexShrink: 0, fontWeight: 700, fontSize: '0.82rem', color: 'var(--ink)', minWidth: 72 }}>{name}</span>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.85rem' }}>{text}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, fontSize: '0.85rem' }}>
+            Most professionals will find themselves at different levels across different capabilities — and that variation is exactly what makes the self-assessment useful. It shows you not just where you are strong, but where the most valuable development focus lies for you specifically.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'intro',
+      title: 'HB Compass Self-Assessment — Preparation Guide',
+      subtitle: 'This page will take you about 3 minutes to read. Please read it before you begin.',
+      body: (
+        <>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>What you are about to do</p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.9rem' }}>
+            You are going to read a series of realistic workplace scenarios — situations that professionals in your kind of role regularly face. For each one, you will choose the description that best fits how you actually respond. There are no right or wrong answers. The three options represent different approaches — not different levels of worth or value.
+          </p>
+          <div style={{ background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '16px 18px', marginBottom: '20px' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>The single most important thing</p>
+            <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
+              Answer based on how you actually work — not how you think you should work. It is tempting to choose the most impressive-sounding option on every question. We'd ask you not to — for a practical reason. Each scenario is paired with a follow-up question that asks what actually happened as a result of your approach. If your first answer describes behaviour you don't typically exhibit, the follow-up will reveal the gap. <strong>An honest 3 is more useful than an inflated 5.</strong>
+            </p>
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', color: 'var(--ink)' }}>What the three options mean</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+            {[
+              { label: 'Option A', desc: 'A professional at an earlier stage of development in this area. Not the "bad" answer — a legitimate approach that many capable people use, especially in areas they\'re still building.' },
+              { label: 'Option B', desc: 'A solid, competent professional performing consistently and independently. For most people in most areas, this is a realistic and accurate description.' },
+              { label: 'Option C', desc: 'A highly effective professional who performs excellently and begins to create positive impact beyond their own work. Select this only if it genuinely reflects your typical approach — not your best day.' },
+            ].map(({ label, desc }) => (
+              <div key={label} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ flexShrink: 0, fontWeight: 700, fontSize: '0.82rem', color: 'var(--ink)', minWidth: 60 }}>{label}</span>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.85rem' }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>How to read each question</p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.88rem' }}>
+            Ask yourself: "Across a typical week, in situations like this — which description most accurately captures what I actually do?" Think about patterns, not highlights. Your most impressive interaction is not your typical one.
+          </p>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', color: 'var(--ink)' }}>Five things to remember while answering</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+            {[
+              'Think patterns, not highlights — choose what\'s typical, not exceptional',
+              'Option A is not a failure — it describes a real professional at an earlier stage of development',
+              'Variation is healthy — a profile with some A\'s, B\'s and C\'s is more honest and more useful than wall-to-wall C\'s',
+              'If you\'re between two options — choose the lower one; the follow-up question gives you room to show nuance',
+              'Find a quiet moment — your honest reflection is more valuable than any particular score',
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, width: 6, height: 6, borderRadius: '50%', background: 'var(--ink)', marginTop: '8px' }} />
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.88rem' }}>{item}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '16px 18px' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>When you're ready</p>
+            <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
+              Find a quiet place. Set aside 20 minutes without interruptions. Your honest reflection is the most valuable thing you can bring to this assessment — more valuable than any particular score.
+            </p>
+          </div>
+        </>
+      ),
+    },
+  ];
+
+  const introPages = isEmployeeProfile ? employeeIntroPages : [
     {
       key: 'compass',
       title: 'HB Compass — Know Where You Stand. Know Where to Grow.',
@@ -396,7 +552,7 @@ export default function AssessPage() {
         <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 24px' }}>
           <div style={{ marginBottom: '32px' }}>
             <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '8px' }}>
-              {introStep === 1 ? 'The Framework' : introStep === 2 ? 'Leadership Model' : 'Instructions'}
+              {introStep === 1 ? 'The Framework' : introStep === 2 ? (isEmployeeProfile ? 'Employee Profile' : 'Leadership Model') : 'Instructions'}
             </p>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', marginBottom: '8px', lineHeight: 1.25 }}>{page.title}</h1>
             {page.subtitle && <p style={{ color: 'var(--ink-soft)', fontSize: '0.95rem' }}>{page.subtitle}</p>}
