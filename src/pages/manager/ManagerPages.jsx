@@ -1565,21 +1565,31 @@ export function CampaignEdit() {
 // ── Pillar Score Chart ───────────────────────────────────────────────────────
 function pillarDim(pillar) {
   const p = (pillar || '').toUpperCase().trim();
-  if (p.includes('CILJEVI') || p.includes('PROMEN') || p.includes('SHORT-TERM') || p.includes('LONG-TERM') || p === 'STG' || p === 'LTC') return 'rezultati';
-  if (p.includes('PREMA') || p.includes('TOWARDS') || p === 'TO' || p === 'TOO' || p === 'TCP' || p === 'CP') return 'mindset';
-  if (p.includes('EFIKASNOST') || p.includes('KOMUNIKACIJA') || p.includes('RAZVOJ TIMA') || p.includes('EFFICIENCY') || p.includes('COMMUNICATION') || p.includes('PEOPLE DEVELOPMENT') || p === 'PE' || p === 'CO' || p === 'TPD') return 'vestine';
-  return 'uticaj';
+  if (p.includes('CILJEVI') || p.includes('PROMEN') || p.includes('SHORT-TERM') || p.includes('LONG-TERM') || p === 'STG' || p === 'LTC') return 'RESULTS';
+  if (p.includes('PREMA') || p.includes('TOWARDS') || p === 'TO' || p === 'TOO' || p === 'TCP' || p === 'CP') return 'MINDSET';
+  if (p.includes('EFIKASNOST') || p.includes('KOMUNIKACIJA') || p.includes('RAZVOJ TIMA') || p.includes('EFFICIENCY') || p.includes('COMMUNICATION') || p.includes('PEOPLE DEVELOPMENT') || p === 'PE' || p === 'CO' || p === 'TPD') return 'SKILLS';
+  return 'INFLUENCE';
 }
 
-const CHART_DIM_COLORS = { rezultati: '#c62828', mindset: '#00695c', vestine: '#1565c0', uticaj: '#ef6c00' };
-const CHART_DIM_LABELS = { rezultati: 'RESULTS', mindset: 'MINDSET', vestine: 'SKILLS', uticaj: 'INFLUENCE' };
-const ASSESSOR_COLORS = { manager: '#9c27b0', peer: '#00897b', directreport: '#f57c00', direct_report: '#f57c00', external: '#546e7a' };
-const ASSESSOR_LABELS = { manager: 'Manager', peer: 'Peers avg', directreport: 'Direct Reports avg', direct_report: 'Direct Reports avg', external: 'External avg' };
-const PILLAR_DISPLAY = {
-  STG: 'Short-term Goals', LTC: 'Long-term Change', TO: 'Towards Oneself',
-  TOO: 'Towards Others', TCP: 'Towards Company & Position', CP: 'Towards Company & Position',
-  PE: 'Personal Efficiency', CO: 'Communication', TPD: 'Team & People Development',
-  MTF: 'How do I make my team feel?', HIA: 'How do I induce action?',
+const PILLAR_EN_MAP = {
+  'KRATKOROČNI CILJEVI': 'SHORT-TERM GOALS', 'DUGOROČNA PROMENA': 'LONG-TERM CHANGE',
+  'DUGOROČNE PROMENE': 'LONG-TERM CHANGE', 'PREMA SEBI': 'TOWARDS ONESELF',
+  'PREMA DRUGIMA': 'TOWARDS OTHERS', 'PREMA KOMPANIJI I POZICIJI': 'TOWARDS COMPANY & POSITION',
+  'PREMA KOMPANIJI': 'TOWARDS COMPANY & POSITION', 'LIČNA EFIKASNOST': 'PERSONAL EFFICIENCY',
+  'KOMUNIKACIJA': 'COMMUNICATION', 'RAZVOJ TIMA I LJUDI': 'TEAM & PEOPLE DEVELOPMENT',
+  'KAKO SE MOJ TIM OSEĆA?': 'HOW DO I MAKE MY TEAM FEEL?', 'KAKO SE TIM OSEĆA': 'HOW DO I MAKE MY TEAM FEEL?',
+  'KAKO POKREĆEM NA AKCIJU?': 'HOW DO I INDUCE ACTION?', 'KAKO PODSTIČEM AKCIJU': 'HOW DO I INDUCE ACTION?',
+  STG: 'SHORT-TERM GOALS', LTC: 'LONG-TERM CHANGE', TO: 'TOWARDS ONESELF',
+  TOO: 'TOWARDS OTHERS', TCP: 'TOWARDS COMPANY & POSITION', CP: 'TOWARDS COMPANY & POSITION',
+  PE: 'PERSONAL EFFICIENCY', CO: 'COMMUNICATION', TPD: 'TEAM & PEOPLE DEVELOPMENT',
+  MTF: 'HOW DO I MAKE MY TEAM FEEL?', HIA: 'HOW DO I INDUCE ACTION?',
+};
+
+const DIM_QUOTES = {
+  RESULTS:   '"Knowing is not enough; we must apply. Willing is not enough; we must do." — Goethe',
+  MINDSET:   '"He who knows others is wise; he who knows himself is enlightened." — Lao Tzu',
+  SKILLS:    '"I hear and I forget. I see and I remember. I do and I understand." — Confucius',
+  INFLUENCE: '"You can\'t win friends by trying to get them interested in you." — Dale Carnegie',
 };
 
 function PillarScoreChart({ data: chartData, selfDone }) {
@@ -1589,100 +1599,99 @@ function PillarScoreChart({ data: chartData, selfDone }) {
   if (selfScores.length === 0) {
     return (
       <Card style={{ padding: '24px' }}>
-        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '4px' }}>Competency Profile</h3>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '4px' }}>Performance Overview</h3>
         <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '0', lineHeight: 1.6 }}>
           {selfDone
             ? 'Score data is loading…'
-            : 'Complete the self-assessment to see the competency profile chart.'}
+            : 'Complete the self-assessment to see the competency profile.'}
         </p>
       </Card>
     );
   }
 
-  // Aggregate self scores by pillar (average if multiple facets per pillar)
-  const selfByPillar = {};
+  // Aggregate scores by pillar
+  const fMap = {};
   selfScores.forEach(r => {
-    if (!selfByPillar[r.pillar]) selfByPillar[r.pillar] = { sum: 0, count: 0, dimension: pillarDim(r.pillar) };
-    selfByPillar[r.pillar].sum += r.score;
-    selfByPillar[r.pillar].count++;
+    const dim = r.dimension && ['RESULTS','MINDSET','SKILLS','INFLUENCE'].includes(r.dimension)
+      ? r.dimension : pillarDim(r.pillar || '');
+    const k = `${dim}||${r.pillar}`;
+    if (!fMap[k]) fMap[k] = { dim, pillar: r.pillar, sum: 0, count: 0 };
+    if (typeof r.score === 'number') { fMap[k].sum += r.score; fMap[k].count++; }
   });
 
-  // Build lookup: pillar → avg score for each other assessor type (also aggregate by pillar)
-  const otherTypes = ['manager', 'peer', 'directreport', 'external'];
-  const otherAcc = {};
-  otherTypes.forEach(aType => {
-    (byAssessorType[aType] || []).forEach(r => {
-      if (!otherAcc[r.pillar]) otherAcc[r.pillar] = {};
-      if (!otherAcc[r.pillar][aType]) otherAcc[r.pillar][aType] = { sum: 0, count: 0 };
-      otherAcc[r.pillar][aType].sum += r.score;
-      otherAcc[r.pillar][aType].count++;
-    });
+  const grouped = { RESULTS: [], MINDSET: [], SKILLS: [], INFLUENCE: [] };
+  Object.values(fMap).forEach(({ dim, pillar, sum, count }) => {
+    if (!grouped[dim] || !count) return;
+    grouped[dim].push({ pillar, score: Math.max(1, Math.min(5, sum / count)) });
   });
-  const otherLookup = {};
-  Object.keys(otherAcc).forEach(pillar => {
-    otherLookup[pillar] = {};
-    otherTypes.forEach(aType => {
-      const e = otherAcc[pillar][aType];
-      if (e) otherLookup[pillar][aType] = e.sum / e.count;
-    });
-  });
-
-  // Group aggregated pillar scores by dimension
-  const dimGroups = { rezultati: [], mindset: [], vestine: [], uticaj: [] };
-  Object.entries(selfByPillar).forEach(([pillar, { sum, count, dimension }]) => {
-    const dim = dimension.toLowerCase();
-    if (dimGroups[dim]) dimGroups[dim].push({ pillar, selfScore: sum / count, otherScores: otherLookup[pillar] || {} });
-  });
-
-  const usedOtherTypes = [...new Set(
-    Object.values(dimGroups).flatMap(g => g.flatMap(p => Object.keys(p.otherScores)))
-  )];
 
   return (
     <Card style={{ padding: '24px' }}>
-      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '4px' }}>Competency Profile</h3>
-      <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '16px', lineHeight: 1.6 }}>
-        Self-assessment scores by pillar (bars). Vertical markers show averages from other completed assessors.
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '4px' }}>Performance Overview</h3>
+      <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.6 }}>
+        Results by Dimensions and Pillars
       </p>
-      <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <div style={{ width: 24, height: 8, background: 'var(--ink)', borderRadius: 2, opacity: 0.7 }} />
-          <span style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>Self</span>
-        </div>
-        {usedOtherTypes.map(t => (
-          <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ width: 3, height: 16, background: ASSESSOR_COLORS[t] || '#888', borderRadius: 1 }} />
-            <span style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>{ASSESSOR_LABELS[t] || t}</span>
-          </div>
-        ))}
-      </div>
-      <div className="grid-2col" style={{ gap: '16px' }}>
-        {['rezultati', 'mindset', 'vestine', 'uticaj'].map(dim => {
-          const pillars = dimGroups[dim];
-          if (pillars.length === 0) return null;
-          const color = CHART_DIM_COLORS[dim];
+      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto' }}>
+        {['RESULTS', 'MINDSET', 'SKILLS', 'INFLUENCE'].map(dim => {
+          const pillars = grouped[dim];
           return (
-            <div key={dim} style={{ border: '1px solid var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '14px 16px', background: 'var(--canvas-white)' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', color, marginBottom: '12px' }}>{CHART_DIM_LABELS[dim]}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {pillars.map(({ pillar, selfScore, otherScores }) => (
-                  <div key={pillar}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ink)' }}>{PILLAR_DISPLAY[pillar] || pillar}</span>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--ink-soft)' }}>{selfScore.toFixed(1)}</span>
-                    </div>
-                    <div style={{ position: 'relative', height: 8, background: 'var(--canvas-warm)', borderRadius: 4 }}>
-                      <div style={{ position: 'absolute', left: 0, top: 0, height: '100%', width: `${(selfScore / 5) * 100}%`, background: color, borderRadius: 4, opacity: 0.75 }} />
-                      {Object.entries(otherScores).map(([aType, score]) => (
-                        <div key={aType} title={`${ASSESSOR_LABELS[aType] || aType}: ${score.toFixed(1)}`} style={{
-                          position: 'absolute', left: `calc(${(score / 5) * 100}% - 1.5px)`,
-                          top: -3, height: 14, width: 3,
-                          background: ASSESSOR_COLORS[aType] || '#666', borderRadius: 2,
-                        }} />
-                      ))}
-                    </div>
+            <div key={dim} style={{
+              flex: '1 1 0', minWidth: 160, minHeight: 300,
+              background: '#fff',
+              border: '1px solid #e0e0e0',
+              borderRadius: 8,
+              boxShadow: '3px 3px 0 rgba(0,0,0,0.08)',
+              display: 'flex', flexDirection: 'column',
+              overflow: 'hidden',
+            }}>
+              {/* Card header */}
+              <div style={{ padding: '10px 12px 0' }}>
+                <div style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.06em', color: '#222', marginBottom: '4px' }}>
+                  HansenBeck
+                </div>
+                <div style={{ height: 1.5, background: '#222', marginBottom: '8px' }} />
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 400, color: '#000', lineHeight: 1.1, marginBottom: '8px' }}>
+                  {dim}
+                </div>
+              </div>
+
+              {/* Bar chart area */}
+              <div style={{ flex: 1, padding: '0 12px', display: 'flex', alignItems: 'flex-end', gap: 0, minHeight: 120 }}>
+                {pillars.length === 0 ? (
+                  <div style={{ fontSize: '0.7rem', color: '#aaa', alignSelf: 'center', width: '100%', textAlign: 'center' }}>—</div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, width: '100%', height: 120, justifyContent: 'center' }}>
+                    {pillars.map(({ pillar, score }) => {
+                      const label = PILLAR_EN_MAP[pillar?.toUpperCase()] || pillar || '';
+                      const barH = Math.max(4, (score / 5) * 96);
+                      return (
+                        <div key={pillar} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                          <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#222', marginBottom: 2 }}>
+                            {score.toFixed(1)}
+                          </div>
+                          <div style={{
+                            width: '100%', maxWidth: 36, height: barH,
+                            background: '#222', borderRadius: '2px 2px 0 0',
+                          }} />
+                          <div style={{
+                            marginTop: 5, fontSize: '0.55rem', fontWeight: 700,
+                            color: '#333', textAlign: 'center', lineHeight: 1.2,
+                            wordBreak: 'break-word', maxWidth: 54,
+                          }}>
+                            {label}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                ))}
+                )}
+              </div>
+
+              {/* Quote footer */}
+              <div style={{ padding: '8px 12px 12px', borderTop: '0.5px solid #ddd', marginTop: 8 }}>
+                <p style={{ fontSize: '0.6rem', color: '#555', lineHeight: 1.4, fontStyle: 'italic', margin: 0 }}>
+                  {DIM_QUOTES[dim]}
+                </p>
               </div>
             </div>
           );
@@ -1902,7 +1911,7 @@ export function CampaignDetail() {
                   <div style={{ fontWeight: 500 }}>{campaign.JobTitle}</div>
                 </div>
               )}
-              {campaign.Status !== 'completed' && (
+              {campaign.Status === 'in_progress' && (
                 <Btn size="sm" variant="outline" onClick={() => navigate(`/manager/campaigns/${id}/edit`)}>Edit Campaign</Btn>
               )}
             </div>
