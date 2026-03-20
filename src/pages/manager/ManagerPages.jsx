@@ -2391,6 +2391,13 @@ export function CompaniesAndEmployees() {
     });
   }
 
+  const fmtDeadline = c => {
+    const d = c.Deadline || c.deadline;
+    if (!d) return <span style={{ color: 'var(--ink-faint)' }}>—</span>;
+    const date = new Date(d);
+    return isNaN(date) ? <span style={{ color: 'var(--ink-faint)' }}>—</span> : date.toLocaleDateString();
+  };
+
   async function handleCreateCompany(e) {
     e.preventDefault();
     if (!newName.trim()) return;
