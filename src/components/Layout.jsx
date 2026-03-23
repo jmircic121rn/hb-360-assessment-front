@@ -45,6 +45,7 @@ export function PortalLayout({ role, navItems, children }) {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState(null);
   const [pwSuccess, setPwSuccess] = useState(false);
+  const [openGroups, setOpenGroups] = useState({});
 
   useEffect(() => {
     api.getMe(role).then(d => setUser(d?.user || d)).catch(() => {});
@@ -54,6 +55,16 @@ export function PortalLayout({ role, navItems, children }) {
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  // Open the group containing the active page
+  useEffect(() => {
+    const activeItem = navItems.find(item =>
+      location.pathname === item.href || location.pathname.startsWith(item.href + '/')
+    );
+    if (activeItem?.group) {
+      setOpenGroups(prev => ({ ...prev, [activeItem.group]: true }));
+    }
+  }, [location.pathname, navItems]);
 
   function handleLogout() {
     clearToken(role);
@@ -122,44 +133,74 @@ export function PortalLayout({ role, navItems, children }) {
 
         {/* Nav */}
         <nav style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto' }}>
-          {navItems.map((item, idx) => {
-            const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
-            const prevGroup = idx > 0 ? navItems[idx - 1].group : null;
-            const showGroupLabel = item.group && item.group !== prevGroup && (!collapsed || isMobile);
-            return (
-              <React.Fragment key={item.href}>
-                {showGroupLabel && (
-                  <div style={{
-                    padding: idx === 0 ? '4px 10px 4px' : '14px 10px 4px',
-                    fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em',
-                    textTransform: 'uppercase', color: 'rgba(255,255,255,0.25)',
-                    fontFamily: 'var(--font-body)',
-                  }}>
-                    {item.group}
-                  </div>
-                )}
-                <Link
-                  to={item.href}
-                  onClick={() => isMobile && setMobileOpen(false)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '10px',
-                    padding: collapsed && !isMobile ? '10px 8px' : '11px 12px',
-                    borderRadius: 'var(--radius-sm)',
-                    background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
-                    color: active ? '#fff' : 'rgba(255,255,255,0.45)',
-                    fontSize: '0.88rem', fontWeight: active ? 600 : 400,
-                    transition: 'all var(--transition)',
-                    whiteSpace: 'nowrap', overflow: 'hidden',
-                    borderLeft: active ? '2px solid #fff' : '2px solid transparent',
-                    justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
-                    letterSpacing: '0.01em',
-                  }}>
-                  <span style={{ fontSize: '1rem', flexShrink: 0 }}>{item.icon}</span>
-                  {(!collapsed || isMobile) && item.label}
-                </Link>
-              </React.Fragment>
-            );
-          })}
+          {(() => {
+            const groupOrder = [];
+            const groupMap = {};
+            navItems.forEach(item => {
+              const g = item.group || '';
+              if (!groupMap[g]) { groupMap[g] = []; groupOrder.push(g); }
+              groupMap[g].push(item);
+            });
+            const iconOnly = collapsed && !isMobile;
+            const isOpen = g => !g || openGroups[g] === true;
+
+            return groupOrder.map((g, gi) => {
+              const items = groupMap[g];
+              const open = isOpen(g);
+              return (
+                <React.Fragment key={g || '_top'}>
+                  {g && !iconOnly && (
+                    <button
+                      onClick={() => setOpenGroups(prev => ({ ...prev, [g]: !prev[g] }))}
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        width: '100%', padding: gi === 0 ? '8px 10px 6px' : '18px 10px 6px',
+                        fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em',
+                        textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)',
+                        fontFamily: 'var(--font-body)', background: 'none', border: 'none',
+                        cursor: 'pointer', textAlign: 'left',
+                      }}
+                    >
+                      <span>{g}</span>
+                      <svg width="9" height="9" viewBox="0 0 9 9" fill="none" style={{ transition: 'transform 0.18s', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', flexShrink: 0 }}>
+                        <path d="M1 2.5L4.5 6L8 2.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  )}
+                  {(iconOnly || open) && items.map(item => {
+                    const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        onClick={() => isMobile && setMobileOpen(false)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: iconOnly ? '10px 8px' : '11px 12px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: active ? 'rgba(255,255,255,0.12)' : 'transparent',
+                          color: active ? '#fff' : 'rgba(255,255,255,0.45)',
+                          fontSize: '0.88rem', fontWeight: active ? 600 : 400,
+                          transition: 'all var(--transition)',
+                          whiteSpace: 'nowrap', overflow: 'hidden',
+                          borderLeft: active ? '2px solid rgba(255,255,255,0.6)' : '2px solid transparent',
+                          justifyContent: iconOnly ? 'center' : 'flex-start',
+                          letterSpacing: '0.01em',
+                        }}
+                      >
+                        {item.icon && (
+                          <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', fontSize: '1rem' }}>
+                            {item.icon}
+                          </span>
+                        )}
+                        {!iconOnly && <span>{item.label}</span>}
+                      </Link>
+                    );
+                  })}
+                </React.Fragment>
+              );
+            });
+          })()}
         </nav>
 
         {/* Footer */}
@@ -213,7 +254,10 @@ export function PortalLayout({ role, navItems, children }) {
               color: 'rgba(255,255,255,0.35)', fontSize: '0.78rem', background: 'none', border: 'none',
               cursor: 'pointer', transition: 'color var(--transition)', fontFamily: 'var(--font-body)',
             }}>
-              <span style={{ fontSize: '0.9rem' }}>🔑</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <circle cx="8" cy="15" r="5"/>
+                <path d="M21 2l-2 2m0 0l-5.5 5.5M19 4l-3 3m1.5-1.5L13 11m0 0l-1.5 1.5"/>
+              </svg>
               Change Password
             </button>
           )}

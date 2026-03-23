@@ -22,6 +22,12 @@ export default function AssessPage() {
   const [introStep, setIntroStep] = useState(1); // 1=compass, 2=leader, 3=intro, 4=questions
 
   useEffect(() => {
+    document.documentElement.style.scrollBehavior = 'auto';
+    window.scrollTo(0, 0);
+    document.documentElement.style.scrollBehavior = '';
+  }, [introStep, currentQ]);
+
+  useEffect(() => {
     api.getAssessment(token)
       .then(setData)
       .catch(e => {
@@ -49,13 +55,18 @@ export default function AssessPage() {
   const profileName = (data?.profileName || data?.profilName || data?.profile?.name || data?.ProfilName || '').toLowerCase();
   const isEmployeeProfile = profileName.includes('employee') || profileName.includes('modern');
 
-  const questionBank =
-    assessmentType === 'manager' ? managerQuestions :
-    ['peer', 'directreport', 'direct_report', 'external', 'other'].includes(assessmentType) ? peerQuestions :
-    isEmployeeProfile ? employeeQuestions40 :
-    leaderQuestions40;
-  const langQuestions = questionBank[lang] || questionBank['eng'];
-  const questions = langQuestions ? Object.values(langQuestions).flat() : [];
+  // Use questions from DB if available; fall back to local question files
+  const questions = (() => {
+    const dbQ = data?.questions;
+    if (dbQ && dbQ.length > 0) return dbQ;
+    const questionBank =
+      assessmentType === 'manager' ? managerQuestions :
+      ['peer', 'directreport', 'direct_report', 'external', 'other'].includes(assessmentType) ? peerQuestions :
+      isEmployeeProfile ? employeeQuestions40 :
+      leaderQuestions40;
+    const langQuestions = questionBank[lang] || questionBank['eng'];
+    return langQuestions ? Object.values(langQuestions).flat() : [];
+  })();
 
   // Shuffle once when questions load — must be before any early returns
   const shuffledQuestions = useMemo(() => {
@@ -340,9 +351,10 @@ export default function AssessPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
             {[
               'Think patterns, not highlights — choose what\'s typical, not exceptional',
-              'Option A is not a failure — it describes a real professional at an earlier stage of development',
-              'Variation is healthy — a profile with some A\'s, B\'s and C\'s is more honest and more useful than wall-to-wall C\'s',
-              'If you\'re between two options — choose the lower one; the follow-up question gives you room to show nuance',
+              'No option is inherently better or worse — each describes a different approach at a different stage of development',
+              'Variation is healthy — consistently choosing the most impressive-sounding option across all questions produces a less accurate and less useful profile',
+              'If you\'re between two options — choose the more conservative one; it gives a more honest starting point for development',
+              'Questions and answer options are presented in a randomised order — A, B, and C do not correspond to low, mid, or high scores',
               'Find a quiet moment — your honest reflection is more valuable than any particular score',
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -499,9 +511,10 @@ export default function AssessPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
             {[
               'Think patterns, not highlights — choose what\'s typical, not exceptional',
-              'Both options A and B are respectable — they describe real professionals, not failures',
-              'Variation is healthy — a profile with some A\'s, B\'s and C\'s is more honest and more useful than wall-to-wall C\'s',
-              'If you\'re between two options — choose the lower one; the follow-up question gives you room to show nuance',
+              'No option is inherently better or worse — each describes a different approach at a different stage of development',
+              'Variation is healthy — consistently choosing the most impressive-sounding option across all questions produces a less accurate and less useful profile',
+              'If you\'re between two options — choose the more conservative one; it gives a more honest starting point for development',
+              'Questions and answer options are presented in a randomised order — A, B, and C do not correspond to low, mid, or high scores',
               'You can pause and return — your progress saves automatically; use the same link to continue',
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>

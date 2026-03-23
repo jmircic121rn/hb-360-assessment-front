@@ -195,10 +195,10 @@ export default function LandingPage() {
                 tag: 'Manager · Team Lead',
               },
               {
-                label: 'Leader Profile',
-                desc: 'Designed for managers and team leads. Evaluates strategic thinking, team development, decision-making, and organizational influence.',
-                tag: 'Manager · Team Lead',
-              },
+  label: 'Employee',
+  desc: 'Focused on individual contributors. Evaluates adaptability, collaboration, personal efficiency, and the ability to drive results in a dynamic environment.',
+  tag: 'Individual Contributor · Professional',
+},
               {
                 label: 'Custom Talent Profile',
                 desc: 'DTailored for specific roles within your organization. Evaluates alignment with company values, cultural fit, and specialized competencies unique to your team.',

@@ -1,18 +1,10 @@
 import React, { useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
-import { PortalLayout } from '../../components/Layout'; 
+import { PortalLayout } from '../../components/Layout';
+import { NAV } from './ManagerPages';
 
 const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(null);
-
-  // Navigacija - prilagodi putanje ako su drugačije
-  const managerNav = [
-    { group: 'My Campaigns', href: '/manager/dashboard', icon: '📊', label: 'Active Campaigns' },
-    { group: 'My Campaigns', href: '/manager/archived', icon: '🗂️', label: 'Archived Campaigns' },
-    { group: 'My Campaigns', href: '/manager/campaigns/new', icon: '➕', label: 'New Campaign' },
-  { group: 'Management', href: '/manager/companies', icon: '🏢', label: 'My Companies' },
-    { group: 'Support', href: '/faq', icon: '❓', label: 'FAQ' },
-  ];
 
   const faqData = [
     {
@@ -183,7 +175,7 @@ const FAQ = () => {
   const toggleFAQ = (index) => setOpenIndex(openIndex === index ? null : index);
 
   return (
-    <PortalLayout role="admin" navItems={managerNav}>
+    <PortalLayout role="admin" navItems={NAV}>
       <div style={{ maxWidth: '900px', margin: '0 auto' }}>
         
         {/* Header Section */}

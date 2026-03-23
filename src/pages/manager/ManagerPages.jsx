@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../../utils/api';
 import { PortalLayout } from '../../components/Layout';
@@ -7,12 +7,100 @@ import {
   Table, Modal, FormField, Input, Select, Spinner
 } from '../../components/UI';
 
-const NAV = [
-  { group: 'My Campaigns', href: '/manager/dashboard', icon: '📊', label: 'Active Campaigns' },
-  { group: 'My Campaigns', href: '/manager/archived', icon: '🗂️', label: 'Archived Campaigns' },
-  { group: 'My Campaigns', href: '/manager/campaigns/new', icon: '➕', label: 'New Campaign' },
-  { group: 'Management', href: '/manager/companies', icon: '🏢', label: 'My Companies' },
-  { group: 'Support', href: '/faq', icon: '❓', label: 'FAQ' },
+// ── Action dropdown menu ───────────────────────────────────────────────────
+function ActionMenu({ items }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+  const visible = items.filter(Boolean);
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        style={{
+          display: 'flex', alignItems: 'center', gap: '4px',
+          padding: '5px 11px', borderRadius: '999px',
+          border: '1px solid rgba(0,0,0,0.11)',
+          background: open ? 'var(--canvas-warm)' : '#fff',
+          cursor: 'pointer', color: 'var(--ink-soft)', fontFamily: 'var(--font-body)',
+          transition: 'all 0.15s', lineHeight: 1,
+        }}
+        title="Actions"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+          <circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/>
+        </svg>
+        <svg width="9" height="9" viewBox="0 0 10 10" fill="none" style={{ flexShrink: 0, opacity: 0.45, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', right: 0, top: 'calc(100% + 6px)',
+          background: '#fff',
+          border: '1px solid rgba(0,0,0,0.08)',
+          borderRadius: '12px',
+          boxShadow: '0 8px 28px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.05)',
+          zIndex: 200, minWidth: 168, padding: '5px',
+        }}>
+          {visible.map((item, i) => {
+            const isDanger = item.danger;
+            const showDivider = isDanger && i > 0 && !visible[i - 1].danger;
+            const base = {
+              display: 'flex', alignItems: 'center', gap: '8px',
+              width: '100%', padding: '9px 13px', textAlign: 'left',
+              background: 'none', border: 'none', borderRadius: '8px',
+              cursor: item.loading ? 'default' : 'pointer', fontFamily: 'var(--font-body)',
+              fontSize: '0.84rem', fontWeight: 400,
+              color: isDanger ? '#dc2626' : 'var(--ink)',
+              opacity: item.loading ? 0.5 : 1, textDecoration: 'none',
+            };
+            const hover = e => { if (!item.loading) e.currentTarget.style.background = isDanger ? '#fef2f2' : 'var(--canvas)'; };
+            const unhover = e => { e.currentTarget.style.background = 'none'; };
+            return (
+              <React.Fragment key={i}>
+                {showDivider && <div style={{ height: '1px', background: 'rgba(0,0,0,0.07)', margin: '3px 6px' }} />}
+                {item.href ? (
+                  <Link to={item.href} onClick={() => setOpen(false)} style={base} onMouseEnter={hover} onMouseLeave={unhover}>
+                    {item.icon && <span style={{ opacity: 0.45, flexShrink: 0, display: 'flex' }}>{item.icon}</span>}
+                    {item.label}
+                  </Link>
+                ) : (
+                  <button disabled={item.loading} onClick={() => { if (!item.loading) { item.onClick(); setOpen(false); } }} style={base} onMouseEnter={hover} onMouseLeave={unhover}>
+                    {item.icon && <span style={{ opacity: 0.45, flexShrink: 0, display: 'flex' }}>{item.icon}</span>}
+                    {item.loading ? 'Please wait…' : item.label}
+                  </button>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const IcHome = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>;
+const IcChart = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>;
+const IcArchive = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></svg>;
+const IcPlus = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+const IcBuilding = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>;
+const IcPeople = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+const IcQuestion = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+
+export const NAV = [
+  { href: '/manager/welcome', icon: <IcHome />, label: 'Home' },
+  { group: 'My Campaigns', href: '/manager/dashboard', icon: <IcChart />, label: 'Active Campaigns' },
+  { group: 'My Campaigns', href: '/manager/archived', icon: <IcArchive />, label: 'Archived Campaigns' },
+  { group: 'My Campaigns', href: '/manager/campaigns/new', icon: <IcPlus />, label: 'New Campaign' },
+  { group: 'Management', href: '/manager/companies', icon: <IcBuilding />, label: 'My Companies' },
+  { group: 'Management', href: '/manager/people', icon: <IcPeople />, label: 'Employees' },
+  { group: 'Support', href: '/faq', icon: <IcQuestion />, label: 'FAQ' },
 ];
 
 function Layout({ children }) {
@@ -32,46 +120,137 @@ export function ManagerWelcome() {
   const [name, setName] = useState('');
 
   useEffect(() => {
-    api.getMe('admin').then(d => setName(d?.firstName || '')).catch(() => {});
+    api.getMe('admin').then(d => setName(d?.firstName || d?.name || '')).catch(() => {});
   }, []);
 
+  const sections = [
+    {
+      title: 'My Campaigns',
+      description: 'Create and manage your 360° assessment campaigns.',
+      cards: [
+        {
+          href: '/manager/dashboard',
+          title: 'Active Campaigns',
+          desc: 'View and manage your running assessment cycles — check completion rates, send reminders, and take action on in-progress campaigns.',
+        },
+        {
+          href: '/manager/archived',
+          title: 'Archived Campaigns',
+          desc: 'Access completed campaigns and review past results. Archived campaigns are stored for reference.',
+        },
+        {
+          href: '/manager/campaigns/new',
+          title: 'New Campaign',
+          desc: 'Launch a new assessment cycle. Choose participants, set assessment types, configure deadlines, and assign a profile.',
+        },
+      ],
+    },
+    {
+      title: 'Management',
+      description: 'Organise the companies and employees in your portal.',
+      cards: [
+        {
+          href: '/manager/companies',
+          title: 'My Companies',
+          desc: 'Manage the organisations you work with. Add companies, manage employee records, and view campaigns by company.',
+        },
+        {
+  href: '/manager/employees',
+  title: 'Employees',
+  desc: 'Access complete records for all company personnel. View individual employee profiles, track their 360° campaign history, and download generated reports.',
+},
+      ],
+    },
+    {
+      title: 'Support',
+      description: 'Resources to help you get the most from the platform.',
+      cards: [
+        {
+          href: '/faq',
+          title: 'FAQ',
+          desc: 'Answers to common questions about campaigns, assessment types, profiles, scoring, and how the platform works.',
+        },
+      ],
+    },
+  ];
+
   return (
-    <div style={{
-      minHeight: '100vh', background: 'var(--ink)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '40px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden',
+    <Layout>
+      <div style={{ maxWidth: 860, margin: '0 auto' }}>
+    <div style={{ 
+      marginBottom: '52px', 
+      paddingBottom: '32px', 
+      borderBottom: '1px solid var(--canvas-warm)',
+      display: 'flex',              // Dodato
+      justifyContent: 'space-between', // Dodato
+      alignItems: 'flex-start',     // Dodato
+      gap: '20px'                   // Dodato
     }}>
-      <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.06)', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
-      <div style={{ position: 'absolute', width: 800, height: 800, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.03)', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }} />
-      <div style={{ position: 'relative', maxWidth: 520 }}>
-        <div style={{
-          display: 'inline-block', padding: '5px 16px', borderRadius: '2px',
-          border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.55)',
-          fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase',
-          marginBottom: '32px', fontFamily: 'var(--font-body)',
-        }}>HB Compass</div>
-        <h1 style={{
-          fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3rem)',
-          color: '#fff', lineHeight: 1.1, marginBottom: '16px', fontWeight: 400,
-        }}>
-          {name ? `Welcome, ${name}` : 'Welcome back'}
-        </h1>
-        <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', lineHeight: 1.8, marginBottom: '44px', maxWidth: 380, margin: '0 auto 44px' }}>
-          Your HB Compass management portal. Review campaigns, manage your team, and track progress.
+      <div> {/* Tekstualni deo ide u poseban div */}
+        <p style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '10px' }}>
+          HB Compass
         </p>
-        <button
-          onClick={() => navigate('/manager/dashboard')}
-          style={{
-            padding: '14px 36px', borderRadius: 'var(--radius-sm)',
-            background: '#fff', color: '#000', fontWeight: 700, fontSize: '0.88rem',
-            letterSpacing: '0.04em', textTransform: 'uppercase', border: 'none',
-            cursor: 'pointer', fontFamily: 'var(--font-body)',
-          }}
-        >
-          Go to Dashboard →
-        </button>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.6rem, 4vw, 2.3rem)', lineHeight: 1.15, marginBottom: '12px' }}>
+          {name ? `Welcome, ${name}` : 'Welcome'}
+        </h1>
+        <p style={{ color: 'var(--ink-soft)', fontSize: '0.95rem', lineHeight: 1.65, maxWidth: 520 }}>
+          Your HB Compass management portal. Create and manage 360° assessment campaigns, organise your companies and employees, and track progress.
+        </p>
       </div>
+
+      {/* --- SLIKA --- */}
+      <img 
+        src="/compass.png" 
+        alt="HB Compass Illustration" 
+        style={{ 
+          width: '180px', // Podesi veličinu po želji
+          height: 'auto',
+          borderRadius: 'var(--radius-md)',
+          opacity: 0.9
+        }} 
+      />
     </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+          {sections.map(section => (
+            <div key={section.title}>
+              <div style={{ marginBottom: '16px' }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', marginBottom: '4px' }}>
+                  {section.title}
+                </h2>
+                <p style={{ color: 'var(--ink-faint)', fontSize: '0.85rem' }}>{section.description}</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '14px' }}>
+                {section.cards.map(card => (
+                  <button
+                    key={card.href}
+                    onClick={() => navigate(card.href)}
+                    style={{
+                      background: 'var(--canvas-white)',
+                      border: '1.5px solid var(--canvas-warm)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '20px 22px',
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      transition: 'border-color var(--transition), box-shadow var(--transition)',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--ink-faint)'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.07)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--canvas-warm)'; e.currentTarget.style.boxShadow = 'none'; }}
+                  >
+                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--ink)', marginBottom: '7px', fontFamily: 'var(--font-body)' }}>
+                      {card.title}
+                    </div>
+                    <p style={{ color: 'var(--ink-soft)', fontSize: '0.82rem', lineHeight: 1.6, margin: 0 }}>
+                      {card.desc}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Layout>
   );
 }
 
@@ -275,19 +454,13 @@ export function ManagerDashboard() {
                 `${c.CompletedLinks}/${c.TotalLinks}`,
                 new Date(c.CreatedAt).toLocaleDateString(),
                 fmtDeadline(c),
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <Link to={`/manager/campaigns/${c.CycleID}`}><Btn size="sm" variant="outline">View</Btn></Link>
-                  {c.Status === 'in_progress' && (
-                    <Link to={`/manager/campaigns/${c.CycleID}/edit`}><Btn size="sm" variant="outline">Edit</Btn></Link>
-                  )}
-                  {c.Status === 'in_progress' && (
-                    <Btn size="sm" variant="outline" loading={actionLoading === c.CycleID + '-complete'} onClick={() => handleComplete(c.CycleID)} style={{ color: '#059669', borderColor: '#059669' }}>Complete</Btn>
-                  )}
-                  {c.Status === 'completed' && (
-                    <Btn size="sm" variant="outline" loading={actionLoading === c.CycleID + '-archive'} onClick={() => handleArchive(c.CycleID)} style={{ color: '#7c3aed', borderColor: '#7c3aed' }}>Archive</Btn>
-                  )}
-                  <Btn size="sm" variant="outline" onClick={() => setDeleteId(c.CycleID)} style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>Delete</Btn>
-                </div>,
+                <ActionMenu items={[
+                  { label: 'View', href: `/manager/campaigns/${c.CycleID}` },
+                  c.Status === 'in_progress' ? { label: 'Edit', href: `/manager/campaigns/${c.CycleID}/edit` } : null,
+                  c.Status === 'in_progress' ? { label: 'Complete', onClick: () => handleComplete(c.CycleID), loading: actionLoading === c.CycleID + '-complete' } : null,
+                  c.Status === 'completed' ? { label: 'Archive', onClick: () => handleArchive(c.CycleID), loading: actionLoading === c.CycleID + '-archive' } : null,
+                  { label: 'Delete', onClick: () => setDeleteId(c.CycleID), danger: true },
+                ].filter(Boolean)} />,
               ])}
               emptyMessage="No campaigns yet. Start your first assessment campaign."
             />
@@ -453,10 +626,10 @@ export function ArchivedCampaigns() {
                 `${c.CompletedLinks}/${c.TotalLinks}`,
                 new Date(c.CreatedAt).toLocaleDateString(),
                 fmtDeadline(c),
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <Link to={`/manager/campaigns/${c.CycleID}`}><Btn size="sm" variant="outline">View</Btn></Link>
-                  <Btn size="sm" variant="outline" onClick={() => setDeleteId(c.CycleID)} style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>Delete</Btn>
-                </div>,
+                <ActionMenu items={[
+                  { label: 'View', href: `/manager/campaigns/${c.CycleID}` },
+                  { label: 'Delete', onClick: () => setDeleteId(c.CycleID), danger: true },
+                ]} />,
               ])}
               emptyMessage="No archived campaigns yet."
             />
@@ -560,10 +733,10 @@ export function ManagerEmployees() {
                   <span style={{ color: 'var(--ink-soft)' }}>{e.Email}</span>,
                   e.JobTitle || '—',
                   <Badge status="default">{e.Lang || 'EN'}</Badge>,
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <Btn size="sm" variant="outline" onClick={() => navigate(`/manager/employees/${e.EmployeeID}/edit`)}>Edit</Btn>
-                    <Btn size="sm" variant="danger" onClick={() => setDeleteId(e.EmployeeID)}>Delete</Btn>
-                  </div>,
+                  <ActionMenu items={[
+                    { label: 'Edit', onClick: () => navigate(`/manager/employees/${e.EmployeeID}/edit`) },
+                    { label: 'Delete', onClick: () => setDeleteId(e.EmployeeID), danger: true },
+                  ]} />,
                 ])}
               />
             </Card>
@@ -963,6 +1136,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
     name: '', employeeId: '', employeeIds: [], profilId: '',
     includeSelf: false, includeManager: false, includePeer: false,
     includeDirectReports: false, includeExternal: false,
+    includeCrossPartisan: false, includeMentor: false,
     peerEmployeeIds: [],
     peerNewPersons: [],
     drEmployeeIds: [],
@@ -987,7 +1161,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
   const [loadingRelationships, setLoadingRelationships] = useState(false);
   const [groupStyle, setGroupStyle] = useState('same');
   const [subgroups, setSubgroups] = useState([
-    { employeeIds: [], includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false },
+    { employeeIds: [], includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeCrossPartisan: false, includeMentor: false },
   ]);
 
   useEffect(() => {
@@ -1004,16 +1178,47 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
     }
   }, []);
 
-  // Detect if selected profile is "modern employee" — restricts to self-only
   const selectedProfile = profiles.find(p => String(p.id || p.ProfilID) === String(form.profilId));
-  const isEmployeeProfile = (selectedProfile?.name || selectedProfile?.Name || '').toLowerCase().includes('employee');
 
-  // When employee profile is selected, force Self-only
+  // Map form keys → API questionType strings
+  const Q_TYPE_MAP = {
+    includeSelf: 'self',
+    includeManager: 'manager',
+    includePeer: 'peer',
+    includeDirectReports: 'direct_report',
+    includeExternal: 'external',
+    includeCrossPartisan: 'crosspartisan',
+    includeMentor: 'mentor',
+  };
+
+  // Which types are available for the selected profile (from DB)
+  const profileQTypes = selectedProfile?.questionTypes || null;
+  const isTypeAvailable = key => !profileQTypes || profileQTypes.some(t =>
+    t === Q_TYPE_MAP[key] || t === Q_TYPE_MAP[key]?.replace('_', '') // handle 'directreport' vs 'direct_report'
+  );
+
+  // Backwards-compat: if profile name says employee, treat as self-only
+  const isEmployeeProfile = profileQTypes
+    ? profileQTypes.length === 1 && profileQTypes[0] === 'self'
+    : (selectedProfile?.name || selectedProfile?.Name || '').toLowerCase().includes('employee');
+
+  // When profile changes, clear assessment types that are no longer available
   useEffect(() => {
+    if (!form.profilId) return;
+    setForm(f => ({
+      ...f,
+      includeSelf: f.includeSelf && isTypeAvailable('includeSelf'),
+      includeManager: f.includeManager && isTypeAvailable('includeManager'),
+      includePeer: f.includePeer && isTypeAvailable('includePeer'),
+      includeDirectReports: f.includeDirectReports && isTypeAvailable('includeDirectReports'),
+      includeExternal: f.includeExternal && isTypeAvailable('includeExternal'),
+      includeCrossPartisan: f.includeCrossPartisan && isTypeAvailable('includeCrossPartisan'),
+      includeMentor: f.includeMentor && isTypeAvailable('includeMentor'),
+    }));
     if (isEmployeeProfile) {
-      setForm(f => ({ ...f, includeSelf: true, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false }));
+      setForm(f => ({ ...f, includeSelf: true, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeCrossPartisan: false, includeMentor: false }));
     }
-  }, [isEmployeeProfile]);
+  }, [form.profilId]); // eslint-disable-line
 
   // Kada se promeni subject employee, učitaj njegove peers i DR iz baze
   useEffect(() => {
@@ -1099,6 +1304,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
       includeSelf: form.includeSelf, includeManager: form.includeManager,
       includePeer: form.includePeer, includeDirectReports: form.includeDirectReports,
       includeExternal: form.includeExternal,
+      includeCrossPartisan: form.includeCrossPartisan, includeMentor: form.includeMentor,
       // Peer — individualni + shared link uvek ide sa backenda
       peerEmployeeIds: form.peerEmployeeIds,
       peerNewPersonIds: form.peerNewPersons.map(p => p.id).filter(Boolean),
@@ -1170,8 +1376,14 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
              <Select 
   value={filterEmpCompany} 
   onChange={e => {
-    setFilterEmpCompany(e.target.value);
-    setForm(f => ({ ...f, employeeId: '', employeeIds: [] })); 
+    const newCompId = e.target.value;
+    setFilterEmpCompany(newCompId);
+    const compObj = companies.find(c => String(c.CompanyID || c.id) === newCompId);
+    const compProfs = compObj?.profiles;
+    setForm(f => {
+      const profilStillValid = !compProfs?.length || compProfs.some(cp => String(cp.id) === String(f.profilId));
+      return { ...f, employeeId: '', employeeIds: [], profilId: profilStillValid ? f.profilId : '' };
+    });
   }} 
   style={{ 
     width: '100%', 
@@ -1327,6 +1539,8 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
                     { key: 'includePeer', label: 'Peer' },
                     { key: 'includeDirectReports', label: 'Direct Reports' },
                     { key: 'includeExternal', label: 'External' },
+                    { key: 'includeCrossPartisan', label: 'Cross-Partisan' },
+                    { key: 'includeMentor', label: 'Mentor' },
                   ].map(t => (
                     <label key={t.key} style={{
                       display: 'flex', gap: '6px', alignItems: 'center', padding: '7px 11px',
@@ -1344,7 +1558,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
                 </div>
               </div>
             ))}
-            <Btn type="button" variant="outline" size="sm" onClick={() => setSubgroups(prev => [...prev, { employeeIds: [], includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false }])}>
+            <Btn type="button" variant="outline" size="sm" onClick={() => setSubgroups(prev => [...prev, { employeeIds: [], includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeCrossPartisan: false, includeMentor: false }])}>
               + Add Subgroup
             </Btn>
           </div>
@@ -1380,49 +1594,65 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
         );
       })()}
 
-      {/* Profile */}
-      {profiles.length > 0 && (
-        <FormField label="Assessment Profile" hint="Which question set to use">
-          <Select value={form.profilId} onChange={e => setForm(f => ({ ...f, profilId: e.target.value }))}>
-            <option value="">— Default profile —</option>
-            {profiles.map(p => <option key={p.id || p.ProfilID} value={p.id || p.ProfilID}>{p.name || p.Name}</option>)}
-          </Select>
-        </FormField>
-      )}
+      {/* Profile — only shown after company is selected */}
+      {profiles.length > 0 && filterEmpCompany && (() => {
+        const companyObj = companies.find(c => String(c.CompanyID || c.id) === filterEmpCompany);
+        const companyProfiles = companyObj?.profiles;
+        const availableProfiles = companyProfiles?.length > 0
+          ? profiles.filter(p => companyProfiles.some(cp => String(cp.id) === String(p.id || p.ProfilID)))
+          : profiles;
+        return (
+          <FormField label="Assessment Profile" hint="Select a profile for this campaign">
+            <Select value={form.profilId} onChange={e => setForm(f => ({ ...f, profilId: e.target.value }))}>
+              <option value="">— Default profile —</option>
+              {availableProfiles.map(p => <option key={p.id || p.ProfilID} value={p.id || p.ProfilID}>{p.name || p.Name}</option>)}
+            </Select>
+          </FormField>
+        );
+      })()}
 
-      {/* Assessment types */}
-      {!(mode === 'group' && groupStyle === 'custom') && (
-      <FormField label="Assessment Types" required hint={isEmployeeProfile ? 'This profile only supports Self Assessment' : undefined}>
-        <div className="grid-2col" style={{ gap: '10px' }}>
-          {[
-            { key: 'includeSelf', label: 'Self Assessment', desc: 'Employee rates themselves' },
-            { key: 'includeManager', label: 'Manager Review', desc: 'Direct manager assessment' },
-            { key: 'includePeer', label: 'Peer Review', desc: 'Individual links + shared link' },
-            { key: 'includeDirectReports', label: 'Direct Reports', desc: 'Individual links + shared link' },
-            { key: 'includeExternal', label: 'External', desc: 'One shared link for external assessors' },
-          ].map(t => {
-            const lockedOff = isEmployeeProfile && t.key !== 'includeSelf';
-            const lockedOn  = isEmployeeProfile && t.key === 'includeSelf';
-            return (
-            <label key={t.key} style={{
-              display: 'flex', gap: '12px', padding: '14px', borderRadius: 'var(--radius-md)',
-              cursor: (lockedOff || lockedOn) ? 'not-allowed' : 'pointer',
-              border: `1.5px solid ${form[t.key] ? 'var(--ink)' : 'var(--canvas-warm)'}`,
-              background: lockedOff ? '#f9f9f9' : form[t.key] ? 'var(--canvas-warm)' : 'var(--canvas)',
-              opacity: lockedOff ? 0.45 : 1,
-              transition: 'all var(--transition)',
-            }}>
-              <input type="checkbox" checked={form[t.key]} onChange={() => { if (!lockedOff && !lockedOn) toggle(t.key); }} disabled={lockedOff || lockedOn} style={{ accentColor: 'var(--ink)', marginTop: '2px' }} />
-              <div>
-                <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.label}</div>
-                <div style={{ fontSize: '0.77rem', color: 'var(--ink-soft)', marginTop: '2px' }}>{t.desc}</div>
-              </div>
-            </label>
-            );
-          })}
+      {/* Assessment types — only shown when profile is selected */}
+      {!(mode === 'group' && groupStyle === 'custom') && !form.profilId && filterEmpCompany && (
+        <div style={{ padding: '14px 16px', borderRadius: 'var(--radius-md)', background: 'var(--canvas)', border: '1.5px solid var(--canvas-warm)', fontSize: '0.85rem', color: 'var(--ink-faint)' }}>
+          Select a profile above to see available assessment types.
         </div>
-      </FormField>
       )}
+      {!(mode === 'group' && groupStyle === 'custom') && form.profilId && (() => {
+        const allTypes = [
+          { key: 'includeSelf', label: 'Self Assessment', desc: 'Employee rates themselves' },
+          { key: 'includeManager', label: 'Manager Review', desc: 'Direct manager assessment' },
+          { key: 'includePeer', label: 'Peer Review', desc: 'Individual links + shared link' },
+          { key: 'includeDirectReports', label: 'Direct Reports', desc: 'Individual links + shared link' },
+          { key: 'includeExternal', label: 'External', desc: 'One shared link for external assessors' },
+          { key: 'includeCrossPartisan', label: 'Cross-Partisan', desc: 'Cross-partisan assessment' },
+          { key: 'includeMentor', label: 'Mentor', desc: 'Mentor assessment' },
+        ];
+        const visibleTypes = allTypes.filter(t => isTypeAvailable(t.key));
+        return (
+          <FormField label="Assessment Types" required hint={isEmployeeProfile ? 'This profile only supports Self Assessment' : undefined}>
+            <div className="grid-2col" style={{ gap: '10px' }}>
+              {visibleTypes.map(t => {
+                const lockedOn = isEmployeeProfile && t.key === 'includeSelf';
+                return (
+                  <label key={t.key} style={{
+                    display: 'flex', gap: '12px', padding: '14px', borderRadius: 'var(--radius-md)',
+                    cursor: lockedOn ? 'not-allowed' : 'pointer',
+                    border: `1.5px solid ${form[t.key] ? 'var(--ink)' : 'var(--canvas-warm)'}`,
+                    background: form[t.key] ? 'var(--canvas-warm)' : 'var(--canvas)',
+                    transition: 'all var(--transition)',
+                  }}>
+                    <input type="checkbox" checked={form[t.key]} onChange={() => { if (!lockedOn) toggle(t.key); }} disabled={lockedOn} style={{ accentColor: 'var(--ink)', marginTop: '2px' }} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.label}</div>
+                      <div style={{ fontSize: '0.77rem', color: 'var(--ink-soft)', marginTop: '2px' }}>{t.desc}</div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </FormField>
+        );
+      })()}
 
       {/* Peer picker — individual mode only */}
       {form.includePeer && mode === 'individual' && (
@@ -2155,10 +2385,10 @@ export function CampaignDetail() {
                           {new Date(r.GeneratedAt).toLocaleDateString()}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <Btn size="sm" variant="accent" onClick={() => downloadReportPdf(r.CycleID, r.ReportType, r.ReportID, campaign.FirstName, campaign.LastName)}>⬇ Download PDF</Btn>
-                        <Btn size="sm" variant="outline" onClick={() => setConfirmDeleteId(r.ReportID)} style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>Delete</Btn>
-                      </div>
+                      <ActionMenu items={[
+                        { label: 'Download PDF', onClick: () => downloadReportPdf(r.CycleID, r.ReportType, r.ReportID, campaign.FirstName, campaign.LastName) },
+                        { label: 'Delete', onClick: () => setConfirmDeleteId(r.ReportID), danger: true },
+                      ]} />
                     </div>
                   ))}
                 </div>
@@ -2318,8 +2548,10 @@ export function ManagerCompanies() {
                   ) : (
                     <>
                       <span style={{ flex: 1, fontWeight: 500 }}>{cName}</span>
-                      <Btn size="sm" variant="outline" onClick={() => { setEditId(cId); setEditName(cName); setActionError(null); }}>Rename</Btn>
-                      <Btn size="sm" variant="danger" onClick={() => { setDeleteId(cId); setActionError(null); }}>Delete</Btn>
+                      <ActionMenu items={[
+                        { label: 'Rename', onClick: () => { setEditId(cId); setEditName(cName); setActionError(null); } },
+                        { label: 'Delete', onClick: () => { setDeleteId(cId); setActionError(null); }, danger: true },
+                      ]} />
                     </>
                   )}
                 </div>
@@ -2363,10 +2595,18 @@ export function CompaniesAndEmployees() {
   const [deleteEmpId, setDeleteEmpId] = useState(null);
   const [deletingEmp, setDeletingEmp] = useState(false);
 
-  // Expand state: { [companyId]: 'employees' | 'campaigns' | null }
-  const [expanded, setExpanded] = useState({});
+  // Selection & tab
+  const [selectedCompanyId, setSelectedCompanyId] = useState(null);
+  const [activeTab, setActiveTab] = useState('employees');
 
   const [actionError, setActionError] = useState(null);
+
+  // Profiles
+  const [allProfiles, setAllProfiles] = useState([]);
+  const [newProfileIds, setNewProfileIds] = useState([]);
+  const [showAddProfile, setShowAddProfile] = useState(false);
+  const [addingProfileId, setAddingProfileId] = useState('');
+  const [profileActionLoading, setProfileActionLoading] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -2374,22 +2614,17 @@ export function CompaniesAndEmployees() {
       api.manager.getCompanies().catch(() => []),
       api.manager.getEmployees().catch(() => []),
       api.manager.getCampaigns().catch(() => []),
-    ]).then(([comps, emps, camps]) => {
+      api.manager.getProfiles().catch(() => []),
+    ]).then(([comps, emps, camps, profs]) => {
       setCompanies(Array.isArray(comps) ? comps : []);
       setEmployees(Array.isArray(emps) ? emps : []);
       setCampaigns(Array.isArray(camps) ? camps : []);
+      setAllProfiles(Array.isArray(profs) ? profs : []);
     }).catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
   useEffect(load, [load]);
-
-  function toggleExpand(compId, tab) {
-    setExpanded(prev => {
-      const cur = prev[compId];
-      return { ...prev, [compId]: cur === tab ? null : tab };
-    });
-  }
 
   const fmtDeadline = c => {
     const d = c.Deadline || c.deadline;
@@ -2403,11 +2638,37 @@ export function CompaniesAndEmployees() {
     if (!newName.trim()) return;
     setCreating(true); setActionError(null);
     try {
-      await api.manager.createCompany({ companyName: newName.trim() });
-      setNewName(''); setShowAddCompany(false);
+      await api.manager.createCompany({ companyName: newName.trim(), profileIds: newProfileIds });
+      setNewName(''); setNewProfileIds([]); setShowAddCompany(false);
       load();
     } catch (err) { setActionError(err.message); }
     finally { setCreating(false); }
+  }
+
+  async function handleAddProfile() {
+    if (!addingProfileId || !selectedCompanyId) return;
+    const cId = selectedCompanyId;
+    const currentIds = (selectedCompany?.profiles || []).map(p => p.id);
+    if (currentIds.includes(Number(addingProfileId))) return;
+    setProfileActionLoading(true); setActionError(null);
+    try {
+      await api.manager.updateCompany(cId, { companyName: selectedCompany.CompanyName || selectedCompany.name, profileIds: [...currentIds, Number(addingProfileId)] });
+      setAddingProfileId(''); setShowAddProfile(false);
+      load();
+    } catch (err) { setActionError(err.message); }
+    finally { setProfileActionLoading(false); }
+  }
+
+  async function handleRemoveProfile(profileId) {
+    if (!selectedCompanyId) return;
+    const cId = selectedCompanyId;
+    const currentIds = (selectedCompany?.profiles || []).map(p => p.id).filter(id => id !== profileId);
+    setProfileActionLoading(true); setActionError(null);
+    try {
+      await api.manager.updateCompany(cId, { companyName: selectedCompany.CompanyName || selectedCompany.name, profileIds: currentIds });
+      load();
+    } catch (err) { setActionError(err.message); }
+    finally { setProfileActionLoading(false); }
   }
 
   async function handleRenameCompany(e) {
@@ -2426,6 +2687,7 @@ export function CompaniesAndEmployees() {
     setDeletingCompany(true); setActionError(null);
     try {
       await api.manager.deleteCompany(deleteCompanyId);
+      if (String(selectedCompanyId) === String(deleteCompanyId)) setSelectedCompanyId(null);
       setDeleteCompanyId(null);
       load();
     } catch (err) { setActionError(err.message); setDeleteCompanyId(null); }
@@ -2450,158 +2712,282 @@ export function CompaniesAndEmployees() {
   }, {});
 
   const campsByCompany = campaigns.reduce((acc, c) => {
-    // Try to find company via employee map
-    const emp = employees.find(e => e.EmployeeID === c.EmployeeID);
-    const key = String(c.CompanyID || emp?.CompanyID || '__none__');
+    const key = String(c.CompanyID || '__none__');
     if (!acc[key]) acc[key] = [];
     acc[key].push(c);
     return acc;
   }, {});
+
+  const selectedCompany = selectedCompanyId
+    ? companies.find(c => String(c.CompanyID || c.id) === String(selectedCompanyId))
+    : null;
+  const selEmps = selectedCompanyId ? (empsByCompany[String(selectedCompanyId)] || []) : [];
+  const selCamps = selectedCompanyId ? (campsByCompany[String(selectedCompanyId)] || []) : [];
 
   return (
     <Layout>
       <PageHeader
         title="My Companies"
         subtitle="Manage your companies and their team members"
-        action={
-          <Btn variant="teal" onClick={() => setShowAddCompany(v => !v)}>
-            {showAddCompany ? 'Cancel' : '+ Add Company'}
-          </Btn>
-        }
       />
 
       {error && <div style={{ marginBottom: '16px' }}><Alert type="error">{error}</Alert></div>}
       {actionError && <div style={{ marginBottom: '16px' }}><Alert type="error">{actionError}</Alert></div>}
 
-      {showAddCompany && (
-        <Card style={{ padding: '20px 24px', marginBottom: '20px' }}>
-          <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: '12px' }}>New Company</div>
-          <form onSubmit={handleCreateCompany} style={{ display: 'flex', gap: '10px' }}>
-            <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Company name..." required autoFocus style={{ flex: 1 }} />
-            <Btn type="submit" variant="teal" loading={creating}>Create</Btn>
-          </form>
-        </Card>
-      )}
-
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner size={28} /></div>
-      ) : companies.length === 0 ? (
-        <Card><EmptyState icon="🏢" title="No companies yet" message="Add your first company to get started." /></Card>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {companies.map(c => {
-            const cId = c.CompanyID || c.id;
-            const cName = c.CompanyName || c.name;
-            const compEmps = empsByCompany[String(cId)] || [];
-            const compCamps = campsByCompany[String(cId)] || [];
-            const expandedTab = expanded[cId] || null;
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
 
-            return (
-              <Card key={cId} style={{ padding: 0, overflow: 'hidden' }}>
-                {/* Company row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', flexWrap: 'wrap' }}>
-                  {editId === cId ? (
-                    <form onSubmit={handleRenameCompany} style={{ display: 'flex', gap: '8px', flex: 1 }}>
+          {/* ── Left panel ── */}
+          <div style={{ width: 272, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <Card style={{ padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>
+                  Companies{companies.length > 0 ? ` (${companies.length})` : ''}
+                </p>
+                <button
+                  onClick={() => setShowAddCompany(v => !v)}
+                  style={{
+                    fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    fontFamily: 'var(--font-body)', padding: '2px 4px',
+                  }}
+                >
+                  {showAddCompany ? 'Cancel' : '+ Add'}
+                </button>
+              </div>
+
+              {showAddCompany && (
+                <form onSubmit={handleCreateCompany} style={{ marginBottom: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Company name…" required autoFocus />
+                  {allProfiles.length > 0 && (
+                    <div>
+                      <p style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-faint)', marginBottom: '5px' }}>Profiles</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        {allProfiles.map(p => {
+                          const pid = p.id || p.ProfilID;
+                          const checked = newProfileIds.includes(pid);
+                          return (
+                            <label key={pid} style={{ display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', fontSize: '0.82rem', color: 'var(--ink-soft)' }}>
+                              <input type="checkbox" checked={checked} onChange={() => setNewProfileIds(prev => checked ? prev.filter(x => x !== pid) : [...prev, pid])} style={{ accentColor: 'var(--ink)' }} />
+                              {p.name || p.Name}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  <Btn type="submit" size="sm" variant="teal" loading={creating}>Add Company</Btn>
+                </form>
+              )}
+
+              {companies.length === 0 ? (
+                <p style={{ color: 'var(--ink-faint)', fontSize: '0.83rem', padding: '8px 0' }}>No companies yet.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                  {companies.map(c => {
+                    const cId = String(c.CompanyID || c.id);
+                    const cName = c.CompanyName || c.name;
+                    const empCount = (empsByCompany[cId] || []).length;
+                    const active = String(selectedCompanyId) === cId;
+                    return (
+                      <button key={cId} onClick={() => { setSelectedCompanyId(cId); setEditId(null); setActiveTab('employees'); }} style={{
+                        padding: '9px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                        background: active ? 'rgba(0,0,0,0.06)' : 'transparent',
+                        textAlign: 'left', fontFamily: 'var(--font-body)', transition: 'background 0.15s',
+                      }}>
+                        <div style={{ fontWeight: active ? 600 : 400, fontSize: '0.87rem', color: 'var(--ink)' }}>{cName}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--ink-faint)', marginTop: '1px' }}>
+                          {empCount} employee{empCount !== 1 ? 's' : ''}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* ── Right panel ── */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {!selectedCompany ? (
+              <Card style={{ padding: '64px 32px', textAlign: 'center' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--canvas-warm)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: 'var(--ink-faint)' }}>
+                  <IcBuilding />
+                </div>
+                <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>Select a company to view details.</p>
+              </Card>
+            ) : (
+              <>
+                {/* Company header card */}
+                <Card style={{ padding: '24px 28px' }}>
+                  {editId === String(selectedCompany.CompanyID || selectedCompany.id) ? (
+                    <form onSubmit={handleRenameCompany} style={{ display: 'flex', gap: '8px' }}>
                       <Input value={editName} onChange={e => setEditName(e.target.value)} required autoFocus style={{ flex: 1 }} />
                       <Btn type="submit" size="sm" variant="teal" loading={saving}>Save</Btn>
                       <Btn type="button" size="sm" variant="outline" onClick={() => { setEditId(null); setEditName(''); }}>Cancel</Btn>
                     </form>
                   ) : (
-                    <>
-                      <div style={{ flex: 1, fontWeight: 700, fontSize: '1rem' }}>{cName}</div>
-
-                      {/* Stats — clickable */}
-                      <button
-                        onClick={() => toggleExpand(cId, 'employees')}
-                        style={{
-                          background: expandedTab === 'employees' ? 'var(--ink)' : 'var(--canvas-warm)',
-                          color: expandedTab === 'employees' ? '#fff' : 'var(--ink-soft)',
-                          border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                          padding: '6px 14px', fontSize: '0.82rem', fontWeight: 600,
-                          fontFamily: 'var(--font-body)', transition: 'all var(--transition)',
-                          display: 'flex', alignItems: 'center', gap: '6px',
-                        }}
-                      >
-                        👥 {compEmps.length} employee{compEmps.length !== 1 ? 's' : ''}
-                      </button>
-
-                      <button
-                        onClick={() => toggleExpand(cId, 'campaigns')}
-                        style={{
-                          background: expandedTab === 'campaigns' ? 'var(--ink)' : 'var(--canvas-warm)',
-                          color: expandedTab === 'campaigns' ? '#fff' : 'var(--ink-soft)',
-                          border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                          padding: '6px 14px', fontSize: '0.82rem', fontWeight: 600,
-                          fontFamily: 'var(--font-body)', transition: 'all var(--transition)',
-                          display: 'flex', alignItems: 'center', gap: '6px',
-                        }}
-                      >
-                        📊 {compCamps.length} campaign{compCamps.length !== 1 ? 's' : ''}
-                      </button>
-
-                      {/* Actions */}
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <Btn size="sm" variant="outline" onClick={() => { setEditId(cId); setEditName(cName); setActionError(null); }}>Rename</Btn>
-                        <Btn size="sm" variant="danger" onClick={() => { setDeleteCompanyId(cId); setActionError(null); }}>Delete</Btn>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{
+                          width: 52, height: 52, borderRadius: '50%',
+                          background: 'var(--canvas-warm)', display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', flexShrink: 0, color: 'var(--ink-soft)',
+                        }}>
+                          <IcBuilding />
+                        </div>
+                        <div>
+                          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--ink)' }}>
+                            {selectedCompany.CompanyName || selectedCompany.name}
+                          </h2>
+                          {/* Profiles */}
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '8px', alignItems: 'center' }}>
+                            {(selectedCompany.profiles || []).map(p => (
+                              <span key={p.id} style={{
+                                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                fontSize: '0.75rem', fontWeight: 500, padding: '3px 10px 3px 10px',
+                                borderRadius: '999px', background: 'var(--canvas-warm)',
+                                color: 'var(--ink-soft)', border: '1px solid rgba(0,0,0,0.06)',
+                              }}>
+                                {p.name}
+                                <button
+                                  disabled={profileActionLoading}
+                                  onClick={() => handleRemoveProfile(p.id)}
+                                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0', lineHeight: 1, color: 'var(--ink-faint)', display: 'flex', alignItems: 'center' }}
+                                  title="Remove profile"
+                                >
+                                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+                                </button>
+                              </span>
+                            ))}
+                            {(() => {
+                              const assigned = (selectedCompany.profiles || []).map(p => p.id);
+                              const available = allProfiles.filter(p => !assigned.includes(p.id || p.ProfilID));
+                              if (available.length === 0) return null;
+                              return showAddProfile ? (
+                                <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                                  <Select
+                                    value={addingProfileId}
+                                    onChange={e => setAddingProfileId(e.target.value)}
+                                    style={{ fontSize: '0.78rem', padding: '3px 8px', height: 'auto' }}
+                                  >
+                                    <option value="">— choose —</option>
+                                    {available.map(p => <option key={p.id || p.ProfilID} value={p.id || p.ProfilID}>{p.name || p.Name}</option>)}
+                                  </Select>
+                                  <Btn size="sm" variant="teal" loading={profileActionLoading} onClick={handleAddProfile}>Add</Btn>
+                                  <Btn size="sm" variant="outline" onClick={() => { setShowAddProfile(false); setAddingProfileId(''); }}>✕</Btn>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setShowAddProfile(true)}
+                                  style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)', background: 'none', border: '1px dashed rgba(0,0,0,0.15)', borderRadius: '999px', padding: '3px 10px', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                                >
+                                  + Add Profile
+                                </button>
+                              );
+                            })()}
+                          </div>
+                        </div>
                       </div>
-                    </>
-                  )}
-                </div>
-
-                {/* Expanded: Employees */}
-                {expandedTab === 'employees' && (
-                  <div style={{ borderTop: '1px solid var(--canvas-warm)' }}>
-                    <div style={{ padding: '10px 20px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-soft)' }}>Employees</span>
-                      <Btn size="sm" variant="teal" onClick={() => navigate(`/manager/employees/new?company=${cId}`)}>+ Add Employee</Btn>
+                      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                        <Btn size="sm" variant="secondary" onClick={() => {
+                          const cId = String(selectedCompany.CompanyID || selectedCompany.id);
+                          setEditId(cId);
+                          setEditName(selectedCompany.CompanyName || selectedCompany.name);
+                          setActionError(null);
+                        }}>Rename</Btn>
+                        <Btn size="sm" variant="danger" onClick={() => {
+                          setDeleteCompanyId(selectedCompany.CompanyID || selectedCompany.id);
+                          setActionError(null);
+                        }}>Delete</Btn>
+                      </div>
                     </div>
-                    {compEmps.length === 0 ? (
-                      <div style={{ padding: '20px', color: 'var(--ink-faint)', fontSize: '0.88rem', textAlign: 'center' }}>No employees in this company yet.</div>
+                  )}
+
+                  {/* Stats / tab switcher */}
+                  <div style={{ display: 'flex', gap: '12px', marginTop: '20px', paddingTop: '18px', borderTop: '1px solid var(--canvas-warm)' }}>
+                    {[
+                      { key: 'employees', label: 'Employees', value: selEmps.length },
+                      { key: 'campaigns', label: 'Campaigns', value: selCamps.length },
+                    ].map(({ key, label, value }) => {
+                      const active = activeTab === key;
+                      return (
+                        <button
+                          key={key}
+                          onClick={() => setActiveTab(key)}
+                          style={{
+                            flex: 1, textAlign: 'center', padding: '10px 8px', borderRadius: '10px',
+                            border: 'none', cursor: 'pointer',
+                            background: active ? 'var(--ink)' : 'var(--canvas)',
+                            transition: 'all 0.15s',
+                          }}
+                        >
+                          <div style={{ fontSize: '1.5rem', fontWeight: 700, color: active ? '#fff' : 'var(--ink)', lineHeight: 1 }}>{value}</div>
+                          <div style={{ fontSize: '0.71rem', color: active ? 'rgba(255,255,255,0.7)' : 'var(--ink-faint)', marginTop: '4px', letterSpacing: '0.02em' }}>{label}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </Card>
+
+                {/* Tab content card */}
+                <Card style={{ padding: 0 }}>
+                  <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--canvas-warm)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)' }}>
+                      {activeTab === 'employees' ? 'Employees' : 'Campaigns'}
+                    </h3>
+                    {activeTab === 'employees' ? (
+                      <Btn size="sm" variant="teal" onClick={() => navigate(`/manager/employees/new?company=${selectedCompanyId}`)}>+ Add Employee</Btn>
+                    ) : (
+                      <Link to={`/manager/campaigns/new?company=${selectedCompanyId}`}><Btn size="sm" variant="teal">+ New Campaign</Btn></Link>
+                    )}
+                  </div>
+
+                  {activeTab === 'employees' && (
+                    selEmps.length === 0 ? (
+                      <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '0.88rem' }}>No employees in this company yet.</div>
                     ) : (
                       <Table
                         headers={['Name', 'Email', 'Job Title', 'Language', 'Actions']}
-                        rows={compEmps.map(e => [
+                        rows={selEmps.map(e => [
                           <strong>{e.FirstName} {e.LastName}</strong>,
                           <span style={{ color: 'var(--ink-soft)', fontSize: '0.85rem' }}>{e.Email}</span>,
                           e.JobTitle || '—',
                           <Badge status="default">{e.Lang?.toUpperCase() || 'EN'}</Badge>,
-                          <div style={{ display: 'flex', gap: '6px' }}>
-                            <Btn size="sm" variant="outline" onClick={() => navigate(`/manager/employees/${e.EmployeeID}/edit`)}>Edit</Btn>
-                            <Btn size="sm" variant="danger" onClick={() => setDeleteEmpId(e.EmployeeID)}>Delete</Btn>
-                          </div>,
+                          <ActionMenu items={[
+                            { label: 'Edit', onClick: () => navigate(`/manager/employees/${e.EmployeeID}/edit`) },
+                            { label: 'Delete', onClick: () => setDeleteEmpId(e.EmployeeID), danger: true },
+                          ]} />,
                         ])}
                       />
-                    )}
-                  </div>
-                )}
+                    )
+                  )}
 
-                {/* Expanded: Campaigns */}
-                {expandedTab === 'campaigns' && (
-                  <div style={{ borderTop: '1px solid var(--canvas-warm)' }}>
-                    <div style={{ padding: '10px 20px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-soft)' }}>Campaigns</span>
-                      <Link to={`/manager/campaigns/new?company=${cId}`}><Btn size="sm" variant="teal">+ New Campaign</Btn></Link>
-                    </div>
-                    {compCamps.length === 0 ? (
-                      <div style={{ padding: '20px', color: 'var(--ink-faint)', fontSize: '0.88rem', textAlign: 'center' }}>No campaigns for this company yet.</div>
+                  {activeTab === 'campaigns' && (
+                    selCamps.length === 0 ? (
+                      <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '0.88rem' }}>No campaigns for this company yet.</div>
                     ) : (
                       <Table
                         headers={['Campaign', 'Employee', 'Status', 'Progress', 'Deadline', 'Actions']}
-                        rows={compCamps.map(camp => [
+                        rows={selCamps.map(camp => [
                           <strong>{camp.Name}</strong>,
                           `${camp.FirstName || ''} ${camp.LastName || ''}`.trim() || '—',
                           <Badge status={camp.Status === 'in_progress' ? 'active' : camp.Status}>{camp.Status}</Badge>,
                           `${camp.CompletedLinks}/${camp.TotalLinks}`,
                           fmtDeadline(camp),
-                          <Link to={`/manager/campaigns/${camp.CycleID}`}><Btn size="sm" variant="outline">View</Btn></Link>,
+                          <ActionMenu items={[
+                            { label: 'View', href: `/manager/campaigns/${camp.CycleID}` },
+                          ]} />,
                         ])}
                       />
-                    )}
-                  </div>
-                )}
-              </Card>
-            );
-          })}
+                    )
+                  )}
+                </Card>
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -2621,6 +3007,282 @@ export function CompaniesAndEmployees() {
         </div>
       </Modal>
     </Layout>
+  );
+}
+
+// ── Employee Overview ───────────────────────────────────────────────────────
+export function EmployeeOverview() {
+  const navigate = useNavigate();
+  const [companies, setCompanies] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedCompany, setSelectedCompany] = useState('all');
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [search, setSearch] = useState('');
+  const [downloading, setDownloading] = useState(null);
+  const [campaignFilter, setCampaignFilter] = useState('all');
+
+  useEffect(() => {
+    Promise.all([
+      api.manager.getCompanies().catch(() => []),
+      api.manager.getEmployees().catch(() => []),
+      api.manager.getCampaigns().catch(() => []),
+      api.manager.getReports().catch(() => []),
+    ]).then(([comp, emp, camp, rep]) => {
+setCompanies(Array.isArray(comp) ? comp : []);
+      setEmployees(Array.isArray(emp) ? emp : []);
+      setCampaigns(Array.isArray(camp) ? camp : []);
+      setReports(Array.isArray(rep) ? rep : []);
+    }).catch(e => setError(e.message)).finally(() => setLoading(false));
+  }, []);
+
+  const filteredEmployees = employees
+    .filter(e => selectedCompany === 'all' || String(e.CompanyID) === String(selectedCompany))
+    .filter(e => !search || `${e.FirstName} ${e.LastName}`.toLowerCase().includes(search.toLowerCase()));
+
+  const employeeCampaigns = selectedEmployee
+    ? campaigns.filter(c => c.Email && selectedEmployee.Email && c.Email.toLowerCase() === selectedEmployee.Email.toLowerCase())
+        .sort((a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt))
+    : [];
+
+  function handleDownload(r, emp) {
+    setDownloading(r.ReportID);
+    downloadReportPdf(r.CycleID, r.ReportType, r.ReportID, emp.FirstName, emp.LastName);
+    setTimeout(() => setDownloading(null), 2000);
+  }
+
+  const LANG_LABELS = { en: 'EN', sr: 'SR', de: 'DE', fr: 'FR', es: 'ES' };
+
+  return (
+    <PortalLayout role="admin" navItems={NAV}>
+      <PageHeader
+        title="Employees"
+        subtitle="Employee-centric view of campaigns and reports."
+      />
+      {loading ? <div style={{ padding: '48px', display: 'flex', justifyContent: 'center' }}><Spinner /></div>
+        : error ? <Alert variant="error">{error}</Alert>
+        : (
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
+          {/* ── Left panel ── */}
+          <div style={{ width: 272, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {/* Company filter */}
+            <Card style={{ padding: '16px' }}>
+              <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '10px' }}>Company</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                {[{ id: 'all', name: 'All Companies' }, ...companies.map(c => ({ id: String(c.CompanyID || c.id), name: c.CompanyName || c.name }))].map(({ id, name }) => {
+                  const active = selectedCompany === id;
+                  return (
+                    <button key={id} onClick={() => { setSelectedCompany(id); setSelectedEmployee(null); }} style={{
+                      padding: '7px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                      background: active ? 'var(--ink)' : 'transparent',
+                      color: active ? '#fff' : 'var(--ink-soft)',
+                      fontSize: '0.85rem', textAlign: 'left', fontFamily: 'var(--font-body)',
+                      transition: 'all 0.15s', fontWeight: active ? 600 : 400,
+                    }}>{name}</button>
+                  );
+                })}
+              </div>
+            </Card>
+
+            {/* Employee list */}
+            <Card style={{ padding: '16px' }}>
+              <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '10px' }}>
+                Employees{filteredEmployees.length > 0 ? ` (${filteredEmployees.length})` : ''}
+              </p>
+              <Input
+                placeholder="Search…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ marginBottom: '10px' }}
+              />
+              {filteredEmployees.length === 0 ? (
+                <p style={{ color: 'var(--ink-faint)', fontSize: '0.83rem', padding: '8px 0' }}>No employees found.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', maxHeight: 280, overflowY: 'auto', marginRight: -4 }}>
+                  {filteredEmployees.map(emp => {
+                    const eId = String(emp.EmployeeID);
+                    const active = selectedEmployee && String(selectedEmployee.EmployeeID) === eId;
+                    const empCampCount = campaigns.filter(c => c.Email && emp.Email && c.Email.toLowerCase() === emp.Email.toLowerCase()).length;
+                    return (
+                      <button key={eId} onClick={() => { setSelectedEmployee(emp); setCampaignFilter('all'); }} style={{
+                        padding: '9px 10px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                        background: active ? 'rgba(0,0,0,0.06)' : 'transparent',
+                        textAlign: 'left', fontFamily: 'var(--font-body)', transition: 'background 0.15s',
+                      }}>
+                        <div style={{ fontWeight: active ? 600 : 400, fontSize: '0.87rem', color: 'var(--ink)' }}>
+                          {emp.FirstName} {emp.LastName}
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--ink-faint)', marginTop: '1px' }}>
+                          {emp.JobTitle || '—'} · {empCampCount} campaign{empCampCount !== 1 ? 's' : ''}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* ── Right panel ── */}
+          <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {!selectedEmployee ? (
+              <Card style={{ padding: '64px 32px', textAlign: 'center' }}>
+                <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'var(--canvas-warm)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', color: 'var(--ink-faint)' }}>
+                  <IcPeople />
+                </div>
+                <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>Select an employee to view their profile.</p>
+              </Card>
+            ) : (
+              <>
+                {/* Employee header card */}
+                <Card style={{ padding: '24px 28px' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{
+                        width: 52, height: 52, borderRadius: '50%',
+                        background: 'var(--canvas-warm)', display: 'flex', alignItems: 'center',
+                        justifyContent: 'center', fontSize: '1.1rem', fontWeight: 700, color: 'var(--ink)', flexShrink: 0,
+                      }}>
+                        {(selectedEmployee.FirstName || '')[0]}{(selectedEmployee.LastName || '')[0]}
+                      </div>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--ink)' }}>
+                            {selectedEmployee.FirstName} {selectedEmployee.LastName}
+                          </h2>
+                          {selectedEmployee.Lang && (
+                            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 7px', borderRadius: '999px', border: '1px solid var(--canvas-warm)', color: 'var(--ink-faint)', letterSpacing: '0.06em' }}>
+                              {LANG_LABELS[selectedEmployee.Lang] || selectedEmployee.Lang.toUpperCase()}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.84rem', color: 'var(--ink-soft)', marginTop: '3px' }}>
+                          {[selectedEmployee.JobTitle, selectedEmployee.CompanyName || companies.find(c => String(c.CompanyID || c.id) === String(selectedEmployee.CompanyID))?.CompanyName].filter(Boolean).join(' · ')}
+                        </div>
+                        {selectedEmployee.Email && (
+                          <div style={{ fontSize: '0.8rem', color: 'var(--ink-faint)', marginTop: '2px' }}>{selectedEmployee.Email}</div>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                      <Btn size="sm" variant="secondary" onClick={() => navigate(`/manager/employees/${selectedEmployee.EmployeeID}/edit`)}>Edit</Btn>
+                      <Btn size="sm" onClick={() => navigate('/manager/campaigns/new')}>New Campaign</Btn>
+                    </div>
+                  </div>
+
+                  {/* Stats row */}
+                  {(() => {
+                    const statsConfig = [
+                      { key: 'all', label: 'All', value: employeeCampaigns.length },
+                      { key: 'in_progress', label: 'In Progress', value: employeeCampaigns.filter(c => c.Status === 'in_progress').length },
+                      { key: 'completed', label: 'Completed', value: employeeCampaigns.filter(c => c.Status === 'completed').length },
+                      { key: 'with_reports', label: 'With Reports', value: reports.filter(r => employeeCampaigns.some(c => String(c.CycleID) === String(r.CycleID))).length },
+                    ];
+                    return (
+                      <div style={{ display: 'flex', gap: '12px', marginTop: '20px', paddingTop: '18px', borderTop: '1px solid var(--canvas-warm)' }}>
+                        {statsConfig.map(({ key, label, value }) => {
+                          const active = campaignFilter === key;
+                          return (
+                            <button
+                              key={key}
+                              onClick={() => setCampaignFilter(active ? 'all' : key)}
+                              style={{
+                                flex: 1, textAlign: 'center', padding: '10px 8px', borderRadius: '10px', border: 'none', cursor: 'pointer',
+                                background: active ? 'var(--ink)' : 'var(--canvas)',
+                                transition: 'all 0.15s',
+                              }}
+                            >
+                              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: active ? '#fff' : 'var(--ink)', lineHeight: 1 }}>{value}</div>
+                              <div style={{ fontSize: '0.71rem', color: active ? 'rgba(255,255,255,0.7)' : 'var(--ink-faint)', marginTop: '4px', letterSpacing: '0.02em' }}>{label}</div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
+                </Card>
+
+                {/* Campaigns card */}
+                {(() => {
+                  const visibleCampaigns = campaignFilter === 'all' ? employeeCampaigns
+                    : campaignFilter === 'with_reports' ? employeeCampaigns.filter(c => reports.some(r => String(r.CycleID) === String(c.CycleID)))
+                    : employeeCampaigns.filter(c => c.Status === campaignFilter);
+                  const filterLabel = campaignFilter === 'all' ? null : campaignFilter === 'with_reports' ? 'With Reports' : campaignFilter === 'in_progress' ? 'In Progress' : 'Completed';
+                  return (
+                <Card style={{ padding: 0 }}>
+                  <div style={{ padding: '16px 24px', borderBottom: '1px solid var(--canvas-warm)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <h3 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--ink)' }}>Campaign History</h3>
+                      {filterLabel && (
+                        <span style={{ fontSize: '0.72rem', fontWeight: 600, padding: '2px 8px', borderRadius: '999px', background: 'var(--ink)', color: '#fff' }}>
+                          {filterLabel}
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--ink-faint)' }}>{visibleCampaigns.length} of {employeeCampaigns.length}</span>
+                  </div>
+                  {visibleCampaigns.length === 0 ? (
+                    <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '0.88rem' }}>
+                      No campaigns match this filter.
+                    </div>
+                  ) : visibleCampaigns.map((c, i) => {
+                    const campReports = reports.filter(r => String(r.CycleID) === String(c.CycleID));
+                    const report1 = campReports.find(r => r.ReportType === 'report1');
+                    const report2 = campReports.find(r => r.ReportType === 'report2');
+                    const pct = c.TotalLinks > 0 ? Math.round((c.CompletedLinks / c.TotalLinks) * 100) : 0;
+                    const statusMap = { in_progress: { label: 'In Progress', color: '#2563eb' }, completed: { label: 'Completed', color: '#16a34a' }, archived: { label: 'Archived', color: '#6b7280' } };
+                    const { label: statusLabel, color: statusColor } = statusMap[c.Status] || { label: c.Status, color: '#6b7280' };
+                    const assessorParts = [
+                      c.IncludeSelf && 'Self',
+                      c.IncludeManager && 'Manager',
+                      c.IncludePeer && 'Peers',
+                      c.IncludeDirectReports && 'Direct Reports',
+                      c.IncludeExternal && 'External',
+                    ].filter(Boolean);
+
+                    return (
+                      <div key={c.CycleID} style={{ padding: '18px 24px', borderBottom: i < employeeCampaigns.length - 1 ? '1px solid var(--canvas-warm)' : 'none' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--ink)' }}>{c.Name}</span>
+                              <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: statusColor + '18', color: statusColor }}>
+                                {statusLabel}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--ink-faint)', marginBottom: '10px' }}>
+                              {new Date(c.CreatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              {c.Deadline && ` · Due ${new Date(c.Deadline).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                              {assessorParts.length > 0 && ` · ${assessorParts.join(', ')}`}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{ flex: 1, height: 5, borderRadius: '999px', background: 'var(--canvas-warm)', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${pct}%`, borderRadius: '999px', background: 'var(--ink)', transition: 'width 0.3s' }} />
+                              </div>
+                              <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)', flexShrink: 0 }}>{c.CompletedLinks}/{c.TotalLinks} completed</span>
+                            </div>
+                          </div>
+                          <ActionMenu items={[
+                            { label: 'View Campaign', href: `/manager/campaigns/${c.CycleID}` },
+                            report1 && { label: 'Download Self Report', onClick: () => handleDownload(report1, selectedEmployee), loading: downloading === report1.ReportID },
+                            report2 && { label: 'Download AI Report', onClick: () => handleDownload(report2, selectedEmployee), loading: downloading === report2.ReportID },
+                          ].filter(Boolean)} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </Card>
+                  );
+                })()}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </PortalLayout>
   );
 }
 
