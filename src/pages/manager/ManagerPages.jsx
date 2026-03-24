@@ -1331,15 +1331,28 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
         />
       </FormField>
 
-      {/* Deadline */}
-      <FormField label="Deadline" hint="Assessors will receive reminder emails at 10, 5, 2 and 1 day(s) before the deadline">
-        <Input
-          type="date"
-          value={form.deadline}
-          onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
-          min={new Date().toISOString().split('T')[0]}
-        />
-      </FormField>
+      {/* Company */}
+      {!lockMode && companies.length > 0 && (
+        <FormField label="Company" required>
+          <Select
+            value={filterEmpCompany}
+            onChange={e => {
+              const newCompId = e.target.value;
+              setFilterEmpCompany(newCompId);
+              const compObj = companies.find(c => String(c.CompanyID || c.id) === newCompId);
+              const compProfs = compObj?.profiles;
+              setForm(f => {
+                const profilStillValid = !compProfs?.length || compProfs.some(cp => String(cp.id) === String(f.profilId));
+                return { ...f, employeeId: '', employeeIds: [], profilId: profilStillValid ? f.profilId : '' };
+              });
+            }}
+            required
+          >
+            <option value="">— Select company —</option>
+            {companies.map(c => <option key={c.CompanyID || c.id} value={String(c.CompanyID || c.id)}>{c.CompanyName || c.name}</option>)}
+          </Select>
+        </FormField>
+      )}
 
       {/* Mode — hidden in edit mode */}
       {!lockMode && (
@@ -1362,78 +1375,54 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
         </FormField>
       )}
 
+      {/* Deadline */}
+      <FormField label="Deadline" hint="Assessors will receive reminder emails at 10, 5, 2 and 1 day(s) before the deadline">
+        <Input
+          type="date"
+          value={form.deadline}
+          onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
+          min={new Date().toISOString().split('T')[0]}
+        />
+      </FormField>
+
       {/* Employee selection — hidden in edit mode */}
       {!lockMode && (() => {
         const filteredEmps = filterEmpCompany
           ? employees.filter(e => String(e.CompanyID) === filterEmpCompany)
           : employees;
           const isCompanySelected = !!filterEmpCompany;
-        const companyFilter = companies.length > 0 ? (
-          <div style={{ marginBottom: '8px' }}>
-             <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ink-soft)', textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>
-                1. Select Company First
-             </label>
-             <Select 
-  value={filterEmpCompany} 
-  onChange={e => {
-    const newCompId = e.target.value;
-    setFilterEmpCompany(newCompId);
-    const compObj = companies.find(c => String(c.CompanyID || c.id) === newCompId);
-    const compProfs = compObj?.profiles;
-    setForm(f => {
-      const profilStillValid = !compProfs?.length || compProfs.some(cp => String(cp.id) === String(f.profilId));
-      return { ...f, employeeId: '', employeeIds: [], profilId: profilStillValid ? f.profilId : '' };
-    });
-  }} 
-  style={{ 
-    width: '100%', 
-    // Koristimo borderColor umesto border da izbegnemo konflikt
-    borderColor: !isCompanySelected ? 'var(--teal)' : 'var(--canvas-warm)',
-    borderWidth: '1.5px',
-    borderStyle: 'solid'
-  }}
->
-  <option value="">— Choose company to unlock employees —</option>
-  {companies.map(c => <option key={c.CompanyID || c.id} value={String(c.CompanyID || c.id)}>{c.CompanyName || c.name}</option>)}
-</Select>
-          </div>
-        ) : null;
         if (mode === 'individual') return (
-          <FormField label="Select Company and Employee" required>
-            {companyFilter}
-            <div style={{ 
-              display: 'flex', gap: '8px', alignItems: 'flex-start', 
-              opacity: isCompanySelected ? 1 : 0.6,
-              transition: 'opacity 0.2s ease'
-            }}>
-              <Select 
-                value={form.employeeId} 
-                disabled={!isCompanySelected}
-                onChange={e => {
-                  setForm(f => ({ ...f, employeeId: e.target.value, peerEmployeeIds: [], drEmployeeIds: [], peerNewPersons: [], drNewPersons: [] }));
-                  setPeerEmployees([]);
-                  setDrEmployees([]);
-                }} 
-                required 
-                style={{ flex: 1, cursor: !isCompanySelected ? 'not-allowed' : 'pointer' }}
-              >
-                <option value="">{isCompanySelected ? '— Choose employee —' : 'Select company above first'}</option>
-                {filteredEmps.map(emp => <option key={emp.EmployeeID} value={emp.EmployeeID}>{emp.FirstName} {emp.LastName} ({emp.JobTitle || emp.Email})</option>)}
-              </Select>
-              <Btn 
-                type="button" 
-                variant="outline" 
-                size="sm" 
-                disabled={!isCompanySelected}
-                onClick={() => {
-                  setAddEmpForm(prev => ({ ...prev, companyId: filterEmpCompany })); // Automatski dodeljujemo izabranu firmu novom zaposlenom
-                  setShowAddEmp(true);
-                }} 
-                style={{ whiteSpace: 'nowrap', flexShrink: 0, cursor: !isCompanySelected ? 'not-allowed' : 'pointer' }}
-              >
-                + Add New
-              </Btn>
-            </div>
+          <FormField label="Select Employee" required>
+            {isCompanySelected && filteredEmps.length === 0 ? (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <div style={{ flex: 1, padding: '14px 16px', borderRadius: 'var(--radius-md)', background: 'var(--canvas)', border: '1.5px solid var(--canvas-warm)', fontSize: '0.85rem', color: 'var(--ink-faint)' }}>
+                  This company has no employees yet.
+                </div>
+                <Btn type="button" variant="outline" size="sm" onClick={() => { setAddEmpForm(prev => ({ ...prev, companyId: filterEmpCompany })); setShowAddEmp(true); }} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  + Add New
+                </Btn>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', opacity: isCompanySelected ? 1 : 0.6, transition: 'opacity 0.2s ease' }}>
+                <Select
+                  value={form.employeeId}
+                  disabled={!isCompanySelected}
+                  onChange={e => {
+                    setForm(f => ({ ...f, employeeId: e.target.value, peerEmployeeIds: [], drEmployeeIds: [], peerNewPersons: [], drNewPersons: [] }));
+                    setPeerEmployees([]);
+                    setDrEmployees([]);
+                  }}
+                  required
+                  style={{ flex: 1, cursor: !isCompanySelected ? 'not-allowed' : 'pointer' }}
+                >
+                  <option value="">{isCompanySelected ? '— Choose employee —' : 'Select company above first'}</option>
+                  {filteredEmps.map(emp => <option key={emp.EmployeeID} value={emp.EmployeeID}>{emp.FirstName} {emp.LastName} ({emp.JobTitle || emp.Email})</option>)}
+                </Select>
+                <Btn type="button" variant="outline" size="sm" disabled={!isCompanySelected} onClick={() => { setAddEmpForm(prev => ({ ...prev, companyId: filterEmpCompany })); setShowAddEmp(true); }} style={{ whiteSpace: 'nowrap', flexShrink: 0, cursor: !isCompanySelected ? 'not-allowed' : 'pointer' }}>
+                  + Add New
+                </Btn>
+              </div>
+            )}
           </FormField>
         );
         const employeeListUI = (
@@ -1474,7 +1463,15 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
               border: '1.5px solid var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '6px',
               background: !isCompanySelected ? 'var(--canvas)' : 'transparent'
             }}>
-              {isCompanySelected ? filteredEmps.map(emp => (
+              {!isCompanySelected ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '0.85rem' }}>
+                  Select a company above to see employees.
+                </div>
+              ) : filteredEmps.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '0.85rem' }}>
+                  This company has no employees yet.
+                </div>
+              ) : filteredEmps.map(emp => (
                 <label key={emp.EmployeeID} style={{
                   display: 'flex', gap: '10px', alignItems: 'center', padding: '8px 10px',
                   borderRadius: 'var(--radius-sm)', cursor: 'pointer',
@@ -1487,11 +1484,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
                     <div style={{ fontSize: '0.76rem', color: 'var(--ink-soft)' }}>{emp.JobTitle || emp.Email}</div>
                   </div>
                 </label>
-              )) : (
-                <div style={{ padding: '20px', textAlign: 'center', color: 'var(--ink-faint)', fontSize: '0.85rem' }}>
-                  List is empty. Please select a company first to see employees.
-                </div>
-              )}
+              ))}
             </div>
           </div>
         );
@@ -1566,7 +1559,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
 
         return (
           <>
-            <FormField label="2. Group Configuration">
+            <FormField label="Group Configuration">
               <div style={{ display: 'flex', gap: '10px' }}>
                 {[
                   { v: 'same', l: 'Same for all', d: 'All employees get the same assessment types' },
@@ -1586,8 +1579,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
                 ))}
               </div>
             </FormField>
-            <FormField label={groupStyle === 'same' ? '3. Select Employees' : '3. Configure Subgroups'} hint={groupStyle === 'same' ? 'Select all employees for this batch campaign' : 'Each subgroup can have different employees and assessment types'} required>
-              {companyFilter}
+            <FormField label={groupStyle === 'same' ? 'Select Employees' : 'Configure Subgroups'} hint={groupStyle === 'same' ? 'Select all employees for this batch campaign' : 'Each subgroup can have different employees and assessment types'} required>
               {groupStyle === 'same' ? employeeListUI : subgroupUI}
             </FormField>
           </>
@@ -1598,13 +1590,20 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
       {profiles.length > 0 && filterEmpCompany && (() => {
         const companyObj = companies.find(c => String(c.CompanyID || c.id) === filterEmpCompany);
         const companyProfiles = companyObj?.profiles;
-        const availableProfiles = companyProfiles?.length > 0
-          ? profiles.filter(p => companyProfiles.some(cp => String(cp.id) === String(p.id || p.ProfilID)))
-          : profiles;
+        if (!companyProfiles?.length) {
+          return (
+            <FormField label="Assessment Profile">
+              <div style={{ padding: '14px 16px', borderRadius: 'var(--radius-md)', background: 'var(--canvas)', border: '1.5px solid var(--canvas-warm)', fontSize: '0.85rem', color: 'var(--ink-faint)' }}>
+                This company has no profiles assigned. Go to My Companies to assign a profile before creating a campaign.
+              </div>
+            </FormField>
+          );
+        }
+        const availableProfiles = profiles.filter(p => companyProfiles.some(cp => String(cp.id) === String(p.id || p.ProfilID)));
         return (
           <FormField label="Assessment Profile" hint="Select a profile for this campaign">
             <Select value={form.profilId} onChange={e => setForm(f => ({ ...f, profilId: e.target.value }))}>
-              <option value="">— Default profile —</option>
+              <option value="">— Select profile —</option>
               {availableProfiles.map(p => <option key={p.id || p.ProfilID} value={p.id || p.ProfilID}>{p.name || p.Name}</option>)}
             </Select>
           </FormField>
