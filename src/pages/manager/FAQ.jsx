@@ -25,15 +25,19 @@ const FAQ = () => {
       questions: [
         {
           q: "Where do I manage companies and employees?",
-          a: "Both are managed from the same page: My Companies (sidebar → Management). Companies are listed as cards. Click the employee count on a company card to expand and see its employees, or click the campaign count to see its campaigns."
+          a: "Go to My Companies (sidebar → Management). The page uses a two-panel layout: the left panel lists all companies; clicking a company opens its detail in the right panel. The detail panel shows the company's assigned profiles, stats (employee count, campaign count), and a tab switcher between the Employees and Campaigns tabs."
         },
         {
           q: "How do I add a new company?",
-          a: "On the My Companies page, click + Add Company in the top right. Enter the company name and click Create. The company will appear immediately in the list."
+          a: "On the My Companies page, click + Add Company at the bottom of the left panel. Enter the company name, optionally select one or more assessment profiles to assign, and click Create. The company will appear immediately in the list."
+        },
+        {
+          q: "How do I assign or change profiles for a company?",
+          a: "Select the company in the left panel to open its detail. In the Profiles section of the header, existing profiles appear as pills. To add a profile, click + Add Profile, select from the dropdown, and click Add. To remove a profile, click the ✕ on its pill.\n\nAssigning profiles to a company controls which profiles are available when creating a campaign for that company's employees."
         },
         {
           q: "How do I add a new employee?",
-          a: "On the My Companies page, click the employee count button on a company card to expand the employee list, then click + Add Employee. Fill in First Name, Last Name, Email, Job Title, Language, and optionally Manager and Company. Email must be unique in the system."
+          a: "Select a company to open its detail, go to the Employees tab, and click + Add Employee. Fill in First Name, Last Name, Email, Job Title, Language, and optionally Manager. Email must be unique in the system."
         },
         {
           q: "Can I add a new employee during campaign creation?",
@@ -41,11 +45,11 @@ const FAQ = () => {
         },
         {
           q: "Can I delete an employee or company?",
-          a: "Yes. Use the Delete button on the employee row or company card. Deleting an employee permanently removes their record and all associated assessment history — this cannot be undone. Deleting a company will fail if it has employees assigned to it; remove or reassign employees first."
+          a: "Yes. In the company detail Employees tab, use the Delete option on the employee row. In the left panel, use the Delete option on the company. Deleting an employee permanently removes their record and all associated assessment history — this cannot be undone. Deleting a company will fail if it has employees assigned to it; remove or reassign employees first."
         },
         {
           q: "How do I edit an employee's details?",
-          a: "Expand the company card → employee list → click Edit next to the employee. Update any fields and save."
+          a: "Select the company → Employees tab → click Edit on the employee row. Update any fields and save."
         }
       ]
     },
@@ -62,11 +66,11 @@ const FAQ = () => {
         },
         {
           q: "What assessment types can I include in a campaign?",
-          a: "You can include any combination of:\n• Self — the employee assesses themselves\n• Manager — the employee's manager assesses them\n• Peer — colleagues assess them\n• Direct Reports — the employee's direct reports assess them\n• External — external contacts (e.g. clients) assess them\n\nEach type generates a separate assessment link sent to the relevant person.\n\nNote: if you select the Modern Employee profile, only Self Assessment is available — the other types are automatically disabled."
+          a: "The available assessment types depend entirely on which profile is selected. Each profile has questions in the database for specific types only — the campaign form shows only the types that are actually available for that profile, so the selection will vary.\n\nTypes generally cover perspectives such as self-assessment, manager, peers, direct reports, external contacts, and others. Each type generates a separate assessment link sent to the relevant person.\n\nTo see which types are available for a specific profile, select the company and profile in the New Campaign form — the options will appear automatically."
         },
         {
           q: "What is an Assessment Profile and which ones are available?",
-          a: "The Assessment Profile determines which question set the assessors will answer. There are currently two profiles:\n\n• Inspiring Leadership — the full 360° leadership assessment. Covers four dimensions (Results, Mindset, Skills, Influence) from a leadership perspective. Supports all assessment types: Self, Manager, Peer, Direct Reports, External.\n\n• Modern Employee — an individual contributor self-assessment. Covers the same four dimensions but from an employee perspective, not a management one. Only Self Assessment is available for this profile — the other assessment types are locked out automatically when this profile is selected.\n\nIf no profile is selected, the system uses the Inspiring Leadership profile by default."
+          a: "The Assessment Profile determines which question set the assessors will answer and which assessment types are available for the campaign.\n\nProfiles are managed centrally and assigned to companies. When creating a campaign, the profile dropdown shows only profiles assigned to the selected company. If a company has no profiles assigned, all profiles are available.\n\nEach profile has questions in the database for specific assessment types — the campaign form automatically shows only the types that have questions for the selected profile."
         },
         {
           q: "Can I set a deadline for a campaign?",
@@ -95,7 +99,7 @@ const FAQ = () => {
       questions: [
         {
           q: "What does the assessment experience look like for the person filling it in?",
-          a: "When someone opens their assessment link, they first see three introductory pages that explain the framework, the profile they are being assessed on, and how to answer honestly. After reading these, they proceed to the questions. Questions are shown one at a time and must be answered by clicking Next to advance — there is no auto-skip.\n\nThe intro pages vary by profile:\n• Inspiring Leadership profile — covers the HB Compass framework, the leadership model and five development levels, and the preparation guide.\n• Modern Employee profile — covers the HB Compass framework, the Modern Employee profile and five development levels, and the preparation guide."
+          a: "When someone opens their assessment link, they first see three introductory pages that explain the framework, the profile they are being assessed on, and how to answer honestly. After reading each page they click Continue; the page always returns to the top on navigation. After the intro, they proceed to the questions one at a time.\n\nQuestions and answer options are presented in a randomised order — the letters A, B, C do not correspond to low, mid, or high scores. There is no auto-advance; the assessor clicks Next or ← Previous to navigate.\n\nThe intro pages vary by profile:\n• Inspiring Leadership profile — covers the HB Compass framework, the leadership model and five development levels, and the preparation guide.\n• Modern Employee profile — covers the HB Compass framework, the Modern Employee profile and five development levels, and the preparation guide."
         },
         {
           q: "Do external assessors need to identify themselves?",
