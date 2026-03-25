@@ -92,6 +92,7 @@ export const api = {
     getEmployeeDirectReports: (employeeId) => request(`/api/360/manager/employees/${employeeId}/direct-reports`, {}, 'admin'),
     addEmployeeDirectReport: (employeeId, data) => request(`/api/360/manager/employees/${employeeId}/direct-reports`, { method: 'POST', body: JSON.stringify(data) }, 'admin'),
     removeEmployeeDirectReport: (employeeId, drId) => request(`/api/360/manager/employees/${employeeId}/direct-reports/${drId}`, { method: 'DELETE' }, 'admin'),
+    getCycleConfig: (employeeId, profileId) => request(`/api/360/manager/employees/${employeeId}/cycle-config?profileId=${profileId}`, {}, 'admin'),
   },
 
   // Employee

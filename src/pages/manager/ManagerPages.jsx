@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { api } from '../../utils/api';
 import { PortalLayout } from '../../components/Layout';
 import {
@@ -702,7 +702,7 @@ export function ManagerEmployees() {
       <PageHeader
         title="Employees"
         subtitle="Manage your team members"
-        action={<Link to="/manager/employees/new"><Btn variant="teal">+ Add Employee</Btn></Link>}
+        action={<Link to="/manager/employees/new" state={{ from: '/manager/people' }}><Btn variant="teal">+ Add Employee</Btn></Link>}
       />
       {error && <div style={{ marginBottom: '16px' }}><Alert type="error">{error}</Alert></div>}
       {empCompanies.length > 0 && (
@@ -716,7 +716,7 @@ export function ManagerEmployees() {
       {loading ? (
         <Card><div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner size={28} /></div></Card>
       ) : employees.length === 0 ? (
-        <Card><EmptyState icon="👥" title="No employees yet" message="Add your first employee to get started." action={<Link to="/manager/employees/new"><Btn variant="teal">Add Employee</Btn></Link>} /></Card>
+        <Card><EmptyState icon="👥" title="No employees yet" message="Add your first employee to get started." action={<Link to="/manager/employees/new" state={{ from: '/manager/people' }}><Btn variant="teal">Add Employee</Btn></Link>} /></Card>
       ) : groups.length === 0 ? (
         <Card><EmptyState icon="👥" title="No employees found" message="No employees match the selected company." /></Card>
       ) : (
@@ -734,7 +734,7 @@ export function ManagerEmployees() {
                   e.JobTitle || '—',
                   <Badge status="default">{e.Lang || 'EN'}</Badge>,
                   <ActionMenu items={[
-                    { label: 'Edit', onClick: () => navigate(`/manager/employees/${e.EmployeeID}/edit`) },
+                    { label: 'Edit', onClick: () => navigate(`/manager/employees/${e.EmployeeID}/edit`, { state: { from: '/manager/people' } }) },
                     { label: 'Delete', onClick: () => setDeleteId(e.EmployeeID), danger: true },
                   ]} />,
                 ])}
@@ -757,7 +757,9 @@ export function ManagerEmployees() {
 // ── Employee Form ──────────────────────────────────────────────────────────
 export function EmployeeForm({ editMode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
+  const returnTo = location.state?.from || '/manager/people';
   const [form, setForm] = useState({
     firstName: '', lastName: '', email: '',
     jobTitle: '', jobTitleCustom: '',
@@ -807,7 +809,8 @@ export function EmployeeForm({ editMode }) {
   // Re-fetch manager list when company changes
   useEffect(() => {
     if (!form.companyId) {
-      api.manager.getEmployees().then(list => setManagerList(list.filter(e => String(e.EmployeeID) !== id))).catch(() => {});
+      setManagerList([]);
+      setForm(f => ({ ...f, managerId: '' }));
       return;
     }
     api.manager.getEmployees(form.companyId)
@@ -865,7 +868,7 @@ export function EmployeeForm({ editMode }) {
       };
       if (editMode) await api.manager.updateEmployee(id, payload);
       else await api.manager.createEmployee(payload);
-      navigate('/manager/employees');
+      navigate(returnTo);
     } catch (err) { setError(err.message); }
     finally { setLoading(false); }
   }
@@ -903,17 +906,17 @@ export function EmployeeForm({ editMode }) {
             )}
           </FormField>
 
-          <FormField label="Manager" hint="Select the employee's direct manager (optional)">
+          <FormField label="Manager / Mentor" hint="Select the employee's direct manager or mentor (optional)">
             <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-              <Select value={form.managerId} onChange={set('managerId')} style={{ flex: 1 }}>
-                <option value="">— No manager —</option>
+              <Select value={form.managerId} onChange={set('managerId')} style={{ flex: 1 }} disabled={!form.companyId}>
+                <option value="">{form.companyId ? '— No manager —' : '— Select company first —'}</option>
                 {managerList.map(e => (
                   <option key={e.EmployeeID} value={e.EmployeeID}>
                     {e.FirstName} {e.LastName}
                   </option>
                 ))}
               </Select>
-              <Btn type="button" variant="outline" size="sm" onClick={() => setShowAddManager(true)} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>+ Add New</Btn>
+              <Btn type="button" variant="outline" size="sm" onClick={() => setShowAddManager(true)} style={{ whiteSpace: 'nowrap', flexShrink: 0 }} disabled={!form.companyId}>+ Add New</Btn>
             </div>
           </FormField>
 
@@ -926,7 +929,7 @@ export function EmployeeForm({ editMode }) {
 
           <div style={{ display: 'flex', gap: '10px', paddingTop: '8px' }}>
             <Btn type="submit" variant="teal" loading={loading}>{editMode ? 'Save Changes' : 'Add Employee'}</Btn>
-            <Btn variant="outline" type="button" onClick={() => navigate('/manager/employees')}>Cancel</Btn>
+            <Btn variant="outline" type="button" onClick={() => navigate(returnTo)}>Cancel</Btn>
           </div>
         </form>
       </Card>
@@ -1163,6 +1166,8 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
   const [subgroups, setSubgroups] = useState([
     { employeeIds: [], includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeCrossPartisan: false, includeMentor: false },
   ]);
+  const [cycleConfig, setCycleConfig] = useState(null);
+  const [cycleConfigLoading, setCycleConfigLoading] = useState(false);
 
   useEffect(() => {
     api.manager.getEmployees().then(setEmployees).catch(() => {});
@@ -1190,6 +1195,20 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
     includeCrossPartisan: 'crosspartisan',
     includeMentor: 'mentor',
   };
+  // Reverse map: any backend identifier → frontend form key
+  const BACKEND_TYPE_TO_KEY = {
+    self: 'includeSelf', includeSelf: 'includeSelf',
+    manager: 'includeManager', includeManager: 'includeManager',
+    peer: 'includePeer', includePeer: 'includePeer',
+    direct_report: 'includeDirectReports', directreport: 'includeDirectReports', includeDirectReports: 'includeDirectReports',
+    external: 'includeExternal', includeExternal: 'includeExternal',
+    crosspartisan: 'includeCrossPartisan', includeCrossPartisan: 'includeCrossPartisan',
+    mentor: 'includeMentor', includeMentor: 'includeMentor',
+  };
+  const normalizeCycleTypes = (types) => (types || []).map(t => ({
+    ...t,
+    key: BACKEND_TYPE_TO_KEY[t.key] || BACKEND_TYPE_TO_KEY[t.type] || t.key,
+  }));
 
   // Which types are available for the selected profile (from DB)
   const profileQTypes = selectedProfile?.questionTypes || null;
@@ -1219,6 +1238,30 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
       setForm(f => ({ ...f, includeSelf: true, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeCrossPartisan: false, includeMentor: false }));
     }
   }, [form.profilId]); // eslint-disable-line
+
+  // Fetch cycle config when employee + profile selected (individual mode)
+  useEffect(() => {
+    if (!form.employeeId || !form.profilId || mode !== 'individual') {
+      setCycleConfig(null);
+      return;
+    }
+    setCycleConfigLoading(true);
+    api.manager.getCycleConfig(form.employeeId, form.profilId)
+      .then(cfg => {
+        const normalized = { ...cfg, assessmentTypes: normalizeCycleTypes(cfg.assessmentTypes) };
+        setCycleConfig(normalized);
+        // Uncheck any types that are blocked for this employee
+        setForm(f => {
+          const updated = { ...f };
+          (normalized.assessmentTypes || []).forEach(t => {
+            if (t.blocked) updated[t.key] = false;
+          });
+          return updated;
+        });
+      })
+      .catch(() => setCycleConfig(null))
+      .finally(() => setCycleConfigLoading(false));
+  }, [form.employeeId, form.profilId, mode]); // eslint-disable-line
 
   // Kada se promeni subject employee, učitaj njegove peers i DR iz baze
   useEffect(() => {
@@ -1617,30 +1660,57 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
         </div>
       )}
       {!(mode === 'group' && groupStyle === 'custom') && form.profilId && (() => {
-        const allTypes = [
-          { key: 'includeSelf', label: 'Self Assessment', desc: 'Employee rates themselves' },
-          { key: 'includeManager', label: 'Manager Review', desc: 'Direct manager assessment' },
-          { key: 'includePeer', label: 'Peer Review', desc: 'Individual links + shared link' },
-          { key: 'includeDirectReports', label: 'Direct Reports', desc: 'Individual links + shared link' },
-          { key: 'includeExternal', label: 'External', desc: 'One shared link for external assessors' },
-          { key: 'includeCrossPartisan', label: 'Cross-Partisan', desc: 'Cross-partisan assessment' },
-          { key: 'includeMentor', label: 'Mentor', desc: 'Mentor assessment' },
-        ];
-        const visibleTypes = allTypes.filter(t => isTypeAvailable(t.key));
+        // When cycleConfig is loaded (employee selected, individual mode): use backend types + labels
+        // Otherwise: use profile-based hardcoded list
+        const useCycleTypes = mode === 'individual' && cycleConfig;
+        const visibleTypes = useCycleTypes
+          ? normalizeCycleTypes(cycleConfig.assessmentTypes)
+          : (() => {
+              const allTypes = [
+                { key: 'includeSelf', label: 'Self Assessment', desc: 'Employee rates themselves' },
+                { key: 'includeManager', label: 'Manager Review', desc: 'Direct manager assessment' },
+                { key: 'includePeer', label: 'Peer Review', desc: 'Individual links + shared link' },
+                { key: 'includeDirectReports', label: 'Direct Reports', desc: 'Individual links + shared link' },
+                { key: 'includeExternal', label: 'External', desc: 'One shared link for external assessors' },
+                { key: 'includeCrossPartisan', label: 'Cross-Partisan', desc: 'Cross-partisan assessment' },
+                { key: 'includeMentor', label: 'Mentor', desc: 'Mentor assessment' },
+              ];
+              return allTypes.filter(t => isTypeAvailable(t.key));
+            })();
+
         return (
           <FormField label="Assessment Types" required hint={isEmployeeProfile ? 'This profile only supports Self Assessment' : undefined}>
+            {cycleConfigLoading && mode === 'individual' && form.employeeId && (
+              <div style={{ padding: '8px 0', fontSize: '0.83rem', color: 'var(--ink-faint)' }}>Loading assessment types...</div>
+            )}
             <div className="grid-2col" style={{ gap: '10px' }}>
               {visibleTypes.map(t => {
                 const lockedOn = isEmployeeProfile && t.key === 'includeSelf';
+                if (t.blocked) return (
+                  <div key={t.key} style={{
+                    display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', borderRadius: 'var(--radius-md)',
+                    border: '1.5px solid var(--canvas-warm)', background: 'var(--canvas-warm)', opacity: 0.6,
+                    cursor: 'not-allowed',
+                  }}>
+                    <input type="checkbox" checked={false} disabled style={{ accentColor: 'var(--ink)', flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--ink-soft)' }}>{t.label}</div>
+                      {t.blockMessage
+                        ? <div style={{ fontSize: '0.77rem', color: 'var(--danger)', marginTop: '2px' }}>{t.blockMessage}</div>
+                        : <div style={{ fontSize: '0.77rem', color: 'var(--ink-soft)', marginTop: '2px' }}>{t.desc}</div>
+                      }
+                    </div>
+                  </div>
+                );
                 return (
                   <label key={t.key} style={{
-                    display: 'flex', gap: '12px', padding: '14px', borderRadius: 'var(--radius-md)',
+                    display: 'flex', alignItems: 'center', gap: '12px', padding: '14px', borderRadius: 'var(--radius-md)',
                     cursor: lockedOn ? 'not-allowed' : 'pointer',
                     border: `1.5px solid ${form[t.key] ? 'var(--ink)' : 'var(--canvas-warm)'}`,
                     background: form[t.key] ? 'var(--canvas-warm)' : 'var(--canvas)',
                     transition: 'all var(--transition)',
                   }}>
-                    <input type="checkbox" checked={form[t.key]} onChange={() => { if (!lockedOn) toggle(t.key); }} disabled={lockedOn} style={{ accentColor: 'var(--ink)', marginTop: '2px' }} />
+                    <input type="checkbox" checked={!!form[t.key]} onChange={() => { if (!lockedOn) toggle(t.key); }} disabled={lockedOn} style={{ accentColor: 'var(--ink)', flexShrink: 0 }} />
                     <div>
                       <div style={{ fontWeight: 600, fontSize: '0.88rem' }}>{t.label}</div>
                       <div style={{ fontSize: '0.77rem', color: 'var(--ink-soft)', marginTop: '2px' }}>{t.desc}</div>
@@ -1764,15 +1834,15 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
             </Select>
           </FormField>
         </div>
-        <FormField label="Manager" hint="Optional — select or add the employee's direct manager">
+        <FormField label="Manager / Mentor" hint="Optional — select or add the employee's direct manager or mentor">
           <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-            <Select value={addEmpForm.managerId} onChange={e => setAddEmpForm(f => ({ ...f, managerId: e.target.value }))} style={{ flex: 1 }}>
-              <option value="">— No manager —</option>
-              {employees.map(e => (
+            <Select value={addEmpForm.managerId} onChange={e => setAddEmpForm(f => ({ ...f, managerId: e.target.value }))} style={{ flex: 1 }} disabled={!addEmpForm.companyId}>
+              <option value="">{addEmpForm.companyId ? '— No manager —' : '— Select company first —'}</option>
+              {employees.filter(e => String(e.CompanyID) === String(addEmpForm.companyId)).map(e => (
                 <option key={e.EmployeeID} value={e.EmployeeID}>{e.FirstName} {e.LastName}</option>
               ))}
             </Select>
-            <Btn type="button" variant="outline" size="sm" onClick={() => setShowAddEmpManager(true)} style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>+ Add New</Btn>
+            <Btn type="button" variant="outline" size="sm" onClick={() => setShowAddEmpManager(true)} style={{ whiteSpace: 'nowrap', flexShrink: 0 }} disabled={!addEmpForm.companyId}>+ Add New</Btn>
           </div>
         </FormField>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingTop: '4px' }}>
@@ -2147,6 +2217,7 @@ export function CampaignDetail() {
           a.download = `AI_Report_${campaign.FirstName}_${campaign.LastName}.pdf`;
           a.click();
           URL.revokeObjectURL(url);
+          fetchReports();
           setAiGenerating(false); setAiStatus('');
         } else if (result.status === 'error') {
           setAiError(result.error || 'Report generation failed.');
@@ -2338,35 +2409,35 @@ export function CampaignDetail() {
               </div>
             </div>
 
-            {/* 360 inclusions — in development */}
+            {/* 360 inclusions */}
             <div style={{ borderTop: '1px solid var(--canvas-warm)', paddingTop: '16px' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-soft)', marginBottom: '10px' }}>
-                Include in report
+                Will be included in report
               </div>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {[
+                  { label: 'Self', done: selfDone },
                   { label: 'Manager', done: managerDone },
                   { label: 'Peers', done: peerLinks.some(l => l.Status === 'completed') },
                   { label: 'Direct Reports', done: drLinks.some(l => l.Status === 'completed') },
                   { label: 'External', done: otherLinks.some(l => l.Status === 'completed') },
                 ].map(({ label, done }) => (
-                  <div key={label} title="Coming soon — multi-assessor reports are currently in development" style={{
+                  <div key={label} style={{
                     padding: '5px 12px', borderRadius: 'var(--radius-md)',
-                    border: `1px solid ${done ? 'var(--canvas-warm)' : 'var(--canvas-warm)'}`,
+                    border: `1px solid ${done ? 'var(--ink)' : 'var(--canvas-warm)'}`,
                     background: done ? 'var(--canvas-warm)' : 'var(--canvas)',
                     fontSize: '0.78rem', fontWeight: 500,
-                    color: done ? 'var(--ink-soft)' : 'var(--ink-faint)',
-                    cursor: 'not-allowed', userSelect: 'none',
+                    color: done ? 'var(--ink)' : 'var(--ink-faint)',
                     display: 'flex', alignItems: 'center', gap: '6px',
                   }}>
-                    {done && <span style={{ color: 'var(--success)', fontSize: '0.7rem' }}>●</span>}
+                    {done
+                      ? <span style={{ color: 'var(--success)', fontSize: '0.7rem' }}>●</span>
+                      : <span style={{ color: 'var(--ink-faint)', fontSize: '0.7rem' }}>○</span>
+                    }
                     {label}
                   </div>
                 ))}
               </div>
-              <p style={{ fontSize: '0.76rem', color: 'var(--ink-faint)', lineHeight: 1.5 }}>
-                Multi-assessor reports are currently in development. Reports currently use self-assessment data only.
-              </p>
             </div>
 
             {/* Generated reports list */}
@@ -2938,7 +3009,7 @@ export function CompaniesAndEmployees() {
                       {activeTab === 'employees' ? 'Employees' : 'Campaigns'}
                     </h3>
                     {activeTab === 'employees' ? (
-                      <Btn size="sm" variant="teal" onClick={() => navigate(`/manager/employees/new?company=${selectedCompanyId}`)}>+ Add Employee</Btn>
+                      <Btn size="sm" variant="teal" onClick={() => navigate(`/manager/employees/new?company=${selectedCompanyId}`, { state: { from: '/manager/companies' } })}>+ Add Employee</Btn>
                     ) : (
                       <Link to={`/manager/campaigns/new?company=${selectedCompanyId}`}><Btn size="sm" variant="teal">+ New Campaign</Btn></Link>
                     )}
@@ -2956,7 +3027,7 @@ export function CompaniesAndEmployees() {
                           e.JobTitle || '—',
                           <Badge status="default">{e.Lang?.toUpperCase() || 'EN'}</Badge>,
                           <ActionMenu items={[
-                            { label: 'Edit', onClick: () => navigate(`/manager/employees/${e.EmployeeID}/edit`) },
+                            { label: 'Edit', onClick: () => navigate(`/manager/employees/${e.EmployeeID}/edit`, { state: { from: '/manager/companies' } }) },
                             { label: 'Delete', onClick: () => setDeleteEmpId(e.EmployeeID), danger: true },
                           ]} />,
                         ])}
@@ -3123,6 +3194,10 @@ setCompanies(Array.isArray(comp) ? comp : []);
                 </div>
               )}
             </Card>
+
+            <Btn variant="teal" size="sm" onClick={() => navigate('/manager/employees/new', { state: { from: '/manager/people' } })} style={{ width: '100%', justifyContent: 'center' }}>
+              + Add Employee
+            </Btn>
           </div>
 
           {/* ── Right panel ── */}

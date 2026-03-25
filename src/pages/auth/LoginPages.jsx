@@ -23,7 +23,7 @@ function LoginForm({ title, subtitle, onSubmit, loading, error }) {
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <FormField label="Username" required>
-          <Input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="your username" required autoFocus />
+          <Input type="text" value={username} onChange={e => setUsername(e.target.value)} placeholder="enter username" required autoFocus />
         </FormField>
         <FormField label="Password" required>
           <div style={{ position: 'relative' }}>

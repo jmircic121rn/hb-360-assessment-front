@@ -54,6 +54,10 @@ export default function AssessPage() {
 
   const profileName = (data?.profileName || data?.profilName || data?.profile?.name || data?.ProfilName || '').toLowerCase();
   const isEmployeeProfile = profileName.includes('employee') || profileName.includes('modern');
+  const isYPLProfile = profileName.includes('young') || profileName.includes('political');
+  const isKAMProfile = profileName.includes('kam') || profileName.includes('sales') || profileName.includes('value-driven') || profileName.includes('value driven');
+  // DEBUG
+  if (data) console.log('[DEBUG] profileName:', JSON.stringify(profileName), '| isEmployee:', isEmployeeProfile, '| isYPL:', isYPLProfile, '| isKAM:', isKAMProfile);
 
   // Use questions from DB if available; fall back to local question files
   const questions = (() => {
@@ -374,7 +378,7 @@ export default function AssessPage() {
     },
   ];
 
-  const introPages = isEmployeeProfile ? employeeIntroPages : [
+  const leaderIntroPages = [
     {
       key: 'compass',
       title: 'HB Compass — Know Where You Stand. Know Where to Grow.',
@@ -534,6 +538,313 @@ export default function AssessPage() {
     },
   ];
 
+  const yplIntroPages = [
+    {
+      key: 'compass',
+      title: 'HB Compass — Know Where You Stand. Know Where to Grow.',
+      subtitle: null,
+      body: (
+        <>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
+            Most professionals have a genuine but incomplete picture of themselves. You know your strengths — at least the ones you are aware of. You know the areas you find challenging. But the gap between how you see yourself and how your work actually lands with others, how your thinking shapes your decisions, how your presence influences the people around you — that gap is where the most valuable development insight lives. The HB Compass self-assessment is designed to close that gap.
+          </p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '24px' }}>
+            HB Compass is a professional development framework built on a simple but powerful idea: what makes someone genuinely excellent at their work is not one thing — it is four interconnected things, working together. Most development tools focus on skills or results. HB Compass goes further, assessing the full picture of what drives professional effectiveness — because sustainable excellence is never just about what you can do. It is equally about how you think, who you are in your relationships, and the impact you have on the people and environment around you.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
+            {[
+              { label: 'Mindset — The Foundation', desc: 'How you think shapes everything else. Your beliefs about your own capacity to grow, your resilience when things get difficult, your openness to feedback, your sense of ownership over your work — these are not personality traits you are stuck with. They are patterns that can be understood, developed, and deliberately changed.' },
+              { label: 'Skills — The Toolkit', desc: 'Skills are the practical capabilities you bring to your role — how you manage your time and priorities, how you communicate, how you engage with others, how you build coalitions and navigate complex environments. The Skills dimension assesses not just whether you have a capability, but how reliably and sophisticatedly you apply it in real situations.' },
+              { label: 'Results — The Measure', desc: 'Results are the outcomes you create — in the short term through effective execution and goal achievement, and in the long term through strategic thinking, advocacy, and building capacity that outlasts any individual initiative. The Results dimension connects your day-to-day work to the larger contribution you make.' },
+              { label: 'Influence — The Multiplier', desc: 'How you affect the people around you determines whether your contribution stays with you or extends through others. The Influence dimension examines how you build trust, inspire commitment, and create environments where others feel valued, heard, and motivated to act.' },
+            ].map(({ label, desc }) => (
+              <div key={label} style={{ borderLeft: '3px solid var(--canvas-warm)', paddingLeft: '16px' }}>
+                <p style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: '6px', color: 'var(--ink)' }}>{label}</p>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, fontSize: '0.88rem' }}>
+            Understanding where you currently are is the most practical thing you can do for your development. Not where you hope you are — where you actually are, honestly assessed against a clear description of what excellent looks like. When you know that, development stops being vague. You have a starting point.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'ypl',
+      title: 'The Young Political Leader',
+      subtitle: 'HB Compass — Young Political Leaders Profile',
+      body: (
+        <>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '16px' }}>
+            There is a difference between holding a political position and actually leading. Most people who have worked in civic or political environments understand this instinctively — because they have experienced both kinds of person themselves. They have encountered someone who genuinely moved people, built coalitions, and left the environment better than they found it. And they have encountered someone who occupied a role without ever truly leading. The difference is not seniority, connections, or ambition. It is leadership.
+          </p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
+            The Young Political Leaders profile describes what genuinely effective leadership looks like in political and civic contexts — not as an abstract ideal, but as a set of observable, developable capabilities that emerging leaders can understand, assess, and grow.
+          </p>
+          <p style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '8px', color: 'var(--ink)' }}>What Does a Young Political Leader Look Like?</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '28px' }}>
+            {[
+              {
+                title: 'They Deliver Results — and Build the Capacity for Lasting Change',
+                text: 'A young political leader gets things done within complex, multi-stakeholder environments. They set clear goals, manage competing priorities, and follow through on commitments — even when conditions are uncertain or politically charged. They do not stop at short-term wins. They think strategically about sustainable impact: building coalitions, creating structures that outlast individual initiatives, and developing the capacity of people around them so that progress continues beyond their own direct involvement.',
+              },
+              {
+                title: 'They Lead From the Right Mindset',
+                text: 'How a leader thinks shapes everything about how they engage with others and with power. A young political leader brings genuine self-awareness — understanding their own values, their strengths, and the edges of those strengths. They stay open to feedback and use it constructively. They take ownership of their decisions and their impact. And they maintain intellectual honesty — distinguishing between what they know, what they believe, and what they are still learning.',
+              },
+              {
+                title: 'They Have the Skills That Political Leadership Actually Requires',
+                text: 'Passion and conviction get people into civic life. What keeps them effective is a different set of capabilities entirely. A young political leader communicates with clarity and authenticity across very different audiences — from community members to institutions to media. They listen with genuine intent, not just waiting for their turn to speak. They build and sustain coalitions by understanding what others need. They manage conflict without damaging relationships. And they make sound decisions under pressure and ambiguity.',
+              },
+              {
+                title: 'They Create Environments of Trust and Participation',
+                text: 'The final dimension of effective political leadership is perhaps the least visible — and the most powerful. It is the experience a leader creates for the people around them. A young political leader makes others feel genuinely heard and valued — not through performance, but through authentic presence and inclusive practice. They build trust through consistency between their words and their actions. And they inspire others to participate, contribute, and lead themselves — expanding the circle of leadership rather than concentrating it.',
+              },
+            ].map(({ title, text }) => (
+              <div key={title} style={{ borderLeft: '3px solid var(--canvas-warm)', paddingLeft: '16px' }}>
+                <p style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: '6px', color: 'var(--ink)' }}>{title}</p>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>{text}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '8px', color: 'var(--ink)' }}>The Five Development Levels</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+            {[
+              { name: 'Emerging', text: 'You are building foundational understanding and beginning to develop this capability. Your approach may be inconsistent, and you benefit from guidance and structured support.' },
+              { name: 'Developing', text: 'You are growing in this area and demonstrating the capability in straightforward situations. You are building confidence and consistency, though more complex situations may still stretch you.' },
+              { name: 'Proficient', text: 'You demonstrate this capability reliably and effectively across most situations. This is a genuine strength you can build on and that others can depend on.' },
+              { name: 'Advanced', text: 'You demonstrate sophisticated, nuanced capability that goes beyond effective performance. You anticipate complexity, adapt skilfully, and help others develop in this area.' },
+              { name: 'Expert', text: 'You demonstrate masterful, distinctive capability that shapes how others think about and practice this aspect of leadership. You are a recognised resource and a model for others.' },
+            ].map(({ name, text }) => (
+              <div key={name} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ flexShrink: 0, fontWeight: 700, fontSize: '0.82rem', color: 'var(--ink)', minWidth: 72 }}>{name}</span>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.85rem' }}>{text}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, fontSize: '0.85rem' }}>
+            Most leaders will find themselves at different levels across different capabilities — and that variation is exactly what makes the self-assessment useful. It shows you not just where you are strong, but where the most valuable development focus lies for you specifically.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'intro',
+      title: 'HB Compass Self-Assessment — Preparation Guide',
+      subtitle: 'This page will take you about 3 minutes to read. Please read it before you begin.',
+      body: (
+        <>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>What you are about to do</p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.9rem' }}>
+            You are going to read a series of realistic workplace scenarios — situations that people in your kind of role regularly face. For each one, you will choose the description that best fits how you actually respond. There are no right or wrong answers. The three options in each question represent different approaches to the same situation — not different levels of moral worth or professional value.
+          </p>
+          <div style={{ background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '16px 18px', marginBottom: '20px' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>The single most important thing</p>
+            <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
+              Answer based on how you actually work — not how you think you should work. It is tempting to choose the most impressive-sounding option on every question. We'd ask you not to — for a practical reason. Each scenario is paired with a follow-up question that asks what actually happened as a result of your approach. If your first answer describes behaviour you don't typically exhibit, the follow-up will reveal the gap. <strong>An honest 3 is more useful than an inflated 5.</strong>
+            </p>
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', color: 'var(--ink)' }}>What the three options mean</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+            {[
+              { label: 'Option A', desc: 'A professional at an earlier stage of development in this area. Not the "bad" answer — a legitimate approach that many capable people use, especially in areas they\'re still building.' },
+              { label: 'Option B', desc: 'A solid, competent professional performing consistently and independently. For most people in most areas, this is a realistic and accurate description.' },
+              { label: 'Option C', desc: 'A highly effective professional who performs excellently and begins to create positive impact beyond their own work. Select this only if it genuinely reflects your typical approach — not your best day.' },
+            ].map(({ label, desc }) => (
+              <div key={label} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ flexShrink: 0, fontWeight: 700, fontSize: '0.82rem', color: 'var(--ink)', minWidth: 60 }}>{label}</span>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.85rem' }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>How to read each question</p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.88rem' }}>
+            Ask yourself: "Across a typical week, in situations like this — which description most accurately captures what I actually do?" Think about patterns, not highlights. Your most impressive interaction is not your typical one.
+          </p>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', color: 'var(--ink)' }}>Five things to remember while answering</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+            {[
+              'Think patterns, not highlights — choose what\'s typical, not exceptional',
+              'No option is inherently better or worse — each describes a different approach at a different stage of development',
+              'Variation is healthy — consistently choosing the most impressive-sounding option across all questions produces a less accurate and less useful profile',
+              'If you\'re between two options — choose the more conservative one; it gives a more honest starting point for development',
+              'Questions and answer options are presented in a randomised order — A, B, and C do not correspond to low, mid, or high scores',
+              'You can pause and return — your progress saves automatically; use the same link to continue',
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, width: 6, height: 6, borderRadius: '50%', background: 'var(--ink)', marginTop: '8px' }} />
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.88rem' }}>{item}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '16px 18px' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>When you're ready</p>
+            <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
+              Find a quiet place. Set aside 20 minutes without interruptions. Your honest reflection is the most valuable thing you can bring to this assessment — more valuable than any particular score.
+            </p>
+          </div>
+        </>
+      ),
+    },
+  ];
+
+  const kamIntroPages = [
+    {
+      key: 'compass',
+      title: 'HB Compass — Know Where You Stand. Know Where to Grow.',
+      subtitle: null,
+      body: (
+        <>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
+            Most professionals have a genuine but incomplete picture of themselves. You know your strengths — at least the ones you are aware of. You know the areas you find challenging. But the gap between how you see yourself and how your work actually lands with clients, how your thinking shapes your commercial decisions, how your presence influences the relationships you build — that gap is where the most valuable development insight lives. The HB Compass self-assessment is designed to close that gap.
+          </p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '24px' }}>
+            HB Compass is a professional development framework built on a simple but powerful idea: what makes someone genuinely excellent at their work is not one thing — it is four interconnected things, working together. Most development tools focus on skills or results. HB Compass goes further, assessing the full picture of what drives professional effectiveness — because sustainable commercial excellence is never just about what you can do. It is equally about how you think, who you are in your relationships, and the long-term value you create.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '24px' }}>
+            {[
+              { label: 'Mindset — The Foundation', desc: 'How you think shapes everything else. Your beliefs about your own capacity to grow, your resilience when deals are difficult, your openness to feedback, your sense of ownership over your results — these are not fixed traits. They are patterns that can be understood, developed, and deliberately changed.' },
+              { label: 'Skills — The Toolkit', desc: 'Skills are the practical capabilities you bring to your role — how you manage your priorities across a complex account portfolio, how you communicate value, how you understand client needs at depth, how you navigate complex negotiations. The Skills dimension assesses not just whether you have a capability, but how reliably and sophisticatedly you apply it in real commercial situations.' },
+              { label: 'Results — The Measure', desc: 'Results are the outcomes you create — in the short term through effective execution and quota achievement, and in the long term through strategic account development, client retention, and building partnerships that grow in value over time. The Results dimension connects your day-to-day commercial work to the larger impact you make.' },
+              { label: 'Influence — The Multiplier', desc: 'How you affect the people around you — clients, colleagues, and stakeholders — determines whether your commercial contribution stays with you or extends through others. The Influence dimension examines how you build trust, create genuine partnership, and make clients feel understood and valued rather than sold to.' },
+            ].map(({ label, desc }) => (
+              <div key={label} style={{ borderLeft: '3px solid var(--canvas-warm)', paddingLeft: '16px' }}>
+                <p style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: '6px', color: 'var(--ink)' }}>{label}</p>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, fontSize: '0.88rem' }}>
+            Understanding where you currently are is the most practical thing you can do for your professional development. Not where you hope you are — where you actually are, honestly assessed against a clear description of what excellent looks like in your specific role. When you know that, development stops being vague. You have a starting point.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'kam',
+      title: 'The Value-Driven Sales Professional',
+      subtitle: 'HB Compass — KAM Value-driven Sales Profile',
+      body: (
+        <>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '16px' }}>
+            There is a difference between selling and creating genuine value for a client. Most people who have worked in commercial roles understand this instinctively — because they have experienced both kinds of interaction themselves. They have worked with a sales professional who truly understood their business, brought relevant insight, and made them feel like a partner. And they have worked with someone who was technically proficient but ultimately transactional. The difference between those two experiences is not product knowledge or closing technique. It is how someone approaches the relationship and the value they consistently bring to it.
+          </p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
+            The KAM Value-driven Sales profile describes what genuinely effective key account management looks like today — not as a collection of sales tactics, but as a set of observable, developable capabilities that commercial professionals at every level can understand, assess, and grow.
+          </p>
+          <p style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '8px', color: 'var(--ink)' }}>What Does a Value-Driven Sales Professional Look Like?</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '28px' }}>
+            {[
+              {
+                title: 'They Deliver Results — and Build the Commercial Relationships That Make Future Results Possible',
+                text: 'A value-driven sales professional achieves their commercial targets — but not at the expense of the relationship or the long-term account. They set clear goals, manage their pipeline with discipline, and consistently follow through on commitments to clients. They make sound decisions about where to invest their time and effort across a complex portfolio. And they think beyond the current deal: building account plans that develop the relationship over time, growing share of wallet, and creating the conditions for sustainable commercial success that does not depend on constant pressure.',
+              },
+              {
+                title: 'They Bring a Client-Centric Mindset',
+                text: 'How a sales professional thinks shapes every interaction they have with clients. A value-driven professional approaches each account with genuine curiosity — seeking to understand the client\'s business, their challenges, and their priorities before leading with their own offer. They take feedback from clients seriously and use it to improve. They take ownership of commercial outcomes without deflecting responsibility onto market conditions or internal constraints. And they stay resilient when deals are lost — learning from the experience rather than discarding it.',
+              },
+              {
+                title: 'They Have the Skills That Strategic Sales Actually Requires',
+                text: 'Product knowledge gets people into commercial roles. What keeps them effective at senior account levels is a different set of capabilities entirely. A value-driven sales professional manages their priorities across a demanding portfolio without losing focus on the accounts that matter most. They communicate value in terms that resonate with different stakeholders — from operational contacts to C-suite decision-makers. They listen with real intent during client conversations — understanding not just what is said but what is meant. They conduct needs analysis at depth. And they negotiate in ways that create mutual value rather than simply extracting the best possible terms.',
+              },
+              {
+                title: 'They Build Partnerships That Go Beyond the Transaction',
+                text: 'The final dimension of value-driven sales is perhaps the hardest to measure — and the most commercially significant. It is the experience a client has of working with this professional over time. A value-driven sales professional makes clients feel genuinely valued — not just when a renewal is approaching, but consistently. They build trust through reliability: doing what they say, when they say it. They bring insight and perspective that helps clients think about their challenges differently. And they create the kind of relationship where the client calls them first — not because they have to, but because they want to.',
+              },
+            ].map(({ title, text }) => (
+              <div key={title} style={{ borderLeft: '3px solid var(--canvas-warm)', paddingLeft: '16px' }}>
+                <p style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: '6px', color: 'var(--ink)' }}>{title}</p>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>{text}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '8px', color: 'var(--ink)' }}>The Five Development Levels</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+            {[
+              { name: 'Emerging', text: 'You are building foundational understanding and beginning to develop this capability. Your approach may be inconsistent, and you benefit from guidance and structured support.' },
+              { name: 'Developing', text: 'You are growing in this area and demonstrating the capability in straightforward situations. You are building confidence and consistency, though more complex situations may still stretch you.' },
+              { name: 'Proficient', text: 'You demonstrate this capability reliably and effectively across most situations. This is a genuine strength you can build on and that clients can depend on.' },
+              { name: 'Advanced', text: 'You demonstrate sophisticated, nuanced capability that goes beyond effective performance. You anticipate client needs, adapt skilfully, and often help colleagues around you develop in this area.' },
+              { name: 'Expert', text: 'You demonstrate masterful, distinctive capability that shapes how others think about and practice this aspect of commercial work. You are a recognised resource and a model for others.' },
+            ].map(({ name, text }) => (
+              <div key={name} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ flexShrink: 0, fontWeight: 700, fontSize: '0.82rem', color: 'var(--ink)', minWidth: 72 }}>{name}</span>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.85rem' }}>{text}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, fontSize: '0.85rem' }}>
+            Most professionals will find themselves at different levels across different capabilities — and that variation is exactly what makes the self-assessment useful. It shows you not just where you are strong, but where the most valuable development focus lies for you specifically.
+          </p>
+        </>
+      ),
+    },
+    {
+      key: 'intro',
+      title: 'HB Compass Self-Assessment — Preparation Guide',
+      subtitle: 'This page will take you about 3 minutes to read. Please read it before you begin.',
+      body: (
+        <>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>What you are about to do</p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.9rem' }}>
+            You are going to read a series of realistic workplace scenarios — situations that people in commercial and key account roles regularly face. For each one, you will choose the description that best fits how you actually respond. There are no right or wrong answers. The three options in each question represent different approaches to the same situation — not different levels of moral worth or professional value.
+          </p>
+          <div style={{ background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '16px 18px', marginBottom: '20px' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>The single most important thing</p>
+            <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
+              Answer based on how you actually work — not how you think you should work. It is tempting to choose the most impressive-sounding option on every question. We'd ask you not to — for a practical reason. Each scenario is paired with a follow-up question that asks what actually happened as a result of your approach. If your first answer describes behaviour you don't typically exhibit, the follow-up will reveal the gap. <strong>An honest 3 is more useful than an inflated 5.</strong>
+            </p>
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', color: 'var(--ink)' }}>What the three options mean</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+            {[
+              { label: 'Option A', desc: 'A professional at an earlier stage of development in this area. Not the "bad" answer — a legitimate approach that many capable people use, especially in areas they\'re still building.' },
+              { label: 'Option B', desc: 'A solid, competent professional performing consistently and independently. For most people in most areas, this is a realistic and accurate description.' },
+              { label: 'Option C', desc: 'A highly effective professional who performs excellently and begins to create positive impact beyond their own work. Select this only if it genuinely reflects your typical approach — not your best day.' },
+            ].map(({ label, desc }) => (
+              <div key={label} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ flexShrink: 0, fontWeight: 700, fontSize: '0.82rem', color: 'var(--ink)', minWidth: 60 }}>{label}</span>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.85rem' }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>How to read each question</p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.88rem' }}>
+            Ask yourself: "Across a typical week, in situations like this — which description most accurately captures what I actually do?" Think about patterns, not highlights. Your most impressive client interaction is not your typical one.
+          </p>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', color: 'var(--ink)' }}>Five things to remember while answering</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+            {[
+              'Think patterns, not highlights — choose what\'s typical, not exceptional',
+              'No option is inherently better or worse — each describes a different approach at a different stage of development',
+              'Variation is healthy — consistently choosing the most impressive-sounding option across all questions produces a less accurate and less useful profile',
+              'If you\'re between two options — choose the more conservative one; it gives a more honest starting point for development',
+              'Questions and answer options are presented in a randomised order — A, B, and C do not correspond to low, mid, or high scores',
+              'You can pause and return — your progress saves automatically; use the same link to continue',
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, width: 6, height: 6, borderRadius: '50%', background: 'var(--ink)', marginTop: '8px' }} />
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.88rem' }}>{item}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '16px 18px' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>When you're ready</p>
+            <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
+              Find a quiet place. Set aside 20 minutes without interruptions. Your honest reflection is the most valuable thing you can bring to this assessment — more valuable than any particular score.
+            </p>
+          </div>
+        </>
+      ),
+    },
+  ];
+
+  const introPages = isEmployeeProfile ? employeeIntroPages
+    : isYPLProfile ? yplIntroPages
+    : isKAMProfile ? kamIntroPages
+    : leaderIntroPages;
+
   if (introStep <= 3) {
     const page = introPages[introStep - 1];
     return (
@@ -565,7 +876,7 @@ export default function AssessPage() {
         <div style={{ maxWidth: 680, margin: '0 auto', padding: '48px 24px' }}>
           <div style={{ marginBottom: '32px' }}>
             <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '8px' }}>
-              {introStep === 1 ? 'The Framework' : introStep === 2 ? (isEmployeeProfile ? 'Employee Profile' : 'Leadership Model') : 'Instructions'}
+              {introStep === 1 ? 'The Framework' : introStep === 2 ? (isEmployeeProfile ? 'Employee Profile' : isYPLProfile ? 'Young Political Leaders' : isKAMProfile ? 'KAM Value-driven Sales' : 'Leadership Model') : 'Instructions'}
             </p>
             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', marginBottom: '8px', lineHeight: 1.25 }}>{page.title}</h1>
             {page.subtitle && <p style={{ color: 'var(--ink-soft)', fontSize: '0.95rem' }}>{page.subtitle}</p>}
