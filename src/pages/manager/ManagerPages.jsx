@@ -3094,6 +3094,8 @@ export function EmployeeOverview() {
   const [search, setSearch] = useState('');
   const [downloading, setDownloading] = useState(null);
   const [campaignFilter, setCampaignFilter] = useState('all');
+  const [deleteEmpId, setDeleteEmpId] = useState(null);
+  const [deletingEmp, setDeletingEmp] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -3117,6 +3119,17 @@ setCompanies(Array.isArray(comp) ? comp : []);
     ? campaigns.filter(c => c.Email && selectedEmployee.Email && c.Email.toLowerCase() === selectedEmployee.Email.toLowerCase())
         .sort((a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt))
     : [];
+
+  async function handleDeleteEmployee() {
+    setDeletingEmp(true);
+    try {
+      await api.manager.deleteEmployee(deleteEmpId);
+      setEmployees(prev => prev.filter(e => String(e.EmployeeID) !== String(deleteEmpId)));
+      setSelectedEmployee(null);
+      setDeleteEmpId(null);
+    } catch (e) { alert(e.message); }
+    finally { setDeletingEmp(false); }
+  }
 
   function handleDownload(r, emp) {
     setDownloading(r.ReportID);
@@ -3244,6 +3257,7 @@ setCompanies(Array.isArray(comp) ? comp : []);
                     <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                       <Btn size="sm" variant="secondary" onClick={() => navigate(`/manager/employees/${selectedEmployee.EmployeeID}/edit`)}>Edit</Btn>
                       <Btn size="sm" onClick={() => navigate('/manager/campaigns/new')}>New Campaign</Btn>
+                      <Btn size="sm" variant="danger" onClick={() => setDeleteEmpId(selectedEmployee.EmployeeID)}>Delete</Btn>
                     </div>
                   </div>
 
@@ -3356,6 +3370,13 @@ setCompanies(Array.isArray(comp) ? comp : []);
           </div>
         </div>
       )}
+      <Modal open={!!deleteEmpId} onClose={() => setDeleteEmpId(null)} title="Delete Employee">
+        <p style={{ color: 'var(--ink-soft)', marginBottom: '24px' }}>Are you sure you want to delete this employee? This action cannot be undone.</p>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <Btn variant="outline" onClick={() => setDeleteEmpId(null)}>Cancel</Btn>
+          <Btn variant="danger" loading={deletingEmp} onClick={handleDeleteEmployee}>Delete</Btn>
+        </div>
+      </Modal>
     </PortalLayout>
   );
 }
