@@ -95,6 +95,12 @@ export const api = {
     getCycleConfig: (employeeId, profileId) => request(`/api/360/manager/employees/${employeeId}/cycle-config?profileId=${profileId}`, {}, 'admin'),
   },
 
+  // HB Profiles
+  hbProfiles: {
+    getAll: () => request('/api/hb-profiles'),
+    getOne: (type) => request(`/api/hb-profiles/${type}`),
+  },
+
   // Employee
   employee: {
     getDashboard: () => request('/api/360/employee/dashboard', {}, 'employee'),

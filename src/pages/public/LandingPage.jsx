@@ -68,7 +68,7 @@ export default function LandingPage() {
             </Link>
           </div>
           {/* 2. NOVA STRELICA NA DNU */}
-        <div 
+        <div
           onClick={() => window.scrollTo({ top: window.innerHeight, behavior: 'smooth' })}
           style={{
               cursor: 'pointer',
@@ -195,10 +195,10 @@ export default function LandingPage() {
                 tag: 'Manager · Team Lead',
               },
               {
-  label: 'Employee',
-  desc: 'Focused on individual contributors. Evaluates adaptability, collaboration, personal efficiency, and the ability to drive results in a dynamic environment.',
-  tag: 'Individual Contributor · Professional',
-},
+                label: 'Employee',
+                desc: 'Focused on individual contributors. Evaluates adaptability, collaboration, personal efficiency, and the ability to drive results in a dynamic environment.',
+                tag: 'Individual Contributor · Professional',
+              },
               {
                 label: 'Custom Talent Profile',
                 desc: 'DTailored for specific roles within your organization. Evaluates alignment with company values, cultural fit, and specialized competencies unique to your team.',

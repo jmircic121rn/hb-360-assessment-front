@@ -10,18 +10,31 @@ import {
 // ── Action dropdown menu ───────────────────────────────────────────────────
 function ActionMenu({ items }) {
   const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef(null);
   const ref = useRef(null);
   useEffect(() => {
     if (!open) return;
     function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    function onScroll() { setOpen(false); }
     document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    window.addEventListener('scroll', onScroll, true);
+    return () => { document.removeEventListener('mousedown', handler); window.removeEventListener('scroll', onScroll, true); };
   }, [open]);
+  function handleOpen(e) {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const r = btnRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, right: window.innerWidth - r.right });
+    }
+    setOpen(o => !o);
+  }
   const visible = items.filter(Boolean);
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
-        onClick={e => { e.stopPropagation(); setOpen(o => !o); }}
+        ref={btnRef}
+        onClick={handleOpen}
         style={{
           display: 'flex', alignItems: 'center', gap: '4px',
           padding: '5px 11px', borderRadius: '999px',
@@ -41,12 +54,12 @@ function ActionMenu({ items }) {
       </button>
       {open && (
         <div style={{
-          position: 'absolute', right: 0, top: 'calc(100% + 6px)',
+          position: 'fixed', top: pos.top, right: pos.right,
           background: '#fff',
           border: '1px solid rgba(0,0,0,0.08)',
           borderRadius: '12px',
           boxShadow: '0 8px 28px rgba(0,0,0,0.1), 0 2px 6px rgba(0,0,0,0.05)',
-          zIndex: 200, minWidth: 168, padding: '5px',
+          zIndex: 1000, minWidth: 168, padding: '5px',
         }}>
           {visible.map((item, i) => {
             const isDanger = item.danger;
@@ -92,12 +105,15 @@ const IcPlus = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
 const IcBuilding = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>;
 const IcPeople = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
 const IcQuestion = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+const IcLayers = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
 
 export const NAV = [
   { href: '/manager/welcome', icon: <IcHome />, label: 'Home' },
-  { group: 'My Campaigns', href: '/manager/dashboard', icon: <IcChart />, label: 'Active Campaigns' },
-  { group: 'My Campaigns', href: '/manager/archived', icon: <IcArchive />, label: 'Archived Campaigns' },
-  { group: 'My Campaigns', href: '/manager/campaigns/new', icon: <IcPlus />, label: 'New Campaign' },
+  { group: 'HB Ideal Profiles', href: '/manager/profiles', icon: <IcLayers />, label: 'My Ideal Profiles' },
+  { group: 'HB Ideal Profiles', href: '/manager/profiles/new', icon: <IcPlus />, label: 'Create New Ideal Profile' },
+  { group: 'Campaigns', href: '/manager/dashboard', icon: <IcChart />, label: 'Active Campaigns' },
+  { group: 'Campaigns', href: '/manager/archived', icon: <IcArchive />, label: 'Archived Campaigns' },
+  { group: 'Campaigns', href: '/manager/campaigns/new', icon: <IcPlus />, label: 'New Campaign' },
   { group: 'Management', href: '/manager/companies', icon: <IcBuilding />, label: 'My Companies' },
   { group: 'Management', href: '/manager/people', icon: <IcPeople />, label: 'Employees' },
   { group: 'Support', href: '/faq', icon: <IcQuestion />, label: 'FAQ' },
@@ -125,23 +141,39 @@ export function ManagerWelcome() {
 
   const sections = [
     {
-      title: 'My Campaigns',
-      description: 'Create and manage your 360° assessment campaigns.',
+      title: 'HB Ideal Profiles',
+      description: 'Define what excellence looks like for each role in your organisation.',
+      cards: [
+        {
+          href: '/manager/profiles',
+          title: 'My Ideal Profiles',
+          desc: 'Explore all HB competency profiles — dimensions, pillars, facets, and the proficiency levels that define outstanding performance for each role.',
+        },
+        {
+          href: '/manager/profiles/new',
+          title: 'Create New Ideal Profile',
+          desc: 'Build a bespoke ideal profile tailored to a specific role, selecting the competency levels that reflect your organisation\'s standards.',
+        },
+      ],
+    },
+    {
+      title: 'Campaigns',
+      description: 'Measure your people against the standard — through structured 360° feedback.',
       cards: [
         {
           href: '/manager/dashboard',
           title: 'Active Campaigns',
-          desc: 'View and manage your running assessment cycles — check completion rates, send reminders, and take action on in-progress campaigns.',
+          desc: 'View and manage running assessment cycles — monitor completion rates, send reminders, and act on in-progress campaigns.',
         },
         {
           href: '/manager/archived',
           title: 'Archived Campaigns',
-          desc: 'Access completed campaigns and review past results. Archived campaigns are stored for reference.',
+          desc: 'Access completed campaigns and revisit past results. Archived campaigns are preserved for reference and comparison.',
         },
         {
           href: '/manager/campaigns/new',
           title: 'New Campaign',
-          desc: 'Launch a new assessment cycle. Choose participants, set assessment types, configure deadlines, and assign a profile.',
+          desc: 'Launch a new 360° assessment cycle. Select an ideal profile, choose participants, configure assessment types, and set a deadline.',
         },
       ],
     },
@@ -155,10 +187,10 @@ export function ManagerWelcome() {
           desc: 'Manage the organisations you work with. Add companies, manage employee records, and view campaigns by company.',
         },
         {
-  href: '/manager/employees',
-  title: 'Employees',
-  desc: 'Access complete records for all company personnel. View individual employee profiles, track their 360° campaign history, and download generated reports.',
-},
+          href: '/manager/employees',
+          title: 'Employees',
+          desc: 'Access complete records for all personnel. View individual profiles, track 360° campaign history, and download generated reports.',
+        },
       ],
     },
     {
@@ -194,7 +226,7 @@ export function ManagerWelcome() {
           {name ? `Welcome, ${name}` : 'Welcome'}
         </h1>
         <p style={{ color: 'var(--ink-soft)', fontSize: '0.95rem', lineHeight: 1.65, maxWidth: 520 }}>
-          Your HB Compass management portal. Create and manage 360° assessment campaigns, organise your companies and employees, and track progress.
+          HB Compass is a competency profiling platform. Define what excellence looks like for each role with HB Ideal Profiles — then measure your people against that standard through structured 360° feedback.
         </p>
       </div>
 
@@ -267,6 +299,7 @@ export function ManagerDashboard() {
   const [deleteId, setDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [filterStatus, setFilterStatus] = useState('');
+  const [expandedGroups, setExpandedGroups] = useState({});
   const [actionLoading, setActionLoading] = useState(null);
 
   async function handleDeleteCampaign() {
@@ -444,26 +477,117 @@ export function ManagerDashboard() {
                 </div>
               </div>
             </div>
-            <Table
-              headers={[ 'Campaign', 'Employee', 'Company', 'Status', 'Progress', 'Started', 'Deadline', 'Actions' ]}
-              rows={filtered.map(c => [
-                <strong>{c.Name}</strong>,
-                <strong>{c.FirstName} {c.LastName}</strong>,
-                <span style={{ color: 'var(--ink-soft)', fontSize: '0.84rem' }}>{c.CompanyName || '—'}</span>,
-                <Badge status={c.Status === 'in_progress' ? 'active' : c.Status}>{c.Status}</Badge>,
-                `${c.CompletedLinks}/${c.TotalLinks}`,
-                new Date(c.CreatedAt).toLocaleDateString(),
-                fmtDeadline(c),
-                <ActionMenu items={[
-                  { label: 'View', href: `/manager/campaigns/${c.CycleID}` },
-                  c.Status === 'in_progress' ? { label: 'Edit', href: `/manager/campaigns/${c.CycleID}/edit` } : null,
-                  c.Status === 'in_progress' ? { label: 'Complete', onClick: () => handleComplete(c.CycleID), loading: actionLoading === c.CycleID + '-complete' } : null,
-                  c.Status === 'completed' ? { label: 'Archive', onClick: () => handleArchive(c.CycleID), loading: actionLoading === c.CycleID + '-archive' } : null,
-                  { label: 'Delete', onClick: () => setDeleteId(c.CycleID), danger: true },
-                ].filter(Boolean)} />,
-              ])}
-              emptyMessage="No campaigns yet. Start your first assessment campaign."
-            />
+            {/* Group campaigns by GroupID; ungrouped appear individually */}
+            {(() => {
+              const groupMap = {};
+              const rows = [];
+              filtered.forEach(c => {
+                if (c.GroupID) {
+                  if (!groupMap[c.GroupID]) {
+                    groupMap[c.GroupID] = { groupId: c.GroupID, name: c.Name, company: c.CompanyName, createdAt: c.CreatedAt, deadline: c.Deadline, campaigns: [] };
+                    rows.push({ type: 'group', data: groupMap[c.GroupID] });
+                  }
+                  groupMap[c.GroupID].campaigns.push(c);
+                } else {
+                  rows.push({ type: 'single', data: c });
+                }
+              });
+
+              const thStyle = { padding: '10px 14px', textAlign: 'left', fontSize: '0.72rem', fontWeight: 700, color: 'var(--ink-faint)', textTransform: 'uppercase', letterSpacing: '0.07em', borderBottom: '1px solid var(--canvas-warm)', whiteSpace: 'nowrap' };
+              const tdStyle = { padding: '12px 14px', fontSize: '0.86rem', color: 'var(--ink)', borderBottom: '1px solid var(--canvas-warm)', verticalAlign: 'middle' };
+              const tdSubStyle = { ...tdStyle, background: 'var(--canvas-warm)', fontSize: '0.83rem' };
+
+              const campaignRow = (c, sub = false) => {
+                const td = sub ? tdSubStyle : tdStyle;
+                return (
+                  <tr key={c.CycleID}>
+                    <td style={{ ...td, paddingLeft: sub ? 32 : 14 }}>{sub ? <span style={{ color: 'var(--ink-faint)', marginRight: 6 }}>↳</span> : null}<strong>{sub ? `${c.FirstName} ${c.LastName}` : c.Name}</strong></td>
+                    <td style={td}>{sub ? <span style={{ color: 'var(--ink-faint)', fontSize: '0.78rem' }}>—</span> : <span>{c.FirstName} {c.LastName}</span>}</td>
+                    <td style={{ ...td, color: 'var(--ink-soft)' }}>{c.CompanyName || '—'}</td>
+                    <td style={td}><Badge status={c.Status === 'in_progress' ? 'active' : c.Status}>{c.Status}</Badge></td>
+                    <td style={td}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: 60, height: 4, borderRadius: 999, background: 'var(--canvas-warm)', overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${c.TotalLinks > 0 ? Math.round((c.CompletedLinks / c.TotalLinks) * 100) : 0}%`, background: 'var(--ink)', borderRadius: 999 }} />
+                        </div>
+                        <span style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>{c.CompletedLinks}/{c.TotalLinks}</span>
+                      </div>
+                    </td>
+                    <td style={{ ...td, color: 'var(--ink-soft)' }}>{new Date(c.CreatedAt).toLocaleDateString()}</td>
+                    <td style={td}>{fmtDeadline(c)}</td>
+                    <td style={td}>
+                      <ActionMenu items={[
+                        { label: 'View', href: `/manager/campaigns/${c.CycleID}` },
+                        c.Status === 'in_progress' ? { label: 'Edit', href: `/manager/campaigns/${c.CycleID}/edit` } : null,
+                        c.Status === 'in_progress' ? { label: 'Complete', onClick: () => handleComplete(c.CycleID), loading: actionLoading === c.CycleID + '-complete' } : null,
+                        c.Status === 'completed' ? { label: 'Archive', onClick: () => handleArchive(c.CycleID), loading: actionLoading === c.CycleID + '-archive' } : null,
+                        { label: 'Delete', onClick: () => setDeleteId(c.CycleID), danger: true },
+                      ].filter(Boolean)} />
+                    </td>
+                  </tr>
+                );
+              };
+
+              return (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        {['Campaign', 'Employee', 'Company', 'Status', 'Progress', 'Started', 'Deadline', 'Actions'].map(h => (
+                          <th key={h} style={thStyle}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.length === 0 ? (
+                        <tr><td colSpan={8} style={{ ...tdStyle, textAlign: 'center', color: 'var(--ink-faint)', padding: '40px' }}>No campaigns yet. Start your first assessment campaign.</td></tr>
+                      ) : rows.map((row) => {
+                        if (row.type === 'single') return campaignRow(row.data);
+                        const grp = row.data;
+                        const isOpen = !!expandedGroups[grp.groupId];
+                        const total = grp.campaigns.reduce((s, c) => s + (c.TotalLinks || 0), 0);
+                        const completed = grp.campaigns.reduce((s, c) => s + (c.CompletedLinks || 0), 0);
+                        const anyInProgress = grp.campaigns.some(c => c.Status === 'in_progress');
+                        const groupStatus = anyInProgress ? 'in_progress' : 'completed';
+                        return (
+                          <React.Fragment key={grp.groupId}>
+                            <tr
+                              onClick={() => setExpandedGroups(prev => ({ ...prev, [grp.groupId]: !isOpen }))}
+                              style={{ cursor: 'pointer', background: isOpen ? '#f0f0f0' : '#fafafa' }}
+                            >
+                              <td style={{ ...tdStyle, background: 'inherit' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: 'var(--ink-faint)', transform: isOpen ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>
+                                    <polyline points="9 18 15 12 9 6" />
+                                  </svg>
+                                  <strong>{grp.name}</strong>
+                                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: 'var(--ink)', color: '#fff', letterSpacing: '0.04em' }}>{grp.campaigns.length} sub</span>
+                                </div>
+                              </td>
+                              <td style={{ ...tdStyle, background: 'inherit', color: 'var(--ink-faint)', fontSize: '0.8rem' }}>Group campaign</td>
+                              <td style={{ ...tdStyle, background: 'inherit', color: 'var(--ink-soft)' }}>{grp.company || '—'}</td>
+                              <td style={{ ...tdStyle, background: 'inherit' }}><Badge status={groupStatus === 'in_progress' ? 'active' : groupStatus}>{groupStatus}</Badge></td>
+                              <td style={{ ...tdStyle, background: 'inherit' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{ width: 60, height: 4, borderRadius: 999, background: 'var(--canvas-warm)', overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: `${total > 0 ? Math.round((completed / total) * 100) : 0}%`, background: 'var(--ink)', borderRadius: 999 }} />
+                                  </div>
+                                  <span style={{ fontSize: '0.78rem', color: 'var(--ink-soft)' }}>{completed}/{total}</span>
+                                </div>
+                              </td>
+                              <td style={{ ...tdStyle, background: 'inherit', color: 'var(--ink-soft)' }}>{new Date(grp.createdAt).toLocaleDateString()}</td>
+                              <td style={{ ...tdStyle, background: 'inherit' }}>{fmtDeadline({ Deadline: grp.deadline })}</td>
+                              <td style={{ ...tdStyle, background: 'inherit' }} onClick={e => e.stopPropagation()}>—</td>
+                            </tr>
+                            {isOpen && grp.campaigns.map(c => campaignRow(c, true))}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
           </Card>
 
           <Modal open={!!deleteId} title="Delete Campaign" onClose={() => setDeleteId(null)}>
@@ -765,7 +889,7 @@ export function EmployeeForm({ editMode }) {
     jobTitle: '', jobTitleCustom: '',
     lang: 'en',
     managerId: '',
-    companyId: '',
+    companyId: location.state?.companyId || '',
   });
   const [managerList, setManagerList] = useState([]);
   const [companies, setCompanies] = useState([]);
@@ -1129,7 +1253,7 @@ function PeoplePicker({ label, employees, selected, onToggle, onSelectAll, newPe
 }
 
 // ── Shared Campaign Form ────────────────────────────────────────────────────
-function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockMode }) {
+function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockMode, initialCompanyId, returnTo }) {
   const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
   const [profiles, setProfiles] = useState([]);
@@ -1151,7 +1275,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
   const [showAddPeer, setShowAddPeer] = useState(false);
   const [showAddDr, setShowAddDr] = useState(false);
   const [addEmpForm, setAddEmpForm] = useState({ firstName: '', lastName: '', email: '', jobTitle: '', lang: 'en', companyId: '', managerId: '' });
-  const [filterEmpCompany, setFilterEmpCompany] = useState('');
+  const [filterEmpCompany, setFilterEmpCompany] = useState(initialCompanyId || '');
   const [addEmpLoading, setAddEmpLoading] = useState(false);
   const [addEmpError, setAddEmpError] = useState(null);
   const [showAddEmpManager, setShowAddEmpManager] = useState(false);
@@ -1163,11 +1287,13 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
   const [drEmployees, setDrEmployees] = useState([]);
   const [loadingRelationships, setLoadingRelationships] = useState(false);
   const [groupStyle, setGroupStyle] = useState('same');
-  const [subgroups, setSubgroups] = useState([
-    { employeeIds: [], includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeCrossPartisan: false, includeMentor: false },
-  ]);
+  const EMPTY_SUBGROUP = { employeeIds: [], profilId: '', includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeCrossPartisan: false, includeMentor: false };
+  const [subgroups, setSubgroups] = useState([{ ...EMPTY_SUBGROUP }]);
   const [cycleConfig, setCycleConfig] = useState(null);
   const [cycleConfigLoading, setCycleConfigLoading] = useState(false);
+  const cycleConfigCacheRef = useRef({});
+  const [sgTypeIntersections, setSgTypeIntersections] = useState([]);
+  const [groupSameIntersection, setGroupSameIntersection] = useState(null);
 
   useEffect(() => {
     api.manager.getEmployees().then(setEmployees).catch(() => {});
@@ -1212,9 +1338,23 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
 
   // Which types are available for the selected profile (from DB)
   const profileQTypes = selectedProfile?.questionTypes || null;
-  const isTypeAvailable = key => !profileQTypes || profileQTypes.some(t =>
-    t === Q_TYPE_MAP[key] || t === Q_TYPE_MAP[key]?.replace('_', '') // handle 'directreport' vs 'direct_report'
-  );
+  const isTypeAvailable = key => {
+    // Profile-level check
+    if (profileQTypes && !profileQTypes.some(t => t === Q_TYPE_MAP[key] || t === Q_TYPE_MAP[key]?.replace('_', ''))) return false;
+    // Employee intersection check for "same for all" group mode
+    if (mode === 'group' && groupStyle === 'same' && groupSameIntersection) return groupSameIntersection.has(key);
+    return true;
+  };
+  const sgIsTypeAvailable = (sg, key, si) => {
+    // Profile-level: check if the profile even has questions for this type
+    const sgProf = profiles.find(p => String(p.id || p.ProfilID) === String(sg.profilId));
+    const qTypes = sgProf?.questionTypes || null;
+    if (qTypes && !qTypes.some(t => t === Q_TYPE_MAP[key] || t === Q_TYPE_MAP[key]?.replace('_', ''))) return false;
+    // Employee-level: check intersection of what all employees in this subgroup can do
+    const intersection = si !== undefined ? sgTypeIntersections[si] : undefined;
+    if (intersection) return intersection.has(key);
+    return true;
+  };
 
   // Backwards-compat: if profile name says employee, treat as self-only
   const isEmployeeProfile = profileQTypes
@@ -1262,6 +1402,96 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
       .catch(() => setCycleConfig(null))
       .finally(() => setCycleConfigLoading(false));
   }, [form.employeeId, form.profilId, mode]); // eslint-disable-line
+
+  // For custom subgroups: fetch getCycleConfig per employee+profile, compute intersection of available types
+  const sgSignature = subgroups.map(sg => `${sg.profilId}:${[...sg.employeeIds].sort().join(',')}`).join('|');
+  useEffect(() => {
+    if (mode !== 'group' || groupStyle !== 'custom') return;
+    subgroups.forEach((sg, si) => {
+      if (!sg.profilId || sg.employeeIds.length === 0) {
+        setSgTypeIntersections(prev => { const next = [...prev]; next[si] = null; return next; });
+        return;
+      }
+      const fetchOne = (empId) => {
+        const cacheKey = `${empId}-${sg.profilId}`;
+        if (cycleConfigCacheRef.current[cacheKey]) return Promise.resolve(cycleConfigCacheRef.current[cacheKey]);
+        return api.manager.getCycleConfig(empId, sg.profilId)
+          .then(cfg => {
+            const normalized = normalizeCycleTypes(cfg.assessmentTypes || []);
+            cycleConfigCacheRef.current[cacheKey] = normalized;
+            return normalized;
+          }).catch(() => null);
+      };
+      Promise.all(sg.employeeIds.map(fetchOne)).then(results => {
+        const valid = results.filter(Boolean);
+        if (valid.length === 0) {
+          setSgTypeIntersections(prev => { const next = [...prev]; next[si] = null; return next; });
+          return;
+        }
+        // A type is available only if non-blocked in ALL employees' configs
+        const available = valid[0]
+          .filter(t => !t.blocked)
+          .filter(t => valid.every(r => { const found = r.find(rt => rt.key === t.key); return found && !found.blocked; }))
+          .map(t => t.key);
+        const availSet = new Set(available);
+        setSgTypeIntersections(prev => { const next = [...prev]; next[si] = availSet; return next; });
+        // Uncheck any types that fell out of the intersection
+        setSubgroups(prev => prev.map((g, i) => {
+          if (i !== si) return g;
+          return {
+            ...g,
+            includeSelf: g.includeSelf && availSet.has('includeSelf'),
+            includeManager: g.includeManager && availSet.has('includeManager'),
+            includePeer: g.includePeer && availSet.has('includePeer'),
+            includeDirectReports: g.includeDirectReports && availSet.has('includeDirectReports'),
+            includeExternal: g.includeExternal && availSet.has('includeExternal'),
+            includeCrossPartisan: g.includeCrossPartisan && availSet.has('includeCrossPartisan'),
+            includeMentor: g.includeMentor && availSet.has('includeMentor'),
+          };
+        }));
+      });
+    });
+  }, [sgSignature, mode, groupStyle]); // eslint-disable-line
+
+  // For "same for all" group mode: compute intersection of available types across all selected employees
+  const groupSameSignature = `${form.profilId}:${[...form.employeeIds].sort().join(',')}`;
+  useEffect(() => {
+    if (mode !== 'group' || groupStyle !== 'same' || !form.profilId || form.employeeIds.length === 0) {
+      setGroupSameIntersection(null);
+      return;
+    }
+    const fetchOne = (empId) => {
+      const cacheKey = `${empId}-${form.profilId}`;
+      if (cycleConfigCacheRef.current[cacheKey]) return Promise.resolve(cycleConfigCacheRef.current[cacheKey]);
+      return api.manager.getCycleConfig(empId, form.profilId)
+        .then(cfg => {
+          const normalized = normalizeCycleTypes(cfg.assessmentTypes || []);
+          cycleConfigCacheRef.current[cacheKey] = normalized;
+          return normalized;
+        }).catch(() => null);
+    };
+    Promise.all(form.employeeIds.map(fetchOne)).then(results => {
+      const valid = results.filter(Boolean);
+      if (valid.length === 0) { setGroupSameIntersection(null); return; }
+      const available = valid[0]
+        .filter(t => !t.blocked)
+        .filter(t => valid.every(r => { const found = r.find(rt => rt.key === t.key); return found && !found.blocked; }))
+        .map(t => t.key);
+      const availSet = new Set(available);
+      setGroupSameIntersection(availSet);
+      // Uncheck types that fell out of the intersection
+      setForm(f => ({
+        ...f,
+        includeSelf: f.includeSelf && availSet.has('includeSelf'),
+        includeManager: f.includeManager && availSet.has('includeManager'),
+        includePeer: f.includePeer && availSet.has('includePeer'),
+        includeDirectReports: f.includeDirectReports && availSet.has('includeDirectReports'),
+        includeExternal: f.includeExternal && availSet.has('includeExternal'),
+        includeCrossPartisan: f.includeCrossPartisan && availSet.has('includeCrossPartisan'),
+        includeMentor: f.includeMentor && availSet.has('includeMentor'),
+      }));
+    });
+  }, [groupSameSignature, mode, groupStyle]); // eslint-disable-line
 
   // Kada se promeni subject employee, učitaj njegove peers i DR iz baze
   useEffect(() => {
@@ -1567,34 +1797,95 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
                     </label>
                   ))}
                 </div>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Assessment Types</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                  {[
-                    { key: 'includeSelf', label: 'Self' },
-                    { key: 'includeManager', label: 'Manager' },
-                    { key: 'includePeer', label: 'Peer' },
-                    { key: 'includeDirectReports', label: 'Direct Reports' },
-                    { key: 'includeExternal', label: 'External' },
-                    { key: 'includeCrossPartisan', label: 'Cross-Partisan' },
-                    { key: 'includeMentor', label: 'Mentor' },
-                  ].map(t => (
-                    <label key={t.key} style={{
-                      display: 'flex', gap: '6px', alignItems: 'center', padding: '7px 11px',
-                      borderRadius: 6, cursor: 'pointer', fontSize: '0.83rem', fontWeight: 500,
-                      border: `1.5px solid ${sg[t.key] ? 'var(--ink)' : '#e0e0e0'}`,
-                      background: sg[t.key] ? 'var(--canvas-warm)' : '#fff',
-                      transition: 'all 0.15s ease',
-                    }}>
-                      <input type="checkbox" checked={sg[t.key]}
-                        onChange={() => setSubgroups(prev => prev.map((g, i) => i !== si ? g : { ...g, [t.key]: !g[t.key] }))}
-                        style={{ accentColor: 'var(--ink)' }} />
-                      {t.label}
-                    </label>
-                  ))}
-                </div>
+                {/* Per-subgroup profile */}
+                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '6px' }}>Profile</div>
+                {(() => {
+                  const companyObj = companies.find(c => String(c.CompanyID || c.id) === filterEmpCompany);
+                  const companyProfiles = companyObj?.profiles;
+                  const availableProfiles = companyProfiles?.length
+                    ? profiles.filter(p => companyProfiles.some(cp => String(cp.id) === String(p.id || p.ProfilID)))
+                    : profiles;
+                  return (
+                    <Select
+                      value={sg.profilId}
+                      onChange={e => {
+                        const newProfilId = e.target.value;
+                        setSubgroups(prev => prev.map((g, i) => {
+                          if (i !== si) return g;
+                          const newProf = profiles.find(p => String(p.id || p.ProfilID) === String(newProfilId));
+                          const qTypes = newProf?.questionTypes || null;
+                          const clearIfUnavailable = key => {
+                            if (!qTypes) return g[key];
+                            return qTypes.some(t => t === Q_TYPE_MAP[key] || t === Q_TYPE_MAP[key]?.replace('_', '')) ? g[key] : false;
+                          };
+                          return {
+                            ...g, profilId: newProfilId,
+                            includeSelf: clearIfUnavailable('includeSelf'),
+                            includeManager: clearIfUnavailable('includeManager'),
+                            includePeer: clearIfUnavailable('includePeer'),
+                            includeDirectReports: clearIfUnavailable('includeDirectReports'),
+                            includeExternal: clearIfUnavailable('includeExternal'),
+                            includeCrossPartisan: clearIfUnavailable('includeCrossPartisan'),
+                            includeMentor: clearIfUnavailable('includeMentor'),
+                          };
+                        }));
+                      }}
+                      style={{ marginBottom: '12px' }}
+                    >
+                      <option value="">— Select profile —</option>
+                      {availableProfiles.map(p => <option key={p.id || p.ProfilID} value={p.id || p.ProfilID}>{p.name || p.Name}</option>)}
+                    </Select>
+                  );
+                })()}
+
+                {/* Assessment types — filtered by this subgroup's profile */}
+                {sg.profilId ? (
+                  <>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>Assessment Types</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                      {[
+                        { key: 'includeSelf', label: 'Self' },
+                        { key: 'includeManager', label: 'Manager' },
+                        { key: 'includePeer', label: 'Peer' },
+                        { key: 'includeDirectReports', label: 'Direct Reports' },
+                        { key: 'includeExternal', label: 'External' },
+                        { key: 'includeCrossPartisan', label: 'Cross-Partisan' },
+                        { key: 'includeMentor', label: 'Mentor' },
+                      ].filter(t => sgIsTypeAvailable(sg, t.key, si)).map(t => (
+                        <label key={t.key} style={{
+                          display: 'flex', gap: '6px', alignItems: 'center', padding: '7px 11px',
+                          borderRadius: 6, cursor: 'pointer', fontSize: '0.83rem', fontWeight: 500,
+                          border: `1.5px solid ${sg[t.key] ? 'var(--ink)' : '#e0e0e0'}`,
+                          background: sg[t.key] ? 'var(--canvas-warm)' : '#fff',
+                          transition: 'all 0.15s ease',
+                        }}>
+                          <input type="checkbox" checked={sg[t.key]}
+                            onChange={() => setSubgroups(prev => prev.map((g, i) => i !== si ? g : { ...g, [t.key]: !g[t.key] }))}
+                            style={{ accentColor: 'var(--ink)' }} />
+                          {t.label}
+                        </label>
+                      ))}
+                    </div>
+                    {sgTypeIntersections[si] && sg.employeeIds.length > 1 && (() => {
+                      const sgProf = profiles.find(p => String(p.id || p.ProfilID) === String(sg.profilId));
+                      const profileTypes = (sgProf?.questionTypes || []).length;
+                      const intersectionSize = sgTypeIntersections[si].size;
+                      if (profileTypes > 0 && intersectionSize < profileTypes) {
+                        return (
+                          <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--ink-soft)', padding: '6px 10px', background: 'var(--canvas-warm)', borderRadius: 4 }}>
+                            Some assessment types are hidden because not all employees in this subgroup have them available. Split employees with different configurations into separate subgroups.
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </>
+                ) : (
+                  <div style={{ fontSize: '0.83rem', color: 'var(--ink-faint)', padding: '6px 0' }}>Select a profile above to see assessment types.</div>
+                )}
               </div>
             ))}
-            <Btn type="button" variant="outline" size="sm" onClick={() => setSubgroups(prev => [...prev, { employeeIds: [], includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeCrossPartisan: false, includeMentor: false }])}>
+            <Btn type="button" variant="outline" size="sm" onClick={() => setSubgroups(prev => [...prev, { ...EMPTY_SUBGROUP }])}>
               + Add Subgroup
             </Btn>
           </div>
@@ -1629,8 +1920,8 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
         );
       })()}
 
-      {/* Profile — only shown after company is selected */}
-      {profiles.length > 0 && filterEmpCompany && (() => {
+      {/* Profile — only shown after company is selected; hidden in custom subgroup mode (each subgroup picks its own) */}
+      {!(mode === 'group' && groupStyle === 'custom') && profiles.length > 0 && filterEmpCompany && (() => {
         const companyObj = companies.find(c => String(c.CompanyID || c.id) === filterEmpCompany);
         const companyProfiles = companyObj?.profiles;
         if (!companyProfiles?.length) {
@@ -1719,6 +2010,17 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
                 );
               })}
             </div>
+            {mode === 'group' && groupStyle === 'same' && groupSameIntersection && form.employeeIds.length > 1 && (() => {
+              const profileTypeCount = (profileQTypes || []).length;
+              if (profileTypeCount > 0 && groupSameIntersection.size < profileTypeCount) {
+                return (
+                  <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--ink-soft)', padding: '8px 12px', background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)' }}>
+                    Some assessment types are hidden because not all selected employees have them available. To use different types per employee, switch to <strong>Custom per subgroup</strong>.
+                  </div>
+                );
+              }
+              return null;
+            })()}
           </FormField>
         );
       })()}
@@ -1791,7 +2093,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <Btn type="submit" loading={submitLoading} style={{ minWidth: 160, justifyContent: 'center' }}>Launch Campaign</Btn>
-        <Btn variant="outline" type="button" onClick={() => navigate('/manager/dashboard')}>Cancel</Btn>
+        <Btn variant="outline" type="button" onClick={() => navigate(returnTo || '/manager/dashboard')}>Cancel</Btn>
       </div>
     </form>
 
@@ -1888,6 +2190,9 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
 // ── New Campaign ────────────────────────────────────────────────────────────
 export function NewCampaign() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialCompanyId = location.state?.companyId || '';
+  const returnTo = location.state?.from || '/manager/dashboard';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -1898,7 +2203,8 @@ export function NewCampaign() {
       for (let i = 0; i < payload.subgroups.length; i++) {
         const sg = payload.subgroups[i];
         if (!sg.employeeIds || sg.employeeIds.length === 0) { setError(`Subgroup ${i + 1} has no employees selected.`); return; }
-        if (!sg.includeSelf && !sg.includeManager && !sg.includePeer && !sg.includeDirectReports && !sg.includeExternal) {
+        if (!sg.profilId) { setError(`Subgroup ${i + 1} has no profile selected.`); return; }
+        if (!sg.includeSelf && !sg.includeManager && !sg.includePeer && !sg.includeDirectReports && !sg.includeExternal && !sg.includeCrossPartisan && !sg.includeMentor) {
           setError(`Subgroup ${i + 1} has no assessment types selected.`); return;
         }
       }
@@ -1912,17 +2218,23 @@ export function NewCampaign() {
     try {
       if (payload.mode === 'group') {
         if (payload.groupStyle === 'custom') {
+          const groupId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+            ? crypto.randomUUID()
+            : `group-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
           for (const sg of payload.subgroups) {
             await api.manager.createCampaignBatch({
               name: payload.name,
               employeeIds: sg.employeeIds,
-              profilId: payload.profilId,
+              profilId: sg.profilId,
               deadline: payload.deadline,
+              groupId,
               includeSelf: sg.includeSelf,
               includeManager: sg.includeManager,
               includePeer: sg.includePeer,
               includeDirectReports: sg.includeDirectReports,
               includeExternal: sg.includeExternal,
+              includeCrossPartisan: sg.includeCrossPartisan,
+              includeMentor: sg.includeMentor,
             });
           }
         } else {
@@ -1941,7 +2253,7 @@ export function NewCampaign() {
     <Layout>
       <PageHeader title="New Assessment Campaign" subtitle="Configure and launch an HB Compass campaign" />
       <Card style={{ padding: '32px', maxWidth: 1000 }}>
-        <CampaignForm onSubmit={handleSubmit} submitLoading={loading} submitError={error} />
+        <CampaignForm onSubmit={handleSubmit} submitLoading={loading} submitError={error} initialCompanyId={initialCompanyId} returnTo={returnTo} />
       </Card>
     </Layout>
   );
@@ -3009,9 +3321,9 @@ export function CompaniesAndEmployees() {
                       {activeTab === 'employees' ? 'Employees' : 'Campaigns'}
                     </h3>
                     {activeTab === 'employees' ? (
-                      <Btn size="sm" variant="teal" onClick={() => navigate(`/manager/employees/new?company=${selectedCompanyId}`, { state: { from: '/manager/companies' } })}>+ Add Employee</Btn>
+                      <Btn size="sm" variant="teal" onClick={() => navigate('/manager/employees/new', { state: { from: '/manager/companies', companyId: String(selectedCompanyId) } })}>+ Add Employee</Btn>
                     ) : (
-                      <Link to={`/manager/campaigns/new?company=${selectedCompanyId}`}><Btn size="sm" variant="teal">+ New Campaign</Btn></Link>
+                      <Link to="/manager/campaigns/new" state={{ companyId: String(selectedCompanyId), from: '/manager/companies' }}><Btn size="sm" variant="teal">+ New Campaign</Btn></Link>
                     )}
                   </div>
 
@@ -3256,7 +3568,7 @@ setCompanies(Array.isArray(comp) ? comp : []);
                     </div>
                     <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                       <Btn size="sm" variant="secondary" onClick={() => navigate(`/manager/employees/${selectedEmployee.EmployeeID}/edit`)}>Edit</Btn>
-                      <Btn size="sm" onClick={() => navigate('/manager/campaigns/new')}>New Campaign</Btn>
+                      <Btn size="sm" onClick={() => navigate('/manager/campaigns/new', { state: { companyId: selectedEmployee.CompanyID ? String(selectedEmployee.CompanyID) : '', from: '/manager/people' } })}>New Campaign</Btn>
                       <Btn size="sm" variant="danger" onClick={() => setDeleteEmpId(selectedEmployee.EmployeeID)}>Delete</Btn>
                     </div>
                   </div>
@@ -3381,6 +3693,206 @@ setCompanies(Array.isArray(comp) ? comp : []);
   );
 }
 
+// ── HB Profiles ────────────────────────────────────────────────────────────
+export function HBProfiles() {
+  const [profiles, setProfiles] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [expandedFacets, setExpandedFacets] = useState({});
+
+  useEffect(() => {
+    api.hbProfiles.getAll()
+      .then(data => {
+        setProfiles(data);
+        if (data.length > 0) setSelected(data[0]);
+      })
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  function toggleFacet(key) {
+    setExpandedFacets(prev => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  // Group facets by dimension → pillar
+  function groupFacets(facets = []) {
+    const dims = {};
+    facets.forEach(f => {
+      if (!dims[f.dimension]) dims[f.dimension] = {};
+      if (!dims[f.dimension][f.pillar]) dims[f.dimension][f.pillar] = [];
+      dims[f.dimension][f.pillar].push(f);
+    });
+    return dims;
+  }
+
+
+  return (
+    <PortalLayout role="admin" navItems={NAV}>
+      <PageHeader title="HB Profiles" subtitle="Competency frameworks for each profile type." />
+
+      {error && <Alert type="error" style={{ marginBottom: 20 }}>{error}</Alert>}
+
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Spinner /></div>
+      ) : (
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+
+          {/* Left: profile list */}
+          <div style={{ width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {profiles.map(p => {
+              const active = selected?.profileType === p.profileType;
+              return (
+                <button
+                  key={p.profileType}
+                  onClick={() => { setSelected(p); setExpandedFacets({}); }}
+                  style={{
+                    padding: '11px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                    background: active ? 'var(--ink)' : 'transparent',
+                    textAlign: 'left', fontFamily: 'var(--font-body)', transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'var(--canvas-warm)'; }}
+                  onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: '0.88rem', color: active ? '#fff' : 'var(--ink)' }}>
+                    {p.profileName || p.profileType}
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: active ? 'rgba(255,255,255,0.6)' : 'var(--ink-faint)', marginTop: '2px' }}>
+                    {(p.facets || []).length} facets
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Right: profile detail */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {!selected ? (
+              <Card style={{ padding: '64px 32px', textAlign: 'center' }}>
+                <p style={{ color: 'var(--ink-soft)' }}>Select a profile to view its framework.</p>
+              </Card>
+            ) : (() => {
+              const grouped = groupFacets(selected.facets);
+              const DIM_ORDER = ['RESULTS', 'MINDSET', 'SKILLS', 'INFLUENCE'];
+              const sortedDims = Object.keys(grouped).sort((a, b) => {
+                const ai = DIM_ORDER.indexOf(a); const bi = DIM_ORDER.indexOf(b);
+                return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+              });
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+                  {sortedDims.map(dimension => { const pillars = grouped[dimension]; return (
+                    <div key={dimension}>
+                      {/* Dimension header */}
+                      <div style={{
+                        padding: '8px 16px', borderRadius: '6px',
+                        background: 'var(--ink)', color: '#fff',
+                        fontWeight: 700, fontSize: '0.78rem', letterSpacing: '0.1em',
+                        textTransform: 'uppercase', marginBottom: '12px',
+                        display: 'inline-block',
+                      }}>
+                        {dimension}
+                      </div>
+
+                      {Object.entries(pillars).map(([pillar, facets]) => (
+                        <div key={pillar} style={{ marginBottom: '16px' }}>
+                          {/* Pillar label */}
+                          <div style={{
+                            fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em',
+                            textTransform: 'uppercase', color: 'var(--ink-faint)',
+                            marginBottom: '8px', paddingLeft: '4px',
+                          }}>
+                            {pillar}
+                          </div>
+
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {facets.map((facet, fi) => {
+                              const key = `${dimension}__${pillar}__${fi}`;
+                              const open = !!expandedFacets[key];
+                              return (
+                                <Card key={key} style={{ padding: 0, overflow: 'hidden' }}>
+                                  {/* Facet header (clickable) */}
+                                  <button
+                                    onClick={() => toggleFacet(key)}
+                                    style={{
+                                      width: '100%', padding: '14px 18px',
+                                      background: 'none', border: 'none', cursor: 'pointer',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                      gap: '12px', textAlign: 'left', fontFamily: 'var(--font-body)',
+                                    }}
+                                  >
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--ink)' }}>
+                                        {facet.facet}
+                                      </div>
+                                      {!open && facet.description && (
+                                        <div style={{
+                                          fontSize: '0.8rem', color: 'var(--ink-soft)',
+                                          marginTop: '3px', overflow: 'hidden',
+                                          whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                                          maxWidth: '100%',
+                                        }}>
+                                          {facet.description}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <svg
+                                      width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                      style={{ flexShrink: 0, color: 'var(--ink-faint)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}
+                                    >
+                                      <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                  </button>
+
+                                  {/* Expanded content */}
+                                  {open && (
+                                    <div style={{ borderTop: '1px solid var(--canvas-warm)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                      {facet.description && (
+                                        <p style={{ fontSize: '0.84rem', color: 'var(--ink-soft)', lineHeight: 1.65, margin: 0 }}>
+                                          {facet.description}
+                                        </p>
+                                      )}
+                                      {facet.levels && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                          {Object.entries(facet.levels).map(([level, text]) => {
+                                            return (
+                                              <div key={level} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                                                <span style={{
+                                                  flexShrink: 0, width: '80px',
+                                                  fontSize: '0.68rem', fontWeight: 700,
+                                                  textTransform: 'uppercase', letterSpacing: '0.07em',
+                                                  color: 'var(--ink-faint)', textAlign: 'center',
+                                                }}>
+                                                  {level}
+                                                </span>
+                                                <p style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', lineHeight: 1.6, margin: 0 }}>
+                                                  {text}
+                                                </p>
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ); })}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+    </PortalLayout>
+  );
+}
+
 // ── Reports ────────────────────────────────────────────────────────────────
 function downloadReportPdf(cycleId, reportType, reportId, firstName, lastName) {
   const token = localStorage.getItem('compass_token_admin');
@@ -3400,5 +3912,93 @@ function downloadReportPdf(cycleId, reportType, reportId, firstName, lastName) {
       URL.revokeObjectURL(a.href);
     })
     .catch(e => alert(`Download failed: ${e.message}`));
+}
+
+// ── Create New Ideal Profile (Coming Soon) ────────────────────────────────
+export function CreateIdealProfile() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick(t => t + 1), 80);
+    return () => clearInterval(id);
+  }, []);
+
+  // 12 dots on a circle, each with a phase offset
+  const dots = Array.from({ length: 12 }, (_, i) => {
+    const angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
+    const x = 50 + 38 * Math.cos(angle);
+    const y = 50 + 38 * Math.sin(angle);
+    const phase = (tick - i * 2 + 240) % 24;
+    const opacity = phase < 12 ? 0.15 + (phase / 12) * 0.85 : 1 - ((phase - 12) / 12) * 0.85;
+    const scale = phase < 12 ? 0.5 + (phase / 12) * 0.5 : 1 - ((phase - 12) / 12) * 0.5;
+    return { x, y, opacity, scale };
+  });
+
+  return (
+    <PortalLayout role="admin" navItems={NAV}>
+      <div style={{
+        minHeight: 'calc(100vh - 120px)',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        gap: '36px',
+      }}>
+        {/* Animated compass-like spinner */}
+        <div style={{ position: 'relative', width: 100, height: 100 }}>
+          <svg viewBox="0 0 100 100" width="100" height="100">
+            {dots.map((d, i) => (
+              <circle
+                key={i}
+                cx={d.x} cy={d.y} r={4}
+                fill="var(--ink)"
+                opacity={d.opacity}
+                transform={`scale(${d.scale}) translate(${(1 - d.scale) * 50}, ${(1 - d.scale) * 50})`}
+                style={{ transformOrigin: `${d.x}px ${d.y}px`, transform: `scale(${d.scale})` }}
+              />
+            ))}
+            {/* Center dot */}
+            <circle cx="50" cy="50" r="3.5" fill="var(--ink)" opacity="0.25" />
+          </svg>
+        </div>
+
+        <div style={{ textAlign: 'center', maxWidth: 420 }}>
+          <p style={{
+            fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.16em',
+            textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '14px',
+          }}>
+            In Development
+          </p>
+          <h1 style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(1.6rem, 4vw, 2.1rem)',
+            lineHeight: 1.2, marginBottom: '16px', color: 'var(--ink)',
+          }}>
+            Coming Soon
+          </h1>
+          <p style={{
+            fontSize: '0.92rem', color: 'var(--ink-soft)',
+            lineHeight: 1.7, marginBottom: '32px',
+          }}>
+            We're building a powerful tool for creating custom ideal profiles.
+            It will let you define competency levels across dimensions and facets
+            tailored to any role.
+          </p>
+          <button
+            onClick={() => window.history.back()}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '9px 20px', borderRadius: 'var(--radius-sm)',
+              border: '1.5px solid rgba(0,0,0,0.12)',
+              background: 'transparent', cursor: 'pointer',
+              fontFamily: 'var(--font-body)', fontSize: '0.85rem',
+              color: 'var(--ink-soft)', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--ink)'; e.currentTarget.style.color = 'var(--ink)'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(0,0,0,0.12)'; e.currentTarget.style.color = 'var(--ink-soft)'; }}
+          >
+            ← Go back
+          </button>
+        </div>
+      </div>
+    </PortalLayout>
+  );
 }
 

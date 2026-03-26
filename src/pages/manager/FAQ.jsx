@@ -17,6 +17,39 @@ const FAQ = () => {
         {
           q: "How do I change my password?",
           a: "On the bottom-left sidebar you will find the Change Password option. You will need to enter your current password, then your new password twice. The new password must be at least 6 characters long."
+        },
+        {
+          q: "What is the recommended workflow for a new organisation?",
+          a: "The recommended order is:\n1. Review the HB Ideal Profiles to understand which profile fits each role in the organisation.\n2. Add the company under My Companies and assign the relevant profiles to it.\n3. Add employees, setting their job title and manager.\n4. Create a campaign — select the profile that matches the employee's role, configure assessment types, and set a deadline.\n\nStarting with profiles ensures every campaign is benchmarked against the right standard from the outset."
+        }
+      ]
+    },
+    {
+      section: "HB IDEAL PROFILES",
+      questions: [
+        {
+          q: "What is an HB Ideal Profile?",
+          a: "An HB Ideal Profile is a competency framework that defines what excellent performance looks like for a specific role. Each profile is structured into four dimensions — Results, Mindset, Skills, and Influence — each containing pillars and facets, with five proficiency levels per facet.\n\nProfiles serve as the benchmark against which employees are assessed in 360° campaigns."
+        },
+        {
+          q: "What are the four dimensions?",
+          a: "Every HB Ideal Profile evaluates people across four interconnected dimensions:\n• Results — achieving goals, managing performance, and driving meaningful outcomes.\n• Mindset — self-awareness, growth orientation, and resilience under pressure.\n• Skills — communication, personal effectiveness, and collaborative working.\n• Influence — inspiring action, building trust, and shaping team culture.\n\nDimensions are always displayed in this order within the platform."
+        },
+        {
+          q: "What are pillars and facets?",
+          a: "Within each dimension, competencies are grouped into pillars — broad capability areas. Each pillar contains one or more facets, which are the specific, observable behaviours being assessed.\n\nEach facet has five proficiency levels (typically Level 1 through Level 5) with a written description of what that level of performance looks like in practice."
+        },
+        {
+          q: "What profiles are currently available?",
+          a: "You can browse all available profiles on the My Ideal Profiles page (sidebar → HB Ideal Profiles). Each profile is shown with its full structure — dimensions, pillars, facets, and level descriptions.\n\nProfiles include options such as the Inspiring Leadership profile for managers and team leads, and the Modern Employee profile for individual contributors. Custom profiles may also be available depending on your organisation's setup."
+        },
+        {
+          q: "How do profiles connect to campaigns?",
+          a: "When creating a campaign, you select an ideal profile for the employee being assessed. The profile determines:\n• Which question set assessors answer.\n• Which assessment types are available (Self, Manager, Peer, etc.).\n\nOnly profiles assigned to the selected company appear in the campaign form. Selecting the right profile is essential — it sets the benchmark for all scores and reports generated from that campaign."
+        },
+        {
+          q: "What is a Custom Ideal Profile?",
+          a: "A Custom Ideal Profile is a bespoke profile built specifically for a role or organisation that falls outside the standard HB profiles. It allows you to define the exact competency levels that represent excellent performance for that specific context.\n\nCreating a custom profile is currently in development. Contact your HB Foundation account manager to discuss bespoke profiling needs."
         }
       ]
     },
@@ -69,8 +102,8 @@ const FAQ = () => {
           a: "The available assessment types depend entirely on which profile is selected. Each profile has questions in the database for specific types only — the campaign form shows only the types that are actually available for that profile, so the selection will vary.\n\nTypes generally cover perspectives such as self-assessment, manager, peers, direct reports, external contacts, and others. Each type generates a separate assessment link sent to the relevant person.\n\nTo see which types are available for a specific profile, select the company and profile in the New Campaign form — the options will appear automatically."
         },
         {
-          q: "What is an Assessment Profile and which ones are available?",
-          a: "The Assessment Profile determines which question set the assessors will answer and which assessment types are available for the campaign.\n\nProfiles are managed centrally and assigned to companies. When creating a campaign, the profile dropdown shows only profiles assigned to the selected company. If a company has no profiles assigned, all profiles are available.\n\nEach profile has questions in the database for specific assessment types — the campaign form automatically shows only the types that have questions for the selected profile."
+          q: "Which profile should I select for a campaign?",
+          a: "Select the profile that matches the employee's role:\n• Inspiring Leadership profile — for managers, team leads, and people in leadership positions.\n• Modern Employee profile — for individual contributors and professionals.\n• Custom profiles — if your organisation has bespoke profiles, they will appear here too.\n\nOnly profiles assigned to the selected company are shown. If a profile you expect is missing, check that it has been assigned to the company on the My Companies page.\n\nChoosing the right profile is important — it determines the question set, the available assessment types, and the benchmark used in all generated reports."
         },
         {
           q: "Can I set a deadline for a campaign?",
@@ -166,7 +199,7 @@ const FAQ = () => {
         },
         {
           q: "I need to run assessments for a large group with different configurations.",
-          a: "Create separate campaigns per configuration group. For example: one campaign for employees needing Self only, a separate campaign for those needing Self + Manager + Peer. Use the For Group mode within each campaign and give each campaign a clear, descriptive name."
+          a: "Use the For Group campaign mode with the Custom per subgroup option. This lets you divide employees into subgroups within a single campaign form — each subgroup can have its own profile and its own set of assessment types.\n\nFor example: one subgroup of 4 people assessed on the Leadership profile with Self + Manager, a second subgroup of 6 on the Employee profile with Self only. All subgroups are set up together and launched at the same time, then appear grouped in Active Campaigns."
         },
         {
           q: "A campaign shows 0 completed even though I know assessments were submitted.",
