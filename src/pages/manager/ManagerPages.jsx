@@ -3913,7 +3913,7 @@ export function HBProfiles() {
                     </div>
                     {hasIntro && (
                       <div style={{ display: 'flex', gap: '2px', background: 'var(--canvas-warm)', borderRadius: '8px', padding: '3px' }}>
-                        {[['overview', 'Overview'], ['framework', 'Framework']].map(([key, label]) => (
+                        {[['overview', 'Overview'], ['framework', 'Facets']].map(([key, label]) => (
                           <button key={key} onClick={() => setActiveTab(key)} style={{
                             padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
                             fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 600,
