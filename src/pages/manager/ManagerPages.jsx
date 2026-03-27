@@ -106,6 +106,7 @@ const IcBuilding = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="n
 const IcPeople = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
 const IcQuestion = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
 const IcLayers = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>;
+const IcShield = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
 
 export const NAV = [
   { href: '/manager/welcome', icon: <IcHome />, label: 'Home' },
@@ -117,6 +118,7 @@ export const NAV = [
   { group: 'Management', href: '/manager/companies', icon: <IcBuilding />, label: 'My Companies' },
   { group: 'Management', href: '/manager/people', icon: <IcPeople />, label: 'Employees' },
   { group: 'Support', href: '/faq', icon: <IcQuestion />, label: 'FAQ' },
+  { group: 'Administration', href: '/manager/admin-access', icon: <IcShield />, label: 'Profile Access', superAdminOnly: true },
 ];
 
 function Layout({ children }) {
@@ -1293,7 +1295,9 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
   const [cycleConfigLoading, setCycleConfigLoading] = useState(false);
   const cycleConfigCacheRef = useRef({});
   const [sgTypeIntersections, setSgTypeIntersections] = useState([]);
+  const [sgBlockReasons, setSgBlockReasons] = useState([]); // per subgroup: { [key]: blockMessage }
   const [groupSameIntersection, setGroupSameIntersection] = useState(null);
+  const [groupSameBlockReasons, setGroupSameBlockReasons] = useState({}); // { [key]: blockMessage }
 
   useEffect(() => {
     api.manager.getEmployees().then(setEmployees).catch(() => {});
@@ -1321,20 +1325,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
     includeCrossPartisan: 'crosspartisan',
     includeMentor: 'mentor',
   };
-  // Reverse map: any backend identifier → frontend form key
-  const BACKEND_TYPE_TO_KEY = {
-    self: 'includeSelf', includeSelf: 'includeSelf',
-    manager: 'includeManager', includeManager: 'includeManager',
-    peer: 'includePeer', includePeer: 'includePeer',
-    direct_report: 'includeDirectReports', directreport: 'includeDirectReports', includeDirectReports: 'includeDirectReports',
-    external: 'includeExternal', includeExternal: 'includeExternal',
-    crosspartisan: 'includeCrossPartisan', includeCrossPartisan: 'includeCrossPartisan',
-    mentor: 'includeMentor', includeMentor: 'includeMentor',
-  };
-  const normalizeCycleTypes = (types) => (types || []).map(t => ({
-    ...t,
-    key: BACKEND_TYPE_TO_KEY[t.key] || BACKEND_TYPE_TO_KEY[t.type] || t.key,
-  }));
+const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.key }));
 
   // Which types are available for the selected profile (from DB)
   const profileQTypes = selectedProfile?.questionTypes || null;
@@ -1345,17 +1336,6 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
     if (mode === 'group' && groupStyle === 'same' && groupSameIntersection) return groupSameIntersection.has(key);
     return true;
   };
-  const sgIsTypeAvailable = (sg, key, si) => {
-    // Profile-level: check if the profile even has questions for this type
-    const sgProf = profiles.find(p => String(p.id || p.ProfilID) === String(sg.profilId));
-    const qTypes = sgProf?.questionTypes || null;
-    if (qTypes && !qTypes.some(t => t === Q_TYPE_MAP[key] || t === Q_TYPE_MAP[key]?.replace('_', ''))) return false;
-    // Employee-level: check intersection of what all employees in this subgroup can do
-    const intersection = si !== undefined ? sgTypeIntersections[si] : undefined;
-    if (intersection) return intersection.has(key);
-    return true;
-  };
-
   // Backwards-compat: if profile name says employee, treat as self-only
   const isEmployeeProfile = profileQTypes
     ? profileQTypes.length === 1 && profileQTypes[0] === 'self'
@@ -1426,15 +1406,23 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
         const valid = results.filter(Boolean);
         if (valid.length === 0) {
           setSgTypeIntersections(prev => { const next = [...prev]; next[si] = null; return next; });
+          setSgBlockReasons(prev => { const next = [...prev]; next[si] = {}; return next; });
           return;
         }
-        // A type is available only if non-blocked in ALL employees' configs
-        const available = valid[0]
-          .filter(t => !t.blocked)
-          .filter(t => valid.every(r => { const found = r.find(rt => rt.key === t.key); return found && !found.blocked; }))
-          .map(t => t.key);
-        const availSet = new Set(available);
+        const availSet = new Set();
+        const blockReasons = {};
+        for (const typeObj of valid[0]) {
+          const key = typeObj.key;
+          if (typeObj.blocked) {
+            blockReasons[key] = typeObj.blockMessage || 'Not available for this employee';
+            continue;
+          }
+          const allAvail = valid.every(r => { const found = r.find(rt => rt.key === key); return found && !found.blocked; });
+          if (allAvail) availSet.add(key);
+          else blockReasons[key] = 'Not available for all employees in this subgroup';
+        }
         setSgTypeIntersections(prev => { const next = [...prev]; next[si] = availSet; return next; });
+        setSgBlockReasons(prev => { const next = [...prev]; next[si] = blockReasons; return next; });
         // Uncheck any types that fell out of the intersection
         setSubgroups(prev => prev.map((g, i) => {
           if (i !== si) return g;
@@ -1472,14 +1460,25 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
     };
     Promise.all(form.employeeIds.map(fetchOne)).then(results => {
       const valid = results.filter(Boolean);
-      if (valid.length === 0) { setGroupSameIntersection(null); return; }
-      const available = valid[0]
-        .filter(t => !t.blocked)
-        .filter(t => valid.every(r => { const found = r.find(rt => rt.key === t.key); return found && !found.blocked; }))
-        .map(t => t.key);
-      const availSet = new Set(available);
+      if (valid.length === 0) { setGroupSameIntersection(null); setGroupSameBlockReasons({}); return; }
+      const availSet = new Set();
+      const blockReasons = {};
+      for (const typeObj of valid[0]) {
+        const key = typeObj.key;
+        if (typeObj.blocked) {
+          // Blocked by backend for this employee — use backend's reason
+          blockReasons[key] = typeObj.blockMessage || 'Not available for this employee';
+          continue;
+        }
+        const allAvail = valid.every(r => { const found = r.find(rt => rt.key === key); return found && !found.blocked; });
+        if (allAvail) {
+          availSet.add(key);
+        } else {
+          blockReasons[key] = 'Not available for all selected employees';
+        }
+      }
       setGroupSameIntersection(availSet);
-      // Uncheck types that fell out of the intersection
+      setGroupSameBlockReasons(blockReasons);
       setForm(f => ({
         ...f,
         includeSelf: f.includeSelf && availSet.has('includeSelf'),
@@ -1851,34 +1850,44 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
                         { key: 'includeExternal', label: 'External' },
                         { key: 'includeCrossPartisan', label: 'Cross-Partisan' },
                         { key: 'includeMentor', label: 'Mentor' },
-                      ].filter(t => sgIsTypeAvailable(sg, t.key, si)).map(t => (
-                        <label key={t.key} style={{
-                          display: 'flex', gap: '6px', alignItems: 'center', padding: '7px 11px',
-                          borderRadius: 6, cursor: 'pointer', fontSize: '0.83rem', fontWeight: 500,
-                          border: `1.5px solid ${sg[t.key] ? 'var(--ink)' : '#e0e0e0'}`,
-                          background: sg[t.key] ? 'var(--canvas-warm)' : '#fff',
-                          transition: 'all 0.15s ease',
-                        }}>
-                          <input type="checkbox" checked={sg[t.key]}
-                            onChange={() => setSubgroups(prev => prev.map((g, i) => i !== si ? g : { ...g, [t.key]: !g[t.key] }))}
-                            style={{ accentColor: 'var(--ink)' }} />
-                          {t.label}
-                        </label>
-                      ))}
-                    </div>
-                    {sgTypeIntersections[si] && sg.employeeIds.length > 1 && (() => {
-                      const sgProf = profiles.find(p => String(p.id || p.ProfilID) === String(sg.profilId));
-                      const profileTypes = (sgProf?.questionTypes || []).length;
-                      const intersectionSize = sgTypeIntersections[si].size;
-                      if (profileTypes > 0 && intersectionSize < profileTypes) {
-                        return (
-                          <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--ink-soft)', padding: '6px 10px', background: 'var(--canvas-warm)', borderRadius: 4 }}>
-                            Some assessment types are hidden because not all employees in this subgroup have them available. Split employees with different configurations into separate subgroups.
+                      ].filter(t => {
+                        const sgProf = profiles.find(p => String(p.id || p.ProfilID) === String(sg.profilId));
+                        const qTypes = sgProf?.questionTypes || null;
+                        return !qTypes || qTypes.some(q => q === Q_TYPE_MAP[t.key] || q === Q_TYPE_MAP[t.key]?.replace('_', ''));
+                      }).map(t => {
+                        const intersection = sgTypeIntersections[si];
+                        const blocked = intersection && !intersection.has(t.key);
+                        const blockMessage = (sgBlockReasons[si] && sgBlockReasons[si][t.key]) || 'Not available for the selected employees';
+                        if (blocked) return (
+                          <div key={t.key} style={{
+                            display: 'flex', gap: '6px', alignItems: 'center', padding: '7px 11px',
+                            borderRadius: 6, fontSize: '0.83rem', fontWeight: 500,
+                            border: '1.5px solid #e0e0e0', background: '#f5f5f5', opacity: 0.6,
+                            cursor: 'not-allowed', flexDirection: 'column', alignItems: 'flex-start',
+                          }}>
+                            <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                              <input type="checkbox" checked={false} disabled style={{ accentColor: 'var(--ink)' }} />
+                              {t.label}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--danger)', marginLeft: '20px' }}>{blockMessage}</div>
                           </div>
                         );
-                      }
-                      return null;
-                    })()}
+                        return (
+                          <label key={t.key} style={{
+                            display: 'flex', gap: '6px', alignItems: 'center', padding: '7px 11px',
+                            borderRadius: 6, cursor: 'pointer', fontSize: '0.83rem', fontWeight: 500,
+                            border: `1.5px solid ${sg[t.key] ? 'var(--ink)' : '#e0e0e0'}`,
+                            background: sg[t.key] ? 'var(--canvas-warm)' : '#fff',
+                            transition: 'all 0.15s ease',
+                          }}>
+                            <input type="checkbox" checked={sg[t.key]}
+                              onChange={() => setSubgroups(prev => prev.map((g, i) => i !== si ? g : { ...g, [t.key]: !g[t.key] }))}
+                              style={{ accentColor: 'var(--ink)' }} />
+                            {t.label}
+                          </label>
+                        );
+                      })}
+                    </div>
                   </>
                 ) : (
                   <div style={{ fontSize: '0.83rem', color: 'var(--ink-faint)', padding: '6px 0' }}>Select a profile above to see assessment types.</div>
@@ -1966,7 +1975,14 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
                 { key: 'includeCrossPartisan', label: 'Cross-Partisan', desc: 'Cross-partisan assessment' },
                 { key: 'includeMentor', label: 'Mentor', desc: 'Mentor assessment' },
               ];
-              return allTypes.filter(t => isTypeAvailable(t.key));
+              return allTypes
+                .filter(t => !profileQTypes || profileQTypes.some(q => q === Q_TYPE_MAP[t.key] || q === Q_TYPE_MAP[t.key]?.replace('_', '')))
+                .map(t => {
+                  if (mode === 'group' && groupStyle === 'same' && groupSameIntersection && !groupSameIntersection.has(t.key)) {
+                    return { ...t, blocked: true, blockMessage: groupSameBlockReasons[t.key] || 'Not available for the selected employees' };
+                  }
+                  return t;
+                });
             })();
 
         return (
@@ -2010,17 +2026,6 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
                 );
               })}
             </div>
-            {mode === 'group' && groupStyle === 'same' && groupSameIntersection && form.employeeIds.length > 1 && (() => {
-              const profileTypeCount = (profileQTypes || []).length;
-              if (profileTypeCount > 0 && groupSameIntersection.size < profileTypeCount) {
-                return (
-                  <div style={{ marginTop: '12px', fontSize: '0.78rem', color: 'var(--ink-soft)', padding: '8px 12px', background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)' }}>
-                    Some assessment types are hidden because not all selected employees have them available. To use different types per employee, switch to <strong>Custom per subgroup</strong>.
-                  </div>
-                );
-              }
-              return null;
-            })()}
           </FormField>
         );
       })()}
@@ -3694,22 +3699,137 @@ setCompanies(Array.isArray(comp) ? comp : []);
 }
 
 // ── HB Profiles ────────────────────────────────────────────────────────────
+// Parse introText into typed blocks for rendering
+function parseIntroText(text = '') {
+  if (!text) return [];
+  const blocks = [];
+  const paragraphs = text.split(/\n\n+/);
+  for (const para of paragraphs) {
+    const trimmed = para.trim();
+    if (!trimmed) continue;
+    // Major ALL-CAPS section header (e.g. "CONTENT", "LEVEL 1 – THE PORTRAIT", "FACET REFERENCE – ALL 40 FACETS")
+    if (/^[A-Z][A-Z\s\-–—0-9]+$/.test(trimmed)) {
+      blocks.push({ type: 'section', text: trimmed });
+      continue;
+    }
+    // Dimension header: "Dimension X — ..."
+    if (/^Dimension\s+\d+\s*[—–-]/.test(trimmed)) {
+      const lines = trimmed.split('\n');
+      blocks.push({ type: 'dimheader', text: lines[0] });
+      if (lines.length > 1) blocks.push({ type: 'body', text: lines.slice(1).join('\n') });
+      continue;
+    }
+    // Pillar header: "Pillar X — ..."
+    if (/^Pillar\s+\d+\s*[—–-]/.test(trimmed)) {
+      const lines = trimmed.split('\n');
+      blocks.push({ type: 'pillarheader', text: lines[0] });
+      if (lines.length > 1) blocks.push({ type: 'body', text: lines.slice(1).join('\n') });
+      continue;
+    }
+    // Dimension sub-label: "Mindset dimension", "Skills dimension" etc.
+    if (/^(Mindset|Skills|Results|Influence)\s+dimension$/.test(trimmed)) {
+      blocks.push({ type: 'dimheader', text: trimmed });
+      continue;
+    }
+    // Short lines that are likely sub-headings (bold intro labels under a pillar)
+    if (/^Facets:\s/.test(trimmed)) {
+      blocks.push({ type: 'facetlabel', text: trimmed });
+      continue;
+    }
+    // HB footer line
+    if (trimmed.startsWith('HB Foundation ·')) {
+      blocks.push({ type: 'footer', text: trimmed });
+      continue;
+    }
+    // Default: body paragraph (may contain \n within)
+    blocks.push({ type: 'body', text: trimmed });
+  }
+  return blocks;
+}
+
+function IntroTextRenderer({ text }) {
+  const blocks = parseIntroText(text);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+      {blocks.map((block, i) => {
+        if (block.type === 'section') return (
+          <div key={i} style={{
+            marginTop: i > 0 ? '40px' : 0, marginBottom: '20px',
+            paddingBottom: '10px', borderBottom: '2px solid var(--ink)',
+          }}>
+            <span style={{
+              fontFamily: 'var(--font-display)', fontSize: '1.05rem',
+              fontWeight: 700, letterSpacing: '0.06em', color: 'var(--ink)',
+            }}>{block.text}</span>
+          </div>
+        );
+        if (block.type === 'dimheader') return (
+          <div key={i} style={{ marginTop: '28px', marginBottom: '8px' }}>
+            <span style={{
+              display: 'inline-block', padding: '5px 14px', borderRadius: '4px',
+              background: 'var(--ink)', color: '#fff',
+              fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.06em',
+            }}>{block.text}</span>
+          </div>
+        );
+        if (block.type === 'pillarheader') return (
+          <div key={i} style={{ marginTop: '20px', marginBottom: '6px' }}>
+            <span style={{
+              fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.08em',
+              textTransform: 'uppercase', color: 'var(--ink-faint)',
+            }}>{block.text}</span>
+          </div>
+        );
+        if (block.type === 'facetlabel') return (
+          <div key={i} style={{ marginBottom: '8px' }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--ink-soft)', fontStyle: 'italic' }}>
+              {block.text}
+            </span>
+          </div>
+        );
+        if (block.type === 'footer') return (
+          <div key={i} style={{ marginTop: '40px', paddingTop: '16px', borderTop: '1px solid var(--canvas-warm)' }}>
+            <p style={{ fontSize: '0.75rem', color: 'var(--ink-faint)', lineHeight: 1.6, margin: 0 }}>{block.text}</p>
+          </div>
+        );
+        // body — handle inline \n as line breaks
+        return (
+          <p key={i} style={{ fontSize: '0.88rem', color: 'var(--ink-soft)', lineHeight: 1.75, margin: '0 0 12px 0', whiteSpace: 'pre-wrap' }}>
+            {block.text}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 export function HBProfiles() {
   const [profiles, setProfiles] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [expandedFacets, setExpandedFacets] = useState({});
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     api.hbProfiles.getAll()
       .then(data => {
-        setProfiles(data);
-        if (data.length > 0) setSelected(data[0]);
+        const list = Array.isArray(data) ? data : [];
+        setProfiles(list);
+        if (list.length > 0) {
+          setSelected(list[0]);
+          setActiveTab(list[0].introText ? 'overview' : 'framework');
+        }
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, []); // eslint-disable-line
+
+  function selectProfile(p) {
+    setExpandedFacets({});
+    setSelected(p);
+    setActiveTab(p.introText ? 'overview' : 'framework');
+  }
 
   function toggleFacet(key) {
     setExpandedFacets(prev => ({ ...prev, [key]: !prev[key] }));
@@ -3745,7 +3865,7 @@ export function HBProfiles() {
               return (
                 <button
                   key={p.profileType}
-                  onClick={() => { setSelected(p); setExpandedFacets({}); }}
+                  onClick={() => selectProfile(p)}
                   style={{
                     padding: '11px 14px', borderRadius: '8px', border: 'none', cursor: 'pointer',
                     background: active ? 'var(--ink)' : 'transparent',
@@ -3778,8 +3898,45 @@ export function HBProfiles() {
                 const ai = DIM_ORDER.indexOf(a); const bi = DIM_ORDER.indexOf(b);
                 return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
               });
+              const hasIntro = !!selected.introText;
               return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Profile title + tab switcher */}
+                  <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                    <div>
+                      <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '4px' }}>
+                        {selected.profileType}
+                      </p>
+                      <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', fontWeight: 400, color: 'var(--ink)', margin: 0 }}>
+                        {selected.profileName || selected.profileType}
+                      </h2>
+                    </div>
+                    {hasIntro && (
+                      <div style={{ display: 'flex', gap: '2px', background: 'var(--canvas-warm)', borderRadius: '8px', padding: '3px' }}>
+                        {[['overview', 'Overview'], ['framework', 'Framework']].map(([key, label]) => (
+                          <button key={key} onClick={() => setActiveTab(key)} style={{
+                            padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                            fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 600,
+                            background: activeTab === key ? '#fff' : 'transparent',
+                            color: activeTab === key ? 'var(--ink)' : 'var(--ink-soft)',
+                            boxShadow: activeTab === key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                            transition: 'all 0.15s',
+                          }}>{label}</button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Overview tab — intro text */}
+                  {activeTab === 'overview' && hasIntro && (
+                    <Card style={{ padding: '32px 36px' }}>
+                      <IntroTextRenderer text={selected.introText} />
+                    </Card>
+                  )}
+
+                  {/* Framework tab — facets */}
+                  {(activeTab === 'framework' || !hasIntro) && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
                   {sortedDims.map(dimension => { const pillars = grouped[dimension]; return (
                     <div key={dimension}>
                       {/* Dimension header */}
@@ -3883,6 +4040,8 @@ export function HBProfiles() {
                       ))}
                     </div>
                   ); })}
+                </div>
+                )}
                 </div>
               );
             })()}
@@ -3998,6 +4157,112 @@ export function CreateIdealProfile() {
           </button>
         </div>
       </div>
+    </PortalLayout>
+  );
+}
+
+// ── Admin Profile Access (super-admin only) ────────────────────────────────
+export function AdminProfileAccess() {
+  const [admins, setAdmins] = useState([]);
+  const [allProfiles, setAllProfiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState({});
+  const [saved, setSaved] = useState({});
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    Promise.all([
+      api.manager.getAdminProfiles(),
+      api.manager.getProfiles(),
+    ])
+      .then(([adminList, profiles]) => {
+        setAdmins(Array.isArray(adminList) ? adminList : []);
+        setAllProfiles(Array.isArray(profiles) ? profiles : []);
+      })
+      .catch(e => setError(e.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function handleSave(admin) {
+    setSaving(prev => ({ ...prev, [admin.managerId]: true }));
+    setSaved(prev => ({ ...prev, [admin.managerId]: false }));
+    try {
+      await api.manager.updateAdminProfiles(admin.managerId, { profileIds: admin.profileIds });
+      setSaved(prev => ({ ...prev, [admin.managerId]: true }));
+      setTimeout(() => setSaved(prev => ({ ...prev, [admin.managerId]: false })), 2000);
+    } catch (e) {
+      alert(`Failed to save: ${e.message}`);
+    } finally {
+      setSaving(prev => ({ ...prev, [admin.managerId]: false }));
+    }
+  }
+
+  function toggleProfile(managerId, profileId) {
+    setAdmins(prev => prev.map(a => {
+      if (a.managerId !== managerId) return a;
+      const has = a.profileIds.includes(profileId);
+      return { ...a, profileIds: has ? a.profileIds.filter(id => id !== profileId) : [...a.profileIds, profileId] };
+    }));
+    setSaved(prev => ({ ...prev, [managerId]: false }));
+  }
+
+  return (
+    <PortalLayout role="admin" navItems={NAV}>
+      <PageHeader title="Profile Access" subtitle="Manage which profiles each administrator can see and use." />
+      {error && <Alert type="error" style={{ marginBottom: 20 }}>{error}</Alert>}
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '80px' }}><Spinner /></div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: 800 }}>
+          {admins.length === 0 && (
+            <Card style={{ padding: '48px 32px', textAlign: 'center' }}>
+              <p style={{ color: 'var(--ink-soft)' }}>No administrators found.</p>
+            </Card>
+          )}
+          {admins.map(admin => (
+            <Card key={admin.managerId} style={{ padding: '24px 28px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--ink)', marginBottom: '2px' }}>{admin.name}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--ink-faint)' }}>{admin.username}</div>
+                </div>
+                <Btn
+                  size="sm"
+                  variant={saved[admin.managerId] ? 'outline' : 'primary'}
+                  onClick={() => handleSave(admin)}
+                  disabled={saving[admin.managerId]}
+                >
+                  {saving[admin.managerId] ? 'Saving…' : saved[admin.managerId] ? '✓ Saved' : 'Save'}
+                </Btn>
+              </div>
+              <div style={{ marginTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {allProfiles.map(p => {
+                  const pid = p.id || p.ProfilID;
+                  const checked = admin.profileIds.includes(pid);
+                  return (
+                    <label key={pid} style={{
+                      display: 'flex', alignItems: 'center', gap: '7px',
+                      padding: '7px 13px', borderRadius: '6px', cursor: 'pointer',
+                      fontSize: '0.83rem', fontWeight: 500,
+                      border: `1.5px solid ${checked ? 'var(--ink)' : '#e0e0e0'}`,
+                      background: checked ? 'var(--canvas-warm)' : '#fff',
+                      transition: 'all 0.15s',
+                    }}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleProfile(admin.managerId, pid)}
+                        style={{ accentColor: 'var(--ink)' }}
+                      />
+                      {p.name || p.Name || p.profileType}
+                    </label>
+                  );
+                })}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </PortalLayout>
   );
 }

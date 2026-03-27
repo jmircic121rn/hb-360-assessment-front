@@ -134,9 +134,10 @@ export function PortalLayout({ role, navItems, children }) {
         {/* Nav */}
         <nav style={{ flex: 1, padding: '8px', display: 'flex', flexDirection: 'column', gap: '2px', overflowY: 'auto' }}>
           {(() => {
+            const visibleItems = navItems.filter(item => !item.superAdminOnly || user?.isSuperAdmin);
             const groupOrder = [];
             const groupMap = {};
-            navItems.forEach(item => {
+            visibleItems.forEach(item => {
               const g = item.group || '';
               if (!groupMap[g]) { groupMap[g] = []; groupOrder.push(g); }
               groupMap[g].push(item);
