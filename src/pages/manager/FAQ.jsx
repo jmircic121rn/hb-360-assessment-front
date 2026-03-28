@@ -49,7 +49,7 @@ const FAQ = () => {
         },
         {
           q: "What is a Custom Ideal Profile?",
-          a: "A Custom Ideal Profile is a bespoke profile built specifically for a role or organisation that falls outside the standard HB profiles. It allows you to define the exact competency levels that represent excellent performance for that specific context.\n\nCreating a custom profile is currently in development. Contact your HB Foundation account manager to discuss bespoke profiling needs."
+          a: "A Custom Ideal Profile is a bespoke profile built specifically for a role or organisation that falls outside the standard HB profiles. It allows you to define the exact competency levels that represent excellent performance for that specific context.\n\nThe Create New Ideal Profile page is accessible from the sidebar (HB Ideal Profiles → Create New Ideal Profile), but this feature is currently being built and is not yet fully functional. Contact your HB Foundation account manager to discuss bespoke profiling needs in the meantime."
         }
       ]
     },
@@ -70,7 +70,11 @@ const FAQ = () => {
         },
         {
           q: "How do I add a new employee?",
-          a: "Select a company to open its detail, go to the Employees tab, and click + Add Employee. Fill in First Name, Last Name, Email, Job Title, Language, and optionally Manager. Email must be unique in the system."
+          a: "Select a company to open its detail, go to the Employees tab, and click + Add Employee. Fill in First Name, Last Name, Email, Job Title, and optionally Manager. Email must be unique in the system.\n\nThe Language field sets the language in which the employee receives assessment invitation emails and sees the assessment interface. Available options are English, Serbian, German, French, and Spanish. If unsure, select English."
+        },
+        {
+          q: "Is there a way to see all employees across all companies in one place?",
+          a: "Yes. The Employees page (sidebar → Management → Employees) gives you a single view of every employee across all companies. From here you can search by name, view individual profiles, see each person's campaign history, and download their generated reports.\n\nFor adding or editing employees, go to My Companies and select the relevant company."
         },
         {
           q: "Can I add a new employee during campaign creation?",
@@ -99,7 +103,7 @@ const FAQ = () => {
         },
         {
           q: "What assessment types can I include in a campaign?",
-          a: "The available assessment types depend entirely on which profile is selected. Each profile has questions in the database for specific types only — the campaign form shows only the types that are actually available for that profile, so the selection will vary.\n\nTypes generally cover perspectives such as self-assessment, manager, peers, direct reports, external contacts, and others. Each type generates a separate assessment link sent to the relevant person.\n\nTo see which types are available for a specific profile, select the company and profile in the New Campaign form — the options will appear automatically."
+          a: "The available assessment types depend entirely on which profile is selected. Each profile has questions in the database for specific types only — the campaign form shows only the types that are actually available for that profile, so the selection will vary.\n\nTypes cover the following perspectives:\n• Self — the employee assesses themselves.\n• Manager — their direct manager provides feedback.\n• Peer — a colleague at the same level.\n• Direct Reports — someone who reports to the employee.\n• External — a contact outside the organisation (prompted to enter their name and email before starting).\n• Cross-Partisan — feedback from someone in a different team or function.\n• Mentor — feedback from a mentor or coach.\n\nEach type generates a separate assessment link sent to the relevant person. To see which types are available for a specific profile, select the company and profile in the New Campaign form — the options will appear automatically."
         },
         {
           q: "Which profile should I select for a campaign?",
