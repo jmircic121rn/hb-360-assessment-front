@@ -1359,7 +1359,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
   const [companies, setCompanies] = useState([]);
   const [mode, setMode] = useState(initialData?.mode || 'individual');
   const [form, setForm] = useState({
-    name: '', employeeId: '', employeeIds: [], profilId: '',
+    name: '', employeeId: '', employeeIds: [], profilId: '', lang: '',
     includeSelf: false, includeManager: false, includePeer: false,
     includeDirectReports: false, includeExternal: false,
     includeCrossPartisan: false, includeMentor: false,
@@ -1667,6 +1667,7 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
     onSubmit({
       name: form.name,
       mode,
+      lang: form.lang || undefined,
       ...(mode === 'individual' ? { employeeId: Number(form.employeeId) } : { employeeIds: form.employeeIds }),
       profilId: form.profilId ? Number(form.profilId) : undefined,
       deadline: form.deadline || undefined,
@@ -2041,12 +2042,50 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
         }
         const availableProfiles = profiles.filter(p => companyProfiles.some(cp => String(cp.id) === String(p.id || p.ProfilID)));
         return (
-          <FormField label="Assessment Profile" hint="Select a profile for this campaign">
-            <Select value={form.profilId} onChange={e => setForm(f => ({ ...f, profilId: e.target.value }))}>
-              <option value="">— Select profile —</option>
-              {availableProfiles.map(p => <option key={p.id || p.ProfilID} value={p.id || p.ProfilID}>{p.name || p.Name}</option>)}
-            </Select>
-          </FormField>
+          <>
+            <FormField label="Assessment Profile" hint="Select a profile for this campaign">
+              <Select value={form.profilId} onChange={e => {
+                const pid = e.target.value;
+                const prof = availableProfiles.find(p => String(p.id || p.ProfilID) === String(pid));
+                const langs = prof?.availableLangs || [];
+                setForm(f => ({ ...f, profilId: pid, lang: langs.length === 1 ? langs[0] : '' }));
+              }}>
+                <option value="">— Select profile —</option>
+                {availableProfiles.map(p => <option key={p.id || p.ProfilID} value={p.id || p.ProfilID}>{p.name || p.Name}</option>)}
+              </Select>
+            </FormField>
+
+            {/* Language picker — shown when profile has multiple langs */}
+            {(() => {
+              const langs = selectedProfile?.availableLangs || [];
+              if (langs.length <= 1) return null;
+              const LANG_LABELS = { sr: 'Serbian', en: 'English', de: 'German', fr: 'French', es: 'Spanish' };
+              return (
+                <FormField label="Assessment Language" hint="Select the language for this campaign's questions">
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {langs.map(l => (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, lang: l }))}
+                        style={{
+                          padding: '8px 18px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                          fontFamily: 'var(--font-body)', fontSize: '0.85rem', fontWeight: 600,
+                          border: '1.5px solid',
+                          borderColor: form.lang === l ? 'var(--ink)' : 'var(--canvas-warm)',
+                          background: form.lang === l ? 'var(--ink)' : 'var(--canvas-white)',
+                          color: form.lang === l ? '#fff' : 'var(--ink-soft)',
+                          transition: 'all 150ms',
+                        }}
+                      >
+                        {LANG_LABELS[l] || l.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </FormField>
+              );
+            })()}
+          </>
         );
       })()}
 
@@ -2330,6 +2369,7 @@ export function NewCampaign() {
               profilId: sg.profilId,
               deadline: payload.deadline,
               groupId,
+              lang: payload.lang,
               includeSelf: sg.includeSelf,
               includeManager: sg.includeManager,
               includePeer: sg.includePeer,
@@ -2626,11 +2666,13 @@ export function CampaignDetail() {
           setAiStatus('Downloading PDF…');
           const blob = await api.manager.downloadAIReportPdf(reportId);
           const url = URL.createObjectURL(blob);
+          window.open(url, '_blank');
           const a = document.createElement('a');
           a.href = url;
           a.download = `AI_Report_${campaign.FirstName}_${campaign.LastName}.pdf`;
           a.click();
-          URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 1000);
           fetchReports();
           setAiGenerating(false); setAiStatus('');
         } else if (result.status === 'error') {
@@ -2654,9 +2696,16 @@ export function CampaignDetail() {
     setGenerating(type); setReportSuccess(null); setReportError(null);
     try {
       await (type === 1 ? api.manager.generateReport1(id) : api.manager.generateReport2(id));
+      const allReports = await api.manager.getReports();
+      const cycleReports = (allReports || []).filter(r => r.CycleID === Number(id));
+      setReports(cycleReports);
+      const reportType = type === 1 ? 'report1' : 'report2';
+      const newReport = cycleReports.find(r => r.ReportType === reportType);
+      if (newReport) {
+        downloadReportPdf(newReport.CycleID, newReport.ReportType, newReport.ReportID, campaign.FirstName, campaign.LastName);
+      }
       setReportSuccess(type === 1 ? 'Self Assessment Report generated.' : 'HB Compass Development Report generated.');
       setConfirmModal(null);
-      fetchReports();
     } catch (e) { setReportError(e.message); }
     finally { setGenerating(null); }
   }
@@ -2826,7 +2875,7 @@ export function CampaignDetail() {
             {/* 360 inclusions */}
             <div style={{ borderTop: '1px solid var(--canvas-warm)', paddingTop: '16px' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-soft)', marginBottom: '10px' }}>
-                Will be included in report
+                Will be included in Personal Development plan report
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {[
@@ -2858,7 +2907,7 @@ export function CampaignDetail() {
             {reports.length > 0 && (
               <div style={{ borderTop: '1px solid var(--canvas-warm)', paddingTop: '20px' }}>
                 <div style={{ fontSize: '0.78rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--ink-soft)', marginBottom: '12px' }}>Generated</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '280px', overflowY: 'auto' }}>
                   {reports.map(r => (
                     <div key={r.ReportID} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--canvas)', borderRadius: 'var(--radius-md)', border: '1px solid var(--canvas-warm)' }}>
                       <div>
@@ -3900,18 +3949,59 @@ function IntroTextRenderer({ text }) {
   );
 }
 
+function LevelAccordionItem({ label, desc, chunk, isLast }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ borderBottom: isLast ? 'none' : '1px solid var(--canvas-warm)' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+          gap: '16px', padding: '22px 32px', background: 'none', border: 'none', cursor: 'pointer',
+          textAlign: 'left',
+        }}
+      >
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: '0.82rem', letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink)', marginBottom: desc ? '6px' : 0 }}>
+            {label}
+          </div>
+          {desc && (
+            <p style={{ fontSize: '0.86rem', color: 'var(--ink-soft)', lineHeight: 1.6, margin: 0 }}>
+              {desc}
+            </p>
+          )}
+        </div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          style={{ flexShrink: 0, marginTop: '2px', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)', color: 'var(--ink-faint)' }}>
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+      {open && (
+        <div style={{ padding: '0 32px 28px' }}>
+          <IntroTextRenderer text={chunk} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+const LANG_LABELS = { en: 'EN', sr: 'SR', de: 'DE', fr: 'FR', es: 'ES' };
+
 export function HBProfiles() {
   const [profiles, setProfiles] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [profileLang, setProfileLang] = useState('en');
   const [loading, setLoading] = useState(true);
+  const [langLoading, setLangLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedFacets, setExpandedFacets] = useState({});
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    api.hbProfiles.getAll()
+    api.hbProfiles.getAll('en')
       .then(data => {
         const list = Array.isArray(data) ? data : [];
+        console.log('[HBProfiles] all profiles from backend:', list);
         setProfiles(list);
         if (list.length > 0) {
           setSelected(list[0]);
@@ -3926,6 +4016,28 @@ export function HBProfiles() {
     setExpandedFacets({});
     setSelected(p);
     setActiveTab(p.introText ? 'overview' : 'framework');
+  }
+
+  function switchLang(lang) {
+    if (lang === profileLang) return;
+    setLangLoading(true);
+    setExpandedFacets({});
+    api.hbProfiles.getAll(lang)
+      .then(data => {
+        const list = Array.isArray(data) ? data : [];
+        setProfiles(list);
+        setProfileLang(lang);
+        // Keep same profile selected if possible
+        const reSelected = selected
+          ? list.find(p => p.profileType === selected.profileType) || list[0]
+          : list[0];
+        if (reSelected) {
+          setSelected(reSelected);
+          setActiveTab(reSelected.introText ? 'overview' : 'framework');
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLangLoading(false));
   }
 
   function toggleFacet(key) {
@@ -3989,6 +4101,9 @@ export function HBProfiles() {
                 <p style={{ color: 'var(--ink-soft)' }}>Select a profile to view its framework.</p>
               </Card>
             ) : (() => {
+              const availLangs = selected.availableLangs || selected.available_langs || selected.languages || [];
+              console.log('[HBProfiles] selected keys:', JSON.stringify(Object.keys(selected)));
+              console.log('[HBProfiles] full object:', JSON.stringify(selected).slice(0, 400));
               const grouped = groupFacets(selected.facets);
               const DIM_ORDER = ['RESULTS', 'MINDSET', 'SKILLS', 'INFLUENCE'];
               const sortedDims = Object.keys(grouped).sort((a, b) => {
@@ -3998,7 +4113,7 @@ export function HBProfiles() {
               const hasIntro = !!selected.introText;
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                  {/* Profile title + tab switcher */}
+                  {/* Profile title + lang switcher + tab switcher */}
                   <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
                     <div>
                       <p style={{ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '4px' }}>
@@ -4008,28 +4123,64 @@ export function HBProfiles() {
                         {selected.profileName || selected.profileType}
                       </h2>
                     </div>
-                    {hasIntro && (
-                      <div style={{ display: 'flex', gap: '2px', background: 'var(--canvas-warm)', borderRadius: '8px', padding: '3px' }}>
-                        {[['overview', 'Overview'], ['framework', 'Facets']].map(([key, label]) => (
-                          <button key={key} onClick={() => setActiveTab(key)} style={{
-                            padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
-                            fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 600,
-                            background: activeTab === key ? '#fff' : 'transparent',
-                            color: activeTab === key ? 'var(--ink)' : 'var(--ink-soft)',
-                            boxShadow: activeTab === key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                            transition: 'all 0.15s',
-                          }}>{label}</button>
-                        ))}
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      {availLangs.length > 1 && (
+                        <div style={{ display: 'flex', gap: '2px', background: 'var(--canvas-warm)', borderRadius: '8px', padding: '3px' }}>
+                          {availLangs.map(l => (
+                            <button key={l} onClick={() => switchLang(l)} disabled={langLoading} style={{
+                              padding: '6px 14px', borderRadius: '6px', border: 'none',
+                              cursor: langLoading ? 'default' : 'pointer',
+                              fontFamily: 'var(--font-body)', fontSize: '0.78rem', fontWeight: 700,
+                              letterSpacing: '0.06em',
+                              background: profileLang === l ? '#000' : 'transparent',
+                              color: profileLang === l ? '#fff' : 'var(--ink-soft)',
+                              boxShadow: profileLang === l ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                              opacity: langLoading && profileLang !== l ? 0.45 : 1,
+                              transition: 'all 0.15s',
+                            }}>{LANG_LABELS[l] || l.toUpperCase()}</button>
+                          ))}
+                        </div>
+                      )}
+                      {hasIntro && (
+                        <div style={{ display: 'flex', gap: '2px', background: 'var(--canvas-warm)', borderRadius: '8px', padding: '3px' }}>
+                          {[['overview', 'Overview'], ['framework', 'Facets']].map(([key, label]) => (
+                            <button key={key} onClick={() => setActiveTab(key)} style={{
+                              padding: '6px 16px', borderRadius: '6px', border: 'none', cursor: 'pointer',
+                              fontFamily: 'var(--font-body)', fontSize: '0.82rem', fontWeight: 600,
+                              background: activeTab === key ? '#fff' : 'transparent',
+                              color: activeTab === key ? 'var(--ink)' : 'var(--ink-soft)',
+                              boxShadow: activeTab === key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                              transition: 'all 0.15s',
+                            }}>{label}</button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Overview tab — intro text */}
-                  {activeTab === 'overview' && hasIntro && (
-                    <Card style={{ padding: '32px 36px' }}>
-                      <IntroTextRenderer text={selected.introText} />
-                    </Card>
-                  )}
+                  {/* Overview tab — 3 accordion items, one per level */}
+                  {activeTab === 'overview' && hasIntro && (() => {
+                    const ld = selected.levelDescriptions || selected.level_descriptions || {};
+                    const levelChunks = (selected.introText || '').split(/(?=LEVEL [123] —)/);
+                    const levels = [
+                      { label: (levelChunks[0] || '').split('\n')[0].trim() || 'Level 1', desc: ld.level1 || ld['1'] || '', chunk: levelChunks[0] || '' },
+                      { label: (levelChunks[1] || '').split('\n')[0].trim() || 'Level 2', desc: ld.level2 || ld['2'] || '', chunk: levelChunks[1] || '' },
+                      { label: (levelChunks[2] || '').split('\n')[0].trim() || 'Level 3', desc: ld.level3 || ld['3'] || '', chunk: levelChunks[2] || '' },
+                    ];
+                    return (
+                      <Card style={{ padding: '8px 0' }}>
+                        {levels.map((lvl, i) => (
+                          <LevelAccordionItem
+                            key={lvl.label}
+                            label={lvl.label}
+                            desc={lvl.desc}
+                            chunk={lvl.chunk}
+                            isLast={i === levels.length - 1}
+                          />
+                        ))}
+                      </Card>
+                    );
+                  })()}
 
                   {/* Framework tab — facets */}
                   {(activeTab === 'framework' || !hasIntro) && (
@@ -4051,9 +4202,10 @@ export function HBProfiles() {
                         <div key={pillar} style={{ marginBottom: '16px' }}>
                           {/* Pillar label */}
                           <div style={{
-                            fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em',
-                            textTransform: 'uppercase', color: 'var(--ink-faint)',
-                            marginBottom: '8px', paddingLeft: '4px',
+                            fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.04em',
+                            color: 'var(--ink)', marginBottom: '10px', marginTop: '4px',
+                            paddingLeft: '12px',
+                            borderLeft: '3px solid var(--ink)',
                           }}>
                             {pillar}
                           </div>
@@ -4145,27 +4297,25 @@ export function HBProfiles() {
           </div>
         </div>
       )}
+
+    
     </PortalLayout>
   );
 }
 
 // ── Reports ────────────────────────────────────────────────────────────────
-function downloadReportPdf(cycleId, reportType, reportId, firstName, lastName) {
+function downloadReportPdf(cycleId, reportType, reportId) {
   const token = localStorage.getItem('compass_token_admin');
   const BASE = process.env.REACT_APP_API_URL || 'https://api.hansenbeck.com';
   const url = reportType === 'report2'
     ? `${BASE}/api/360/manager/reports/${reportId}/ai-pdf`
     : `${BASE}/api/360/manager/cycles/${cycleId}/report/1/pdf`;
-  const label = reportType === 'report2' ? 'AI_Report' : 'Self_Assessment_Report';
-  const name = `HansenBeck_${label}_${firstName}_${lastName}.pdf`;
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.blob(); })
     .then(blob => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = name;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      const blobUrl = URL.createObjectURL(blob);
+      window.open(blobUrl, '_blank');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
     })
     .catch(e => alert(`Download failed: ${e.message}`));
 }

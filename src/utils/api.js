@@ -37,7 +37,7 @@ async function request(path, options = {}, role = null) {
 
 export const api = {
   // Assessment (public)
-  getAssessment: (token) => request(`/api/360/assess/${token}`),
+  getAssessment: (token, lang) => request(`/api/360/assess/${token}${lang ? `?lang=${lang}` : ''}`),
   submitAssessment: (token, data) => request(`/api/360/assess/${token}/submit`, {
     method: 'POST', body: JSON.stringify(data)
   }),
@@ -99,8 +99,8 @@ export const api = {
   },
 
   hbProfiles: {
-    getAll: () => request('/api/360/manager/hb-compass-profiles', {}, 'admin'),
-    getOne: (type) => request(`/api/360/manager/hb-compass-profiles/${type}`, {}, 'admin'),
+    getAll: (lang) => request(`/api/360/manager/hb-compass-profiles${lang ? `?lang=${lang}` : ''}`, {}, 'admin'),
+    getOne: (type, lang) => request(`/api/360/manager/hb-compass-profiles/${type}${lang ? `?lang=${lang}` : ''}`, {}, 'admin'),
   },
 
   // Employee

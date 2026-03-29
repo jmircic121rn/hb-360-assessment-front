@@ -29,7 +29,28 @@ export default function AssessPage() {
 
   useEffect(() => {
     api.getAssessment(token)
-      .then(setData)
+      .then(initial => {
+        console.log('[AssessPage] initial response keys:', Object.keys(initial || {}));
+        console.log('[AssessPage] language fields:', { language: initial?.language, lang: initial?.lang });
+        console.log('[AssessPage] introText (first 200):', (initial?.introText || '').slice(0, 200));
+        console.log('[AssessPage] questions count:', (initial?.questions || []).length);
+        const lng = initial?.language || initial?.lang || 'en';
+        if (lng && lng !== 'en') {
+          console.log('[AssessPage] refetching with lang:', lng);
+          return api.getAssessment(token, lng).then(localized => ({
+            ...initial,
+            ...localized,
+            // keep introText from initial if localized doesn't have it
+            introText: localized?.introText || initial?.introText,
+          }));
+        }
+        return initial;
+      })
+      .then(data => {
+        console.log('[AssessPage] final data lang:', data?.language || data?.lang);
+        console.log('[AssessPage] final introText (first 200):', (data?.introText || '').slice(0, 200));
+        setData(data);
+      })
       .catch(e => {
         const msg = e.message || '';
         if (msg.includes('već popunjen') || msg.includes('completed')) {
@@ -51,6 +72,41 @@ export default function AssessPage() {
 
   const rawLang = data?.language || data?.lang || 'en';
   const lang = rawLang === 'en' ? 'eng' : rawLang;
+
+  const isSr = rawLang === 'sr';
+  const T = {
+    loading: isSr ? 'Učitavanje vaše procjene…' : 'Loading your assessment…',
+    linkIssue: isSr ? 'Problem sa linkom' : 'Link Issue',
+    alreadyCompleted: isSr ? 'Ova procjena je već popunjena.' : 'This assessment has already been completed.',
+    invalidLink: isSr ? 'Ovaj link je nevažeći ili je istekao.' : 'This link is invalid or has expired.',
+    thankYou: isSr ? 'Hvala!' : 'Thank You!',
+    thankYouBody: isSr
+      ? 'Vaša procjena je uspješno poslana. Vaše iskreno mišljenje doprinosi smislenom razvoju liderstva.'
+      : 'Your assessment has been submitted successfully. Your honest feedback contributes to meaningful leadership development.',
+    assessmentFor: isSr ? 'Procjena za' : 'Assessment for',
+    beforeYouBegin: isSr ? 'Prije nego počnete' : 'Before you begin',
+    identityBody: isSr
+      ? 'Molimo unesite vaše podatke. Ove informacije će biti zabilježene zajedno s vašim odgovorima.'
+      : 'Please enter your details. This information will be recorded alongside your assessment responses.',
+    firstName: isSr ? 'Ime' : 'First Name',
+    lastName: isSr ? 'Prezime' : 'Last Name',
+    email: isSr ? 'Email adresa' : 'Email address',
+    continueToAssessment: isSr ? 'Nastavi na procjenu →' : 'Continue to Assessment →',
+    instructions: isSr ? 'Uputstva' : 'Instructions',
+    prepGuideTitle: isSr ? 'HB Compass — Vodič za pripremu' : 'HB Compass — Preparation Guide',
+    prepGuideSubtitle: isSr
+      ? 'Ova stranica će vam trebati oko 3 minute. Molimo pročitajte je prije nego počnete.'
+      : 'This page will take you about 3 minutes to read. Please read it before you begin.',
+    continueBtn: isSr ? 'Nastavi →' : 'Continue →',
+    startBtn: isSr ? 'Pokreni procjenu →' : 'Start Assessment →',
+    prevBtn: isSr ? '← Prethodno' : '← Previous',
+    nextBtn: isSr ? 'Sljedeće →' : 'Next →',
+    submitBtn: isSr ? 'Predaj procjenu' : 'Submit Assessment',
+    questionOf: (cur, total) => isSr ? `Pitanje ${cur} od ${total}` : `Question ${cur} of ${total}`,
+    answered: isSr ? 'odgovoreno' : 'answered',
+    remaining: (n) => isSr ? `Preostalo: ${n}` : `${n} remaining`,
+    levelLabel: (n, total) => isSr ? `Nivo ${n} od ${total}` : `Level ${n} of ${total}`,
+  };
 
   const profileName = (data?.profileName || data?.profilName || data?.profile?.name || data?.ProfilName || '').toLowerCase();
   const isEmployeeProfile = profileName.includes('employee') || profileName.includes('modern');
@@ -130,7 +186,7 @@ export default function AssessPage() {
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '16px', background: 'var(--canvas)' }}>
       <Spinner size={32} />
-      <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>Loading your assessment…</p>
+      <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem' }}>{T.loading}</p>
     </div>
   );
 
@@ -138,7 +194,7 @@ export default function AssessPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--canvas)' }}>
       <div style={{ textAlign: 'center', maxWidth: 400 }}>
         <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🔗</div>
-        <h2 style={{ fontFamily: 'var(--font-display)', marginBottom: '12px' }}>Link Issue</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', marginBottom: '12px' }}>{T.linkIssue}</h2>
         <Alert type="error">{error}</Alert>
       </div>
     </div>
@@ -148,9 +204,9 @@ export default function AssessPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--canvas)' }}>
       <div style={{ textAlign: 'center', maxWidth: 440 }}>
         <div style={{ fontSize: '4rem', marginBottom: '16px' }}>✅</div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: '12px' }}>Thank You!</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: '12px' }}>{T.thankYou}</h2>
         <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7 }}>
-          Your assessment has been submitted successfully. Your honest feedback contributes to meaningful leadership development.
+          {T.thankYouBody}
         </p>
       </div>
     </div>
@@ -172,37 +228,37 @@ export default function AssessPage() {
           <Logo light size="sm" />
           {data?.employeeName && (
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
-              Assessment for <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{data.employeeName}</strong>
+              {T.assessmentFor} <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{data.employeeName}</strong>
             </div>
           )}
         </header>
         <div style={{ maxWidth: 480, margin: '60px auto', padding: '0 24px' }}>
           <Card style={{ padding: '36px' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', marginBottom: '8px' }}>Before you begin</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', marginBottom: '8px' }}>{T.beforeYouBegin}</h2>
             <p style={{ color: 'var(--ink-soft)', fontSize: '0.9rem', lineHeight: 1.7, marginBottom: '28px' }}>
-              Please enter your details. This information will be recorded alongside your assessment responses.
+              {T.identityBody}
             </p>
             <form onSubmit={handleIdentitySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <FormField label="First Name" required>
+                <FormField label={T.firstName} required>
                   <Input
                     value={assessorInfo.firstName}
                     onChange={e => setAssessorInfo(i => ({ ...i, firstName: e.target.value }))}
-                    placeholder="First name"
+                    placeholder={T.firstName}
                     required
                     autoFocus
                   />
                 </FormField>
-                <FormField label="Last Name" required>
+                <FormField label={T.lastName} required>
                   <Input
                     value={assessorInfo.lastName}
                     onChange={e => setAssessorInfo(i => ({ ...i, lastName: e.target.value }))}
-                    placeholder="Last name"
+                    placeholder={T.lastName}
                     required
                   />
                 </FormField>
               </div>
-              <FormField label="Email address" required>
+              <FormField label={T.email} required>
                 <Input
                   type="email"
                   value={assessorInfo.email}
@@ -212,7 +268,7 @@ export default function AssessPage() {
                 />
               </FormField>
               <Btn type="submit" style={{ marginTop: '8px', justifyContent: 'center' }}>
-                Continue to Assessment →
+                {T.continueToAssessment}
               </Btn>
             </form>
           </Card>
@@ -231,14 +287,14 @@ export default function AssessPage() {
     for (const para of paragraphs) {
       const trimmed = para.trim();
       if (!trimmed) continue;
-      if (/^[A-Z][A-Z\s\-–—0-9]+$/.test(trimmed)) { blocks.push({ type: 'section', text: trimmed }); continue; }
-      if (/^Dimension\s+\d+\s*[—–-]/.test(trimmed)) {
+      if (/^[A-Z][A-Z\s\-–—0-9]+$/.test(trimmed) || /^(?:LEVEL|NIVO)\s+\d+/i.test(trimmed)) { blocks.push({ type: 'section', text: trimmed }); continue; }
+      if (/^(?:Dimension|Dimenzija)\s+\d+\s*[—–-]/i.test(trimmed)) {
         const lines = trimmed.split('\n');
         blocks.push({ type: 'dimheader', text: lines[0] });
         if (lines.length > 1) blocks.push({ type: 'body', text: lines.slice(1).join('\n') });
         continue;
       }
-      if (/^Pillar\s+\d+\s*[—–-]/.test(trimmed)) {
+      if (/^(?:Pillar|Stub)\s+\d+\s*[—–-]/i.test(trimmed)) {
         const lines = trimmed.split('\n');
         blocks.push({ type: 'pillarheader', text: lines[0] });
         if (lines.length > 1) blocks.push({ type: 'body', text: lines.slice(1).join('\n') });
@@ -260,7 +316,7 @@ export default function AssessPage() {
     let inside = false;
     for (const block of allBlocks) {
       if (block.type === 'section') {
-        const m = block.text.match(/^LEVEL\s+(\d+)/i);
+        const m = block.text.match(/^(?:LEVEL|NIVO)\s+(\d+)/i);
         if (m) {
           const n = parseInt(m[1]);
           if (n === levelNum) { inside = true; result.push(block); continue; }
@@ -288,8 +344,8 @@ export default function AssessPage() {
             </div>
           );
           if (block.type === 'pillarheader') return (
-            <div key={i} style={{ marginTop: '20px', marginBottom: '6px' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>{block.text}</span>
+            <div key={i} style={{ marginTop: '20px', marginBottom: '6px', paddingLeft: '12px', borderLeft: '3px solid var(--ink)' }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--ink)' }}>{block.text}</span>
             </div>
           );
           if (block.type === 'facetlabel') return (
@@ -305,7 +361,16 @@ export default function AssessPage() {
     );
   }
 
-  const compassIntro = (
+  const compassIntro = isSr ? (
+    <>
+      <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
+        Većina profesionalaca ima iskrenu, ali nepotpunu sliku o sebi. Poznajete svoje snage — barem one kojih ste svjesni. Poznajete oblasti koje vam se čine izazovnim. Ali jaz između toga kako vi vidite sebe i kako vaš rad zaista djeluje na druge, kako vaše razmišljanje oblikuje vaše odluke, kako vaše prisustvo utiče na ljude oko vas — taj jaz je upravo tamo gdje leži najvrjedniji uvid za razvoj. HB Compass samoprocjena je dizajnirana da zatvori taj jaz.
+      </p>
+      <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '32px' }}>
+        HB Compass je okvir profesionalnog razvoja izgrađen na jednostavnoj, ali moćnoj ideji: ono što nekoga čini istinski odličnim u svom poslu nije jedna stvar — to su četiri međusobno povezane stvari koje djeluju zajedno. Većina razvojnih alata fokusira se na vještine ili rezultate. HB Compass ide dalje, procjenjujući cjelovitu sliku onoga što pokreće profesionalnu efikasnost — jer trajna izvrsnost nikada nije samo stvar toga što možete raditi. Jednako je važno i kako mislite, ko ste u svojim odnosima, i kakav utjecaj imate na ljude i okruženje oko vas.
+      </p>
+    </>
+  ) : (
     <>
       <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
         Most professionals have a genuine but incomplete picture of themselves. You know your strengths — at least the ones you are aware of. You know the areas you find challenging. But the gap between how you see yourself and how your work actually lands with others, how your thinking shapes your decisions, how your presence influences the people around you — that gap is where the most valuable development insight lives. The HB Compass self-assessment is designed to close that gap.
@@ -324,7 +389,7 @@ export default function AssessPage() {
           key: `level${n}`,
           title: profileDisplayName,
           subtitle: null,
-          label: `Level ${n} of 3`,
+          label: T.levelLabel(n, 3),
           body: blocks.length > 0
             ? <>{n === 1 && compassIntro}<LevelBlocks blocks={blocks} /></>
             : null,
@@ -338,10 +403,62 @@ export default function AssessPage() {
     ...levelPages,
     {
       key: 'intro',
-      title: 'HB Compass — Preparation Guide',
-      subtitle: 'This page will take you about 3 minutes to read. Please read it before you begin.',
-      label: 'Instructions',
-      body: (
+      title: T.prepGuideTitle,
+      subtitle: T.prepGuideSubtitle,
+      label: T.instructions,
+      body: isSr ? (
+        <>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>Šta vas čeka</p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.9rem' }}>
+            Čitat ćete niz realnih radnih scenarija — situacija s kojima se osobe u ovoj ulozi redovno susreću. Za svaki scenarij odabirate opis koji najbliže odgovara tome kako vi zapravo reagujete. Nema tačnih ili pogrešnih odgovora. Tri opcije predstavljaju različite pristupe na različitim razvojnim nivoima.
+          </p>
+          <div style={{ background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '16px 18px', marginBottom: '20px' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>Najvažnija stvar</p>
+            <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
+              Odgovarajte na osnovu toga kako zaista radite — ne kako mislite da biste trebali raditi. Svaki scenarij je uparen s dodatnim pitanjem koje pita šta se zapravo dogodilo kao rezultat vašeg pristupa. <strong>Iskren odgovor 3 vredniji je od uljepšanog 5.</strong>
+            </p>
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', color: 'var(--ink)' }}>Šta znače tri opcije</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+            {[
+              { label: 'Opcija A', desc: 'Profesionalac na ranijem razvojnom stupnju u ovoj oblasti. Nije "loš" odgovor — legitiman pristup koji koriste mnogi sposobni ljudi, posebno u oblastima koje još razvijaju.' },
+              { label: 'Opcija B', desc: 'Solid, kompetentan profesionalac koji radi dosljedno i samostalno. Za većinu ljudi u većini oblasti, ovo je realan i tačan opis.' },
+              { label: 'Opcija C', desc: 'Visoko vješt profesionalac koji izvrsno radi i počinje uzdizati druge oko sebe. Odaberite ovo samo ako zaista odražava vaš tipičan pristup — ne vaš najbolji dan.' },
+            ].map(({ label, desc }) => (
+              <div key={label} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <span style={{ flexShrink: 0, fontWeight: 700, fontSize: '0.82rem', color: 'var(--ink)', minWidth: 60 }}>{label}</span>
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.85rem' }}>{desc}</p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>Kako čitati svako pitanje</p>
+          <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.88rem' }}>
+            Zapitajte se: "Tokom tipične sedmice, u ovakvim situacijama — koji opis najtačnije opisuje ono što zapravo radim?" Razmišljajte o obrascima, ne o izuzecima. Vaša najimpresivnija interakcija nije vaša tipična.
+          </p>
+          <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', color: 'var(--ink)' }}>Stvari koje treba imati na umu</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+            {[
+              'Razmišljajte o obrascima, ne o izuzecima — birajte ono što je tipično, ne iznimno',
+              'Nijedna opcija nije inherentno bolja ili lošija — svaka opisuje drugačiji pristup na različitom razvojnom stupnju',
+              'Varijacija je zdrava — dosljedno biranje najimpresivnije opcije daje manje tačan profil',
+              'Ako ste između dvije opcije — izaberite konzervativniju; pruža pošteniju polaznu tačku za razvoj',
+              'Pitanja i opcije su u nasumičnom redoslijedu — A, B i C ne odgovaraju niskim, srednjim ili visokim ocjenama',
+              'Možete pauzirati i nastaviti — vaš napredak se automatski čuva',
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div style={{ flexShrink: 0, width: 6, height: 6, borderRadius: '50%', background: 'var(--ink)', marginTop: '8px' }} />
+                <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.88rem' }}>{item}</p>
+              </div>
+            ))}
+          </div>
+          <div style={{ background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '16px 18px' }}>
+            <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>Kada ste spremni</p>
+            <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
+              Pronađite mirno mjesto. Odvojite 20 minuta bez prekida. Vaša iskrena refleksija je najvrjednija stvar koju možete donijeti ovoj procjeni — vrednija od bilo koje ocjene.
+            </p>
+          </div>
+        </>
+      ) : (
         <>
           <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>What you are about to do</p>
           <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.9rem' }}>
@@ -410,7 +527,7 @@ export default function AssessPage() {
           <Logo light size="sm" />
           {data?.employeeName && (
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
-              Assessment for <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{data.employeeName}</strong>
+              {T.assessmentFor} <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{data.employeeName}</strong>
             </div>
           )}
           <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem' }}>
@@ -441,7 +558,7 @@ export default function AssessPage() {
 
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px' }}>
             <Btn onClick={() => setIntroStep(s => s + 1)}>
-              {introStep < totalSteps ? 'Continue →' : 'Start Assessment →'}
+              {introStep < totalSteps ? T.continueBtn : T.startBtn}
             </Btn>
           </div>
         </div>
@@ -461,11 +578,11 @@ export default function AssessPage() {
         <Logo light size="sm" />
         {data?.employeeName && (
           <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
-            Assessment for <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{data.employeeName}</strong>
+            {T.assessmentFor} <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{data.employeeName}</strong>
           </div>
         )}
         <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
-          {totalAnswered} / {questions.length} answered
+          {totalAnswered} / {questions.length} {T.answered}
         </div>
       </header>
 
@@ -488,10 +605,10 @@ export default function AssessPage() {
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', fontWeight: 500 }}>
-                  Question {currentQ + 1} <span style={{ color: 'var(--ink-faint)' }}>of {shuffledQuestions.length}</span>
+                  {T.questionOf(currentQ + 1, shuffledQuestions.length)}
                 </span>
                 <span style={{ fontSize: '0.78rem', color: 'var(--ink-faint)' }}>
-                  {totalAnswered} answered
+                  {totalAnswered} {T.answered}
                 </span>
               </div>
 
@@ -531,15 +648,15 @@ export default function AssessPage() {
 
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', gap: '12px' }}>
                 <Btn variant="outline" onClick={() => setCurrentQ(i => Math.max(0, i - 1))} disabled={currentQ === 0}>
-                  ← Previous
+                  {T.prevBtn}
                 </Btn>
                 {currentQ < shuffledQuestions.length - 1 ? (
                   <Btn onClick={() => setCurrentQ(i => i + 1)}>
-                    Next →
+                    {T.nextBtn}
                   </Btn>
                 ) : (
                   <Btn onClick={handleSubmit} loading={submitting} disabled={!allAnswered}>
-                    {allAnswered ? 'Submit Assessment' : `${shuffledQuestions.length - totalAnswered} remaining`}
+                    {allAnswered ? T.submitBtn : T.remaining(shuffledQuestions.length - totalAnswered)}
                   </Btn>
                 )}
               </div>
