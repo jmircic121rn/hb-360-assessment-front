@@ -3859,14 +3859,14 @@ function parseIntroText(text = '') {
       continue;
     }
     // Dimension header: "Dimension X — ..."
-    if (/^Dimension\s+\d+\s*[—–-]/.test(trimmed)) {
+    if (/^(?:Dimension|Dimenzija)\s+\d+\s*[—–-]/i.test(trimmed)) {
       const lines = trimmed.split('\n');
       blocks.push({ type: 'dimheader', text: lines[0] });
       if (lines.length > 1) blocks.push({ type: 'body', text: lines.slice(1).join('\n') });
       continue;
     }
     // Pillar header: "Pillar X — ..."
-    if (/^Pillar\s+\d+\s*[—–-]/.test(trimmed)) {
+    if (/^(?:Pillar|Stub)\s+\d+\s*[—–-]/i.test(trimmed)) {
       const lines = trimmed.split('\n');
       blocks.push({ type: 'pillarheader', text: lines[0] });
       if (lines.length > 1) blocks.push({ type: 'body', text: lines.slice(1).join('\n') });
@@ -3919,10 +3919,10 @@ function IntroTextRenderer({ text }) {
           </div>
         );
         if (block.type === 'pillarheader') return (
-          <div key={i} style={{ marginTop: '20px', marginBottom: '6px' }}>
+          <div key={i} style={{ marginTop: '20px', marginBottom: '6px', paddingLeft: '12px', borderLeft: '3px solid var(--ink)' }}>
             <span style={{
-              fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.08em',
-              textTransform: 'uppercase', color: 'var(--ink-faint)',
+              fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.04em',
+              color: 'var(--ink)',
             }}>{block.text}</span>
           </div>
         );
@@ -4000,8 +4000,10 @@ export function HBProfiles() {
   useEffect(() => {
     api.hbProfiles.getAll('en')
       .then(data => {
-        const list = Array.isArray(data) ? data : [];
-        console.log('[HBProfiles] all profiles from backend:', list);
+        const raw = Array.isArray(data) ? data : [];
+        console.log('[HBProfiles] all profiles from backend:', raw);
+        const seen = new Set();
+        const list = raw.filter(p => { const k = p.profileType; if (seen.has(k)) return false; seen.add(k); return true; });
         setProfiles(list);
         if (list.length > 0) {
           setSelected(list[0]);
@@ -4024,7 +4026,9 @@ export function HBProfiles() {
     setExpandedFacets({});
     api.hbProfiles.getAll(lang)
       .then(data => {
-        const list = Array.isArray(data) ? data : [];
+        const raw = Array.isArray(data) ? data : [];
+        const seen2 = new Set();
+        const list = raw.filter(p => { const k = p.profileType; if (seen2.has(k)) return false; seen2.add(k); return true; });
         setProfiles(list);
         setProfileLang(lang);
         // Keep same profile selected if possible
@@ -4161,7 +4165,7 @@ export function HBProfiles() {
                   {/* Overview tab — 3 accordion items, one per level */}
                   {activeTab === 'overview' && hasIntro && (() => {
                     const ld = selected.levelDescriptions || selected.level_descriptions || {};
-                    const levelChunks = (selected.introText || '').split(/(?=LEVEL [123] —)/);
+                    const levelChunks = (selected.introText || '').split(/(?=(?:LEVEL|NIVO) [123] —)/i);
                     const levels = [
                       { label: (levelChunks[0] || '').split('\n')[0].trim() || 'Level 1', desc: ld.level1 || ld['1'] || '', chunk: levelChunks[0] || '' },
                       { label: (levelChunks[1] || '').split('\n')[0].trim() || 'Level 2', desc: ld.level2 || ld['2'] || '', chunk: levelChunks[1] || '' },
