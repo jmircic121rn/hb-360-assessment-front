@@ -87,6 +87,14 @@ const FAQ = () => {
         {
           q: "How do I edit an employee's details?",
           a: "Select the company → Employees tab → click Edit on the employee row. Update any fields and save."
+        },
+        {
+          q: "Why does an employee need a manager assigned?",
+          a: "The manager assignment is essential for certain assessment types to function correctly. Specifically:\n\n• Manager assessment — the system uses the manager field to determine who assesses the employee from above. If no manager is assigned, the Manager assessment type cannot be properly linked.\n\n• Peer assessment — two employees are treated as peers when they share the same manager. The system identifies peers by looking at who else reports to the same manager, so this relationship only works when both employees have the same manager set on their record.\n\nWithout a manager assigned, these assessment types will either be unavailable or will not route correctly. Always set the manager field when adding an employee who will participate in 360° campaigns that include Manager or Peer assessments."
+        },
+        {
+          q: "How are peers determined in the system?",
+          a: "Peers are employees who share the same direct manager. If Employee A and Employee B both have the same person set as their manager, the system considers them peers of each other.\n\nThis means that to set up a Peer assessment between two people, you do not manually link them — you simply ensure both have the same manager assigned on their employee record. The peer relationship is then established automatically.\n\nIf a Peer assessment is not appearing as expected, the most common cause is that one or both employees have a different manager set, or no manager set at all."
         }
       ]
     },

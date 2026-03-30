@@ -1675,6 +1675,11 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
       includePeer: form.includePeer, includeDirectReports: form.includeDirectReports,
       includeExternal: form.includeExternal,
       includeCrossPartisan: form.includeCrossPartisan, includeMentor: form.includeMentor,
+      // Dynamic profile-specific types (e.g. includeClient, includeBusinessPartner for ice_pilot)
+      ...Object.fromEntries(
+        Object.entries(form)
+          .filter(([k, v]) => k.startsWith('include') && v === true && !['includeSelf','includeManager','includePeer','includeDirectReports','includeExternal','includeCrossPartisan','includeMentor'].includes(k))
+      ),
       // Peer — individualni + shared link uvek ide sa backenda
       peerEmployeeIds: form.peerEmployeeIds,
       peerNewPersonIds: form.peerNewPersons.map(p => p.id).filter(Boolean),
@@ -2028,7 +2033,7 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
       })()}
 
       {/* Profile — only shown after company is selected; hidden in custom subgroup mode (each subgroup picks its own) */}
-      {!(mode === 'group' && groupStyle === 'custom') && profiles.length > 0 && filterEmpCompany && (() => {
+      {!(mode === 'group' && groupStyle === 'custom') && profiles.length > 0 && filterEmpCompany && (mode === 'group' || form.employeeId) && (() => {
         const companyObj = companies.find(c => String(c.CompanyID || c.id) === filterEmpCompany);
         const companyProfiles = companyObj?.profiles;
         if (!companyProfiles?.length) {
@@ -2048,7 +2053,7 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
                 const pid = e.target.value;
                 const prof = availableProfiles.find(p => String(p.id || p.ProfilID) === String(pid));
                 const langs = prof?.availableLangs || [];
-                setForm(f => ({ ...f, profilId: pid, lang: langs.length === 1 ? langs[0] : '' }));
+                setForm(f => ({ ...f, profilId: pid, lang: langs.length >= 1 ? langs[0] : 'en' }));
               }}>
                 <option value="">— Select profile —</option>
                 {availableProfiles.map(p => <option key={p.id || p.ProfilID} value={p.id || p.ProfilID}>{p.name || p.Name}</option>)}
@@ -2635,6 +2640,7 @@ export function CampaignDetail() {
 
   const campaign = data?.cycle;
   const links = data?.links || [];
+  const typeLabels = data?.typeLabels || {};
 
   const selfLink = links.find(l => l.AssessmentType === 'self');
   const managerLink = links.find(l => l.AssessmentType === 'manager');
@@ -2643,7 +2649,6 @@ export function CampaignDetail() {
   const otherLinks = links.filter(l => !['self', 'manager', 'peer', 'directreport', 'direct_report'].includes(l.AssessmentType));
 
   const selfDone = selfLink?.Status === 'completed';
-  const managerDone = managerLink?.Status === 'completed';
   const completedCount = links.filter(l => l.Status === 'completed').length;
 
   async function generateFullReport() {
@@ -2710,11 +2715,20 @@ export function CampaignDetail() {
     finally { setGenerating(null); }
   }
 
+  const TYPE_LABELS = {
+    self: 'Self Assessment', manager: 'Manager Review',
+    peer: 'Peer Review', directreport: 'Direct Report', direct_report: 'Direct Report',
+    external: 'External', cross_partisan: 'Cross-Partisan', crosspartisan: 'Cross-Partisan',
+    mentor: 'Mentor',
+    ...typeLabels,
+  };
+
   function LinkRow({ link, label }) {
+    const resolvedLabel = label || TYPE_LABELS[link.AssessmentType?.toLowerCase()] || link.AssessmentType?.replace(/_/g, ' ');
     const publicUrl = link.Token ? `${window.location.origin}/assess/${link.Token}` : null;
     return (
       <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 110px 160px', gap: '12px', alignItems: 'center', padding: '12px 14px', background: 'var(--canvas)', borderRadius: 'var(--radius-md)', border: '1px solid var(--canvas-warm)' }}>
-        <span style={{ fontWeight: 500, fontSize: '0.86rem', textTransform: 'capitalize' }}>{label || link.AssessmentType?.replace('_', ' ')}</span>
+        <span style={{ fontWeight: 500, fontSize: '0.86rem', textTransform: 'capitalize' }}>{resolvedLabel}</span>
         {publicUrl ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '0.79rem', color: 'var(--ink-soft)', fontFamily: 'monospace', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{publicUrl}</span>
@@ -2742,14 +2756,17 @@ export function CampaignDetail() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {/* Shared link — uvek vidljiv */}
         {sharedPublicUrl && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 14px', background: 'var(--canvas)', borderRadius: 'var(--radius-md)', border: '1px solid var(--canvas-warm)' }}>
-            <span style={{ fontWeight: 600, fontSize: '0.86rem', minWidth: 140 }}>{label} — shared</span>
-            <span style={{ fontSize: '0.79rem', color: 'var(--ink-soft)', fontFamily: 'monospace', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharedPublicUrl}</span>
-            <Btn size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(sharedPublicUrl)}>Copy</Btn>
+          <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 110px 160px', gap: '12px', alignItems: 'center', padding: '12px 14px', background: 'var(--canvas)', borderRadius: 'var(--radius-md)', border: '1px solid var(--canvas-warm)' }}>
+            <span style={{ fontWeight: 500, fontSize: '0.86rem' }}>{label} — shared</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              <span style={{ fontSize: '0.79rem', color: 'var(--ink-soft)', fontFamily: 'monospace', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sharedPublicUrl}</span>
+              <Btn size="sm" variant="outline" onClick={() => navigator.clipboard.writeText(sharedPublicUrl)}>Copy</Btn>
+            </div>
             {sharedLink.ResponseCount > 0
               ? <Badge status="completed">{sharedLink.ResponseCount} {sharedLink.ResponseCount === 1 ? 'response' : 'responses'}</Badge>
               : <Badge status="pending">Pending</Badge>
             }
+            <span />
           </div>
         )}
         {/* Individualni — collapsible, samo ime + status */}
@@ -2819,6 +2836,12 @@ export function CampaignDetail() {
                   <div style={{ fontWeight: 500 }}>{campaign.JobTitle}</div>
                 </div>
               )}
+              {(campaign.ProfilName || campaign.ProfileName) && (
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Profile</div>
+                  <div style={{ fontWeight: 500 }}>{campaign.ProfilName || campaign.ProfileName}</div>
+                </div>
+              )}
               {campaign.Status === 'in_progress' && (
                 <Btn size="sm" variant="outline" onClick={() => navigate(`/manager/campaigns/${id}/edit`)}>Edit Campaign</Btn>
               )}
@@ -2829,11 +2852,11 @@ export function CampaignDetail() {
           <Card style={{ padding: '24px' }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '16px' }}>Assessment Links</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {selfLink && <LinkRow link={selfLink} label="Self Assessment" />}
-              {managerLink && <LinkRow link={managerLink} label="Manager Review" />}
-              {peerLinks.length > 0 && <GroupRow links={peerLinks} label="Peer Review" expanded={peersExpanded} onToggle={() => setPeersExpanded(x => !x)} />}
-              {drLinks.length > 0 && <GroupRow links={drLinks} label="Direct Reports" expanded={drExpanded} onToggle={() => setDrExpanded(x => !x)} />}
-              {otherLinks.map((l, i) => <LinkRow key={i} link={l} />)}
+              {selfLink && <LinkRow link={selfLink} label={TYPE_LABELS['self']} />}
+              {managerLink && <LinkRow link={managerLink} label={TYPE_LABELS['manager']} />}
+              {peerLinks.length > 0 && <GroupRow links={peerLinks} label={TYPE_LABELS['peer']} expanded={peersExpanded} onToggle={() => setPeersExpanded(x => !x)} />}
+              {drLinks.length > 0 && <GroupRow links={drLinks} label={TYPE_LABELS['direct_report']} expanded={drExpanded} onToggle={() => setDrExpanded(x => !x)} />}
+              {otherLinks.map((l, i) => <LinkRow key={i} link={l} label={TYPE_LABELS[l.AssessmentType?.toLowerCase()]} />)}
             </div>
           </Card>
 
@@ -2878,13 +2901,12 @@ export function CampaignDetail() {
                 Will be included in Personal Development plan report
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {[
-                  { label: 'Self', done: selfDone },
-                  { label: 'Manager', done: managerDone },
-                  { label: 'Peers', done: peerLinks.some(l => l.Status === 'completed') },
-                  { label: 'Direct Reports', done: drLinks.some(l => l.Status === 'completed') },
-                  { label: 'External', done: otherLinks.some(l => l.Status === 'completed') },
-                ].map(({ label, done }) => (
+                {[...new Set(links.map(l => l.AssessmentType))].map(type => {
+                  const typeLinks = links.filter(l => l.AssessmentType === type);
+                  const done = typeLinks.some(l => l.Status === 'completed');
+                  const label = TYPE_LABELS[type?.toLowerCase()] || type?.replace(/_/g, ' ');
+                  return { label, done };
+                }).map(({ label, done }) => (
                   <div key={label} style={{
                     padding: '5px 12px', borderRadius: 'var(--radius-md)',
                     border: `1px solid ${done ? 'var(--ink)' : 'var(--canvas-warm)'}`,
@@ -3854,7 +3876,7 @@ function parseIntroText(text = '') {
     const trimmed = para.trim();
     if (!trimmed) continue;
     // Major ALL-CAPS section header (e.g. "CONTENT", "LEVEL 1 – THE PORTRAIT", "FACET REFERENCE – ALL 40 FACETS")
-    if (/^[A-Z][A-Z\s\-–—0-9]+$/.test(trimmed)) {
+    if (/^[A-Z][A-Z\s\-–—0-9]+$/.test(trimmed) || /^(?:LEVEL|NIVO)\s+\d+/i.test(trimmed)) {
       blocks.push({ type: 'section', text: trimmed });
       continue;
     }
@@ -3993,9 +4015,11 @@ export function HBProfiles() {
   const [profileLang, setProfileLang] = useState('en');
   const [loading, setLoading] = useState(true);
   const [langLoading, setLangLoading] = useState(false);
+  const [facetsLoading, setFacetsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedFacets, setExpandedFacets] = useState({});
   const [activeTab, setActiveTab] = useState('overview');
+  const facetsCacheRef = React.useRef({});
 
   useEffect(() => {
     api.hbProfiles.getAll('en')
@@ -4044,6 +4068,26 @@ export function HBProfiles() {
       .finally(() => setLangLoading(false));
   }
 
+  // Lazy-load facets when Facets tab is opened
+  useEffect(() => {
+    if (!selected || selected.facets?.length) return;
+    if (activeTab !== 'framework' && selected.introText) return;
+    const cacheKey = `${selected.profileType}-${profileLang}`;
+    if (facetsCacheRef.current[cacheKey]) {
+      setSelected(prev => prev ? { ...prev, facets: facetsCacheRef.current[cacheKey] } : prev);
+      return;
+    }
+    setFacetsLoading(true);
+    api.hbProfiles.getOne(selected.profileType, profileLang)
+      .then(full => {
+        const facets = full?.facets || [];
+        facetsCacheRef.current[cacheKey] = facets;
+        setSelected(prev => prev?.profileType === selected.profileType ? { ...prev, facets } : prev);
+      })
+      .catch(() => {})
+      .finally(() => setFacetsLoading(false));
+  }, [activeTab, selected?.profileType, profileLang]); // eslint-disable-line
+
   function toggleFacet(key) {
     setExpandedFacets(prev => ({ ...prev, [key]: !prev[key] }));
   }
@@ -4089,9 +4133,6 @@ export function HBProfiles() {
                 >
                   <div style={{ fontWeight: 600, fontSize: '0.88rem', color: active ? '#fff' : 'var(--ink)' }}>
                     {p.profileName || p.profileType}
-                  </div>
-                  <div style={{ fontSize: '0.74rem', color: active ? 'rgba(255,255,255,0.6)' : 'var(--ink-faint)', marginTop: '2px' }}>
-                    {(p.facets || []).length} facets
                   </div>
                 </button>
               );
@@ -4165,7 +4206,7 @@ export function HBProfiles() {
                   {/* Overview tab — 3 accordion items, one per level */}
                   {activeTab === 'overview' && hasIntro && (() => {
                     const ld = selected.levelDescriptions || selected.level_descriptions || {};
-                    const levelChunks = (selected.introText || '').split(/(?=(?:LEVEL|NIVO) [123] —)/i);
+                    const levelChunks = (selected.introText || '').split(/(?=(?:LEVEL|NIVO)\s+[123]\s*[—–-])/i).filter(c => c.trim());
                     const levels = [
                       { label: (levelChunks[0] || '').split('\n')[0].trim() || 'Level 1', desc: ld.level1 || ld['1'] || '', chunk: levelChunks[0] || '' },
                       { label: (levelChunks[1] || '').split('\n')[0].trim() || 'Level 2', desc: ld.level2 || ld['2'] || '', chunk: levelChunks[1] || '' },
@@ -4188,6 +4229,9 @@ export function HBProfiles() {
 
                   {/* Framework tab — facets */}
                   {(activeTab === 'framework' || !hasIntro) && (
+                  facetsLoading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '60px' }}><Spinner /></div>
+                  ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
                   {sortedDims.map(dimension => { const pillars = grouped[dimension]; return (
                     <div key={dimension}>
@@ -4294,7 +4338,7 @@ export function HBProfiles() {
                     </div>
                   ); })}
                 </div>
-                )}
+                ))}
                 </div>
               );
             })()}
