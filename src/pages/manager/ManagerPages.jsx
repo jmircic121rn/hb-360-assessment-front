@@ -2350,13 +2350,13 @@ export function NewCampaign() {
         const sg = payload.subgroups[i];
         if (!sg.employeeIds || sg.employeeIds.length === 0) { setError(`Subgroup ${i + 1} has no employees selected.`); return; }
         if (!sg.profilId) { setError(`Subgroup ${i + 1} has no profile selected.`); return; }
-        if (!sg.includeSelf && !sg.includeManager && !sg.includePeer && !sg.includeDirectReports && !sg.includeExternal && !sg.includeCrossPartisan && !sg.includeMentor) {
+        if (!Object.entries(sg).some(([k, v]) => k.startsWith('include') && v === true)) {
           setError(`Subgroup ${i + 1} has no assessment types selected.`); return;
         }
       }
     } else {
       if (payload.mode === 'group' && (!payload.employeeIds || payload.employeeIds.length < 2)) { setError('Select at least 2 employees for a group campaign.'); return; }
-      if (!payload.includeSelf && !payload.includeManager && !payload.includePeer && !payload.includeDirectReports && !payload.includeExternal) {
+      if (!Object.entries(payload).some(([k, v]) => k.startsWith('include') && v === true)) {
         setError('Select at least one assessment type.'); return;
       }
     }
@@ -4352,7 +4352,7 @@ export function HBProfiles() {
 }
 
 // ── Reports ────────────────────────────────────────────────────────────────
-function downloadReportPdf(cycleId, reportType, reportId) {
+function downloadReportPdf(cycleId, reportType, reportId, firstName, lastName) {
   const token = localStorage.getItem('compass_token_admin');
   const BASE = process.env.REACT_APP_API_URL || 'https://api.hansenbeck.com';
   const url = reportType === 'report2'
@@ -4361,9 +4361,16 @@ function downloadReportPdf(cycleId, reportType, reportId) {
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.blob(); })
     .then(blob => {
-      const blobUrl = URL.createObjectURL(blob);
-      window.open(blobUrl, '_blank');
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+      const blobUrl = URL.createObjectURL(pdfBlob);
+      const name = [firstName, lastName].filter(Boolean).join('_') || reportId || cycleId;
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = `report_${name}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
     })
     .catch(e => alert(`Download failed: ${e.message}`));
 }
