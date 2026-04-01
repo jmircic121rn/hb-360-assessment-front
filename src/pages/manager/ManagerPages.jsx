@@ -2670,14 +2670,15 @@ export function CampaignDetail() {
           const reportId = saved?.reportId || saved?.ReportID || saved?.id;
           setAiStatus('Downloading PDF…');
           const blob = await api.manager.downloadAIReportPdf(reportId);
-          const url = URL.createObjectURL(blob);
-          window.open(url, '_blank');
+          const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+          const url = URL.createObjectURL(pdfBlob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `AI_Report_${campaign.FirstName}_${campaign.LastName}.pdf`;
+          a.download = `Development_Report_${campaign.FirstName}_${campaign.LastName}.pdf`;
+          document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
-          setTimeout(() => URL.revokeObjectURL(url), 1000);
+          setTimeout(() => URL.revokeObjectURL(url), 30000);
           fetchReports();
           setAiGenerating(false); setAiStatus('');
         } else if (result.status === 'error') {
@@ -2901,27 +2902,31 @@ export function CampaignDetail() {
                 Will be included in Personal Development plan report
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {[...new Set(links.map(l => l.AssessmentType))].map(type => {
-                  const typeLinks = links.filter(l => l.AssessmentType === type);
-                  const done = typeLinks.some(l => l.Status === 'completed');
-                  const label = TYPE_LABELS[type?.toLowerCase()] || type?.replace(/_/g, ' ');
-                  return { label, done };
-                }).map(({ label, done }) => (
-                  <div key={label} style={{
-                    padding: '5px 12px', borderRadius: 'var(--radius-md)',
-                    border: `1px solid ${done ? 'var(--ink)' : 'var(--canvas-warm)'}`,
-                    background: done ? 'var(--canvas-warm)' : 'var(--canvas)',
-                    fontSize: '0.78rem', fontWeight: 500,
-                    color: done ? 'var(--ink)' : 'var(--ink-faint)',
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                  }}>
-                    {done
-                      ? <span style={{ color: 'var(--success)', fontSize: '0.7rem' }}>●</span>
-                      : <span style={{ color: 'var(--ink-faint)', fontSize: '0.7rem' }}>○</span>
-                    }
-                    {label}
-                  </div>
-                ))}
+                <div style={{
+                  padding: '5px 12px', borderRadius: 'var(--radius-md)',
+                  border: `1px solid ${selfDone ? 'var(--ink)' : 'var(--canvas-warm)'}`,
+                  background: selfDone ? 'var(--canvas-warm)' : 'var(--canvas)',
+                  fontSize: '0.78rem', fontWeight: 500,
+                  color: selfDone ? 'var(--ink)' : 'var(--ink-faint)',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                }}>
+                  {selfDone
+                    ? <span style={{ color: 'var(--success)', fontSize: '0.7rem' }}>●</span>
+                    : <span style={{ color: 'var(--ink-faint)', fontSize: '0.7rem' }}>○</span>
+                  }
+                  Self Assessment
+                </div>
+                <div style={{
+                  padding: '5px 12px', borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--canvas-warm)',
+                  background: 'var(--canvas)',
+                  fontSize: '0.78rem', fontWeight: 500,
+                  color: 'var(--ink-faint)',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                }}>
+                  <span style={{ fontSize: '0.7rem' }}>◌</span>
+                  360 feedback — in development
+                </div>
               </div>
             </div>
 
