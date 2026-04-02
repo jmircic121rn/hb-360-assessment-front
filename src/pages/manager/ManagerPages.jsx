@@ -2512,20 +2512,32 @@ function PillarScoreChart({ data: chartData, selfDone }) {
     );
   }
 
-  // Aggregate scores by pillar
+  // Aggregate scores by pillar — use dimension from data directly, no whitelist
   const fMap = {};
   selfScores.forEach(r => {
-    const dim = r.dimension && ['RESULTS','MINDSET','SKILLS','INFLUENCE'].includes(r.dimension)
-      ? r.dimension : pillarDim(r.pillar || '');
+    const rawDim = r.dimension || pillarDim(r.pillar || '');
+    const dim = (rawDim || 'OTHER').toUpperCase().trim();
     const k = `${dim}||${r.pillar}`;
     if (!fMap[k]) fMap[k] = { dim, pillar: r.pillar, sum: 0, count: 0 };
     if (typeof r.score === 'number') { fMap[k].sum += r.score; fMap[k].count++; }
   });
 
-  const grouped = { RESULTS: [], MINDSET: [], SKILLS: [], INFLUENCE: [] };
+  // Build grouped dynamically from whatever dimensions exist in data
+  const grouped = {};
   Object.values(fMap).forEach(({ dim, pillar, sum, count }) => {
-    if (!grouped[dim] || !count) return;
+    if (!count) return;
+    if (!grouped[dim]) grouped[dim] = [];
     grouped[dim].push({ pillar, score: Math.max(1, Math.min(5, sum / count)) });
+  });
+
+  // Known dimensions shown first (in order), then any custom ones alphabetically
+  const KNOWN_ORDER = ['RESULTS', 'MINDSET', 'SKILLS', 'INFLUENCE'];
+  const dims = Object.keys(grouped).sort((a, b) => {
+    const ai = KNOWN_ORDER.indexOf(a), bi = KNOWN_ORDER.indexOf(b);
+    if (ai !== -1 && bi !== -1) return ai - bi;
+    if (ai !== -1) return -1;
+    if (bi !== -1) return 1;
+    return a.localeCompare(b);
   });
 
   return (
@@ -2535,8 +2547,9 @@ function PillarScoreChart({ data: chartData, selfDone }) {
         Results by Dimensions and Pillars
       </p>
       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto' }}>
-        {['RESULTS', 'MINDSET', 'SKILLS', 'INFLUENCE'].map(dim => {
+        {dims.map(dim => {
           const pillars = grouped[dim];
+          const quote = DIM_QUOTES[dim];
           return (
             <div key={dim} style={{
               flex: '1 1 0', minWidth: 160, minHeight: 300,
@@ -2590,12 +2603,14 @@ function PillarScoreChart({ data: chartData, selfDone }) {
                 )}
               </div>
 
-              {/* Quote footer */}
-              <div style={{ padding: '8px 12px 12px', borderTop: '0.5px solid #ddd', marginTop: 8 }}>
-                <p style={{ fontSize: '0.6rem', color: '#555', lineHeight: 1.4, fontStyle: 'italic', margin: 0 }}>
-                  {DIM_QUOTES[dim]}
-                </p>
-              </div>
+              {/* Quote footer — only for known dimensions */}
+              {quote && (
+                <div style={{ padding: '8px 12px 12px', borderTop: '0.5px solid #ddd', marginTop: 8 }}>
+                  <p style={{ fontSize: '0.6rem', color: '#555', lineHeight: 1.4, fontStyle: 'italic', margin: 0 }}>
+                    {quote}
+                  </p>
+                </div>
+              )}
             </div>
           );
         })}
