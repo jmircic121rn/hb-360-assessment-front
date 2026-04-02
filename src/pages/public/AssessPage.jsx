@@ -34,24 +34,7 @@ export default function AssessPage() {
 
   useEffect(() => {
     api.getAssessment(token)
-      .then(initial => {
-        const lng = initial?.language || initial?.lang || 'en';
-        if (lng && lng !== 'en') {
-          return api.getAssessment(token, lng)
-            .then(localized => ({
-              ...initial,
-              ...localized,
-              // always use questions from the first call — second call may return EN fallback
-              questions: initial?.questions ?? localized?.questions,
-              introText: localized?.introText || initial?.introText,
-            }))
-            .catch(() => initial); // if localized call fails, fall back to initial data
-        }
-        return initial;
-      })
-      .then(data => {
-        setData(data);
-      })
+      .then(data => setData(data))
       .catch(e => {
         const msg = e.message || '';
         if (msg.includes('već popunjen') || msg.includes('completed')) {
@@ -171,9 +154,11 @@ export default function AssessPage() {
   })();
 
   // Shuffle once — restore saved order on return visits so answered questions stay in place
+  // NOTE: depends on !!data so memo re-runs after data loads (not during loading state when
+  // questions fall back to EN JS files, which would save wrong ORDER_KEY)
   const ORDER_KEY = `${PROGRESS_KEY}_order`;
   const shuffledQuestions = useMemo(() => {
-    if (questions.length === 0) return questions;
+    if (questions.length === 0 || !data) return questions;
     if (assessmentType !== 'self') return questions;
     try {
       const savedOrder = localStorage.getItem(ORDER_KEY);
@@ -191,7 +176,7 @@ export default function AssessPage() {
     }
     localStorage.setItem(ORDER_KEY, JSON.stringify(arr.map(q => q.id)));
     return arr;
-  }, [questions.length, assessmentType]); // eslint-disable-line
+  }, [questions.length, assessmentType, !!data]); // eslint-disable-line
 
   const totalAnswered = shuffledQuestions.filter(q => answers[q.id] !== undefined).length;
   const allAnswered = totalAnswered === shuffledQuestions.length;
