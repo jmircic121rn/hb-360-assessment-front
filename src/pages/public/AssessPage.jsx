@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../../utils/api';
 import { Logo } from '../../components/Layout';
 import { Btn, Spinner, Alert, Card, FormField, Input } from '../../components/UI';
@@ -10,6 +10,7 @@ import { peerQuestions } from '../../data/peerQuestions';
 
 export default function AssessPage() {
   const { token } = useParams();
+  const [, setSearchParams] = useSearchParams();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -20,6 +21,10 @@ export default function AssessPage() {
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
   const [currentQ, setCurrentQ] = useState(0);
   const [introStep, setIntroStep] = useState(1); // 1=compass, 2=leader, 3=intro, 4=questions
+
+  const PROGRESS_KEY = `compass_progress_${token}`;
+  const hasRestoredRef = React.useRef(false);
+  const totalStepsRef = React.useRef(1);
 
   useEffect(() => {
     document.documentElement.style.scrollBehavior = 'auto';
@@ -32,12 +37,15 @@ export default function AssessPage() {
       .then(initial => {
         const lng = initial?.language || initial?.lang || 'en';
         if (lng && lng !== 'en') {
-          return api.getAssessment(token, lng).then(localized => ({
-            ...initial,
-            ...localized,
-            // keep introText from initial if localized doesn't have it
-            introText: localized?.introText || initial?.introText,
-          }));
+          return api.getAssessment(token, lng)
+            .then(localized => ({
+              ...initial,
+              ...localized,
+              // always use questions from the first call — second call may return EN fallback
+              questions: initial?.questions ?? localized?.questions,
+              introText: localized?.introText || initial?.introText,
+            }))
+            .catch(() => initial); // if localized call fails, fall back to initial data
         }
         return initial;
       })
@@ -57,6 +65,47 @@ export default function AssessPage() {
       .finally(() => setLoading(false));
   }, [token]);
 
+  // Restore progress: URL params take priority, then localStorage
+  useEffect(() => {
+    if (!data) return;
+    const params = new URLSearchParams(window.location.search);
+    const s = params.get('s');
+    const saved = localStorage.getItem(PROGRESS_KEY);
+    const parsed = saved ? (() => { try { return JSON.parse(saved); } catch { return null; } })() : null;
+
+    // always restore answers from localStorage regardless of URL
+    if (parsed?.answers && Object.keys(parsed.answers).length > 0) setAnswers(parsed.answers);
+
+    if (s) {
+      // URL param takes priority for navigation position
+      if (s.startsWith('q')) {
+        const n = parseInt(s.slice(1), 10);
+        if (!isNaN(n) && n >= 0) { setCurrentQ(n); setIntroStep(9999); }
+      } else if (s.startsWith('i')) {
+        const n = parseInt(s.slice(1), 10);
+        if (!isNaN(n) && n >= 1) setIntroStep(n);
+      }
+    } else if (parsed) {
+      if (typeof parsed.currentQ === 'number' && parsed.currentQ >= 0) setCurrentQ(parsed.currentQ);
+      if (typeof parsed.introStep === 'number' && parsed.introStep > 1) setIntroStep(parsed.introStep);
+    }
+    hasRestoredRef.current = true;
+  }, [data]); // eslint-disable-line
+
+  // Sync URL with current navigation position (intro step or question index)
+  useEffect(() => {
+    if (!hasRestoredRef.current) return;
+    const ts = totalStepsRef.current;
+    const s = introStep > ts ? `q${currentQ}` : `i${introStep}`;
+    setSearchParams(prev => { const n = new URLSearchParams(prev); n.set('s', s); return n; }, { replace: true });
+  }, [currentQ, introStep]); // eslint-disable-line
+
+  // Save answers to localStorage — only after restore has run
+  useEffect(() => {
+    if (!hasRestoredRef.current) return;
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify({ answers, currentQ, introStep }));
+  }, [answers, currentQ, introStep]); // eslint-disable-line
+
   // Derive question set here (before early returns) so useMemo is always called
   const assessmentType = data?.assessmentType || data?.type || 'self';
   const subjectFirstName = (data?.employeeName || '').split(' ')[0] || '[Name]';
@@ -69,33 +118,33 @@ export default function AssessPage() {
   const isSr = rawLang === 'sr';
   const isSelf = assessmentType === 'self';
   const T = {
-    loading: isSr ? 'Učitavanje vaše procjene…' : 'Loading your assessment…',
+    loading: isSr ? 'Učitavanje vaše procene…' : 'Loading your assessment…',
     linkIssue: isSr ? 'Problem sa linkom' : 'Link Issue',
-    alreadyCompleted: isSr ? 'Ova procjena je već popunjena.' : 'This assessment has already been completed.',
+    alreadyCompleted: isSr ? 'Ova procena je već popunjena.' : 'This assessment has already been completed.',
     invalidLink: isSr ? 'Ovaj link je nevažeći ili je istekao.' : 'This link is invalid or has expired.',
     thankYou: isSr ? 'Hvala!' : 'Thank You!',
     thankYouBody: isSr
-      ? 'Vaša procjena je uspješno poslana. Vaše iskreno mišljenje doprinosi smislenom razvoju liderstva.'
+      ? 'Vaša procena je uspešno poslata. Vaše iskreno mišljenje doprinosi smislenom razvoju liderstva.'
       : 'Your assessment has been submitted successfully. Your honest feedback contributes to meaningful development.',
-    assessmentFor: isSr ? 'Procjena za' : 'Assessment for',
-    beforeYouBegin: isSr ? 'Prije nego počnete' : 'Before you begin',
+    assessmentFor: isSr ? 'Procena za' : 'Assessment for',
+    beforeYouBegin: isSr ? 'Pre nego što počnete' : 'Before you begin',
     identityBody: isSr
-      ? 'Molimo unesite vaše podatke. Ove informacije će biti zabilježene zajedno s vašim odgovorima.'
+      ? 'Molimo unesite vaše podatke. Ove informacije će biti zabeležene zajedno sa vašim odgovorima.'
       : 'Please enter your details. This information will be recorded alongside your assessment responses.',
     firstName: isSr ? 'Ime' : 'First Name',
     lastName: isSr ? 'Prezime' : 'Last Name',
     email: isSr ? 'Email adresa' : 'Email address',
-    continueToAssessment: isSr ? 'Nastavi na procjenu →' : 'Continue to Assessment →',
+    continueToAssessment: isSr ? 'Nastavi na procenu →' : 'Continue to Assessment →',
     instructions: isSr ? 'Uputstva' : 'Instructions',
     prepGuideTitle: isSr ? 'HB Compass — Vodič za pripremu' : 'HB Compass — Preparation Guide',
     prepGuideSubtitle: isSr
-      ? 'Ova stranica će vam trebati oko 3 minute. Molimo pročitajte je prije nego počnete.'
+      ? 'Ova stranica će vam trebati oko 3 minuta. Molimo pročitajte je pre nego što počnete.'
       : 'This page will take you about 3 minutes to read. Please read it before you begin.',
     continueBtn: isSr ? 'Nastavi →' : 'Continue →',
-    startBtn: isSr ? 'Pokreni procjenu →' : 'Start Assessment →',
+    startBtn: isSr ? 'Pokreni procenu →' : 'Start Assessment →',
     prevBtn: isSr ? '← Prethodno' : '← Previous',
-    nextBtn: isSr ? 'Sljedeće →' : 'Next →',
-    submitBtn: isSr ? 'Predaj procjenu' : 'Submit Assessment',
+    nextBtn: isSr ? 'Sledeće →' : 'Next →',
+    submitBtn: isSr ? 'Predaj procenu' : 'Submit Assessment',
     questionOf: (cur, total) => isSr ? `Pitanje ${cur} od ${total}` : `Question ${cur} of ${total}`,
     answered: isSr ? 'odgovoreno' : 'answered',
     remaining: (n) => isSr ? `Preostalo: ${n}` : `${n} remaining`,
@@ -121,15 +170,26 @@ export default function AssessPage() {
     return langQuestions ? Object.values(langQuestions).flat() : [];
   })();
 
-  // Shuffle once when questions load — only for self assessments
+  // Shuffle once — restore saved order on return visits so answered questions stay in place
+  const ORDER_KEY = `${PROGRESS_KEY}_order`;
   const shuffledQuestions = useMemo(() => {
     if (questions.length === 0) return questions;
     if (assessmentType !== 'self') return questions;
+    try {
+      const savedOrder = localStorage.getItem(ORDER_KEY);
+      if (savedOrder) {
+        const ids = JSON.parse(savedOrder);
+        const qMap = Object.fromEntries(questions.map(q => [String(q.id), q]));
+        const ordered = ids.map(id => qMap[String(id)]).filter(Boolean);
+        if (ordered.length === questions.length) return ordered;
+      }
+    } catch {}
     const arr = [...questions];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
+    localStorage.setItem(ORDER_KEY, JSON.stringify(arr.map(q => q.id)));
     return arr;
   }, [questions.length, assessmentType]); // eslint-disable-line
 
@@ -178,6 +238,8 @@ export default function AssessPage() {
       const payload = { answers: processedAnswers, questions: questionsPayload };
       if (needsIdentity) payload.assessorInfo = { ...assessorInfo, language: rawLang || 'en' };
       await api.submitAssessment(token, payload);
+      localStorage.removeItem(PROGRESS_KEY);
+      localStorage.removeItem(ORDER_KEY);
       setSubmitted(true);
     } catch (e) {
       setError(e.message);
@@ -369,10 +431,10 @@ export default function AssessPage() {
   const compassIntro = isSr ? (
     <>
       <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
-        Većina profesionalaca ima iskrenu, ali nepotpunu sliku o sebi. Poznajete svoje snage — barem one kojih ste svjesni. Poznajete oblasti koje vam se čine izazovnim. Ali jaz između toga kako vi vidite sebe i kako vaš rad zaista djeluje na druge, kako vaše razmišljanje oblikuje vaše odluke, kako vaše prisustvo utiče na ljude oko vas — taj jaz je upravo tamo gdje leži najvrjedniji uvid za razvoj. HB Compass samoprocjena je dizajnirana da zatvori taj jaz.
+        Većina profesionalaca ima iskrenu, ali nepotpunu sliku o sebi. Znate svoje snage — bar one kojih ste svesni. Znate oblasti koje vam se čine izazovnim. Ali jaz između toga kako vi vidite sebe i kako vaš rad zaista deluje na druge, kako vaše razmišljanje oblikuje vaše odluke, kako vaše prisustvo utiče na ljude oko vas — taj jaz je upravo tamo gde leži najvredniji uvid za razvoj. HB Compass samoprocena je dizajnirana da zatvori taj jaz.
       </p>
       <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '32px' }}>
-        HB Compass je okvir profesionalnog razvoja izgrađen na jednostavnoj, ali moćnoj ideji: ono što nekoga čini istinski odličnim u svom poslu nije jedna stvar — to su četiri međusobno povezane stvari koje djeluju zajedno. Većina razvojnih alata fokusira se na vještine ili rezultate. HB Compass ide dalje, procjenjujući cjelovitu sliku onoga što pokreće profesionalnu efikasnost — jer trajna izvrsnost nikada nije samo stvar toga što možete raditi. Jednako je važno i kako mislite, ko ste u svojim odnosima, i kakav utjecaj imate na ljude i okruženje oko vas.
+        HB Compass je okvir profesionalnog razvoja izgrađen na jednostavnoj, ali moćnoj ideji: ono što nekoga čini istinski odličnim u svom poslu nije jedna stvar — to su četiri međusobno povezane stvari koje deluju zajedno. Većina razvojnih alata fokusira se na veštine ili rezultate. HB Compass ide dalje, procenjujući celovitu sliku onoga što pokreće profesionalnu efikasnost — jer trajna izvrsnost nikada nije samo stvar toga šta možete da radite. Jednako je važno i kako razmišljate, ko ste u svojim odnosima, i kakav uticaj imate na ljude i okruženje oko vas.
       </p>
     </>
   ) : (
@@ -403,6 +465,7 @@ export default function AssessPage() {
     : [];
 
   const totalSteps = levelPages.length + 1; // levels + instructions
+  totalStepsRef.current = totalSteps;
 
   const introPages = [
     ...levelPages,
@@ -418,30 +481,30 @@ export default function AssessPage() {
           </p>
           <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.9rem' }}>
             {isSelf
-              ? 'Čitat ćete niz realnih radnih scenarija — situacija s kojima se osobe u ovoj ulozi redovno susreću. Za svaki scenarij odabirate opis koji najbliže odgovara tome kako vi zapravo reagujete. Nema tačnih ili pogrešnih odgovora. Tri opcije predstavljaju različite pristupe na različitim razvojnim nivoima.'
-              : `Čitat ćete niz realnih radnih scenarija — situacija s kojima se osobe u ovoj ulozi redovno susreću. Za svaki scenarij odabirate opis koji najbliže odgovara tome kako ${subjectFirstName} zapravo reaguje na osnovu vašeg zapažanja. Nema tačnih ili pogrešnih odgovora. Tri opcije predstavljaju različite pristupe na različitim razvojnim nivoima.`
+              ? 'Čitaćete niz realnih radnih scenarija — situacija sa kojima se osobe u ovoj ulozi redovno susreću. Za svaki scenarij birate opis koji najbliže odgovara tome kako vi zapravo reagujete. Nema tačnih ili pogrešnih odgovora. Tri opcije predstavljaju različite pristupe na različitim razvojnim nivoima.'
+              : `Čitaćete niz realnih radnih scenarija — situacija sa kojima se osobe u ovoj ulozi redovno susreću. Za svaki scenarij birate opis koji najbliže odgovara tome kako ${subjectFirstName} zapravo reaguje na osnovu vašeg zapažanja. Nema tačnih ili pogrešnih odgovora. Tri opcije predstavljaju različite pristupe na različitim razvojnim nivoima.`
             }
           </p>
           <div style={{ background: 'var(--canvas-warm)', borderRadius: 'var(--radius-md)', padding: '16px 18px', marginBottom: '20px' }}>
             <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>Najvažnija stvar</p>
             <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
               {isSelf
-                ? <>Odgovarajte na osnovu toga kako zaista radite — ne kako mislite da biste trebali raditi. Svaki scenarij je uparen s dodatnim pitanjem koje pita šta se zapravo dogodilo kao rezultat vašeg pristupa. <strong>Iskren odgovor 3 vredniji je od uljepšanog 5.</strong></>
-                : <>Odgovarajte na osnovu onoga što ste zaista primijetili — ne kako mislite da bi {subjectFirstName} trebao/trebala raditi ili kako želi biti viđen/viđena. <strong>Iskren odgovor 3 vredniji je od uljepšanog 5.</strong></>
+                ? <>Odgovarajte na osnovu toga kako zaista radite — ne kako mislite da treba da radite. Svaki scenarij je uparen sa dodatnim pitanjem koje pita šta se zapravo dogodilo kao rezultat vašeg pristupa. <strong>Iskren odgovor 3 vredniji je od ulepšanog 5.</strong></>
+                : <>Odgovarajte na osnovu onoga što ste zaista primetili — ne kako mislite da bi {subjectFirstName} trebalo da radi ili kako želi da bude viđen/viđena. <strong>Iskren odgovor 3 vredniji je od ulepšanog 5.</strong></>
               }
             </p>
           </div>
           <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', color: 'var(--ink)' }}>Šta znače tri opcije</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-            {isSelf ? [
-              { label: 'Opcija A', desc: 'Profesionalac na ranijem razvojnom stupnju u ovoj oblasti. Nije "loš" odgovor — legitiman pristup koji koriste mnogi sposobni ljudi, posebno u oblastima koje još razvijaju.' },
-              { label: 'Opcija B', desc: 'Solid, kompetentan profesionalac koji radi dosljedno i samostalno. Za većinu ljudi u većini oblasti, ovo je realan i tačan opis.' },
-              { label: 'Opcija C', desc: 'Visoko vješt profesionalac koji izvrsno radi i počinje uzdizati druge oko sebe. Odaberite ovo samo ako zaista odražava vaš tipičan pristup — ne vaš najbolji dan.' },
+            {(isSelf ? [
+              { label: 'Opcija A', desc: 'Profesionalac na ranijem razvojnom stepenu u ovoj oblasti. Nije "loš" odgovor — legitiman pristup koji koriste mnogi sposobni ljudi, posebno u oblastima koje još razvijaju.' },
+              { label: 'Opcija B', desc: 'Solidan, kompetentan profesionalac koji radi dosledno i samostalno. Za većinu ljudi u većini oblasti, ovo je realan i tačan opis.' },
+              { label: 'Opcija C', desc: 'Visoko vešt profesionalac koji izvrsno radi i počinje da uzdiže druge oko sebe. Izaberite ovo samo ako zaista odražava vaš tipičan pristup — ne vaš najbolji dan.' },
             ] : [
-              { label: 'Opcija A', desc: `Profesionalac na ranijem razvojnom stupnju u ovoj oblasti. Nije "loš" odgovor — legitiman pristup koji koriste mnogi sposobni ljudi, posebno u oblastima koje još razvijaju.` },
-              { label: 'Opcija B', desc: `Solid, kompetentan profesionalac koji radi dosljedno i samostalno. Za većinu ljudi u većini oblasti, ovo je realan i tačan opis.` },
-              { label: 'Opcija C', desc: `Visoko vješt profesionalac koji izvrsno radi i počinje uzdizati druge oko sebe. Izaberite ovo samo ako zaista odražava tipičan pristup osobe koju ocjenjujete — ne njihov najbolji dan.` },
-            ].map(({ label, desc }) => (
+              { label: 'Opcija A', desc: `Profesionalac na ranijem razvojnom stepenu u ovoj oblasti. Nije "loš" odgovor — legitiman pristup koji koriste mnogi sposobni ljudi, posebno u oblastima koje još razvijaju.` },
+              { label: 'Opcija B', desc: `Solidan, kompetentan profesionalac koji radi dosledno i samostalno. Za većinu ljudi u većini oblasti, ovo je realan i tačan opis.` },
+              { label: 'Opcija C', desc: `Visoko vešt profesionalac koji izvrsno radi i počinje da uzdiže druge oko sebe. Izaberite ovo samo ako zaista odražava tipičan pristup osobe koju ocenjujete — ne njihov najbolji dan.` },
+            ]).map(({ label, desc }) => (
               <div key={label} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
                 <span style={{ flexShrink: 0, fontWeight: 700, fontSize: '0.82rem', color: 'var(--ink)', minWidth: 60 }}>{label}</span>
                 <p style={{ color: 'var(--ink-soft)', lineHeight: 1.65, fontSize: '0.85rem' }}>{desc}</p>
@@ -452,24 +515,24 @@ export default function AssessPage() {
           <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px', fontSize: '0.88rem' }}>
             {isSelf
               ? 'Zapitajte se: "Tokom tipične sedmice, u ovakvim situacijama — koji opis najtačnije opisuje ono što zapravo radim?" Razmišljajte o obrascima, ne o izuzecima. Vaša najimpresivnija interakcija nije vaša tipična.'
-              : `Zapitajte se: "Na osnovu mojih interakcija s ${subjectFirstName} — koji opis najtačnije opisuje ono što tipično rade?" Razmišljajte o obrascima, ne o izuzecima. Njihova najimpresivnija interakcija nije njihova tipična.`
+              : `Zapitajte se: "Na osnovu mojih interakcija sa ${subjectFirstName} — koji opis najtačnije opisuje ono što tipično rade?" Razmišljajte o obrascima, ne o izuzecima. Njihova najimpresivnija interakcija nije njihova tipična.`
             }
           </p>
           <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '10px', color: 'var(--ink)' }}>Stvari koje treba imati na umu</p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
             {(isSelf ? [
-              'Razmišljajte o obrascima, ne o izuzecima — birajte ono što je tipično, ne iznimno',
-              'Nijedna opcija nije inherentno bolja ili lošija — svaka opisuje drugačiji pristup na različitom razvojnom stupnju',
-              'Varijacija je zdrava — dosljedno biranje najimpresivnije opcije daje manje tačan profil',
-              'Ako ste između dvije opcije — izaberite konzervativniju; pruža pošteniju polaznu tačku za razvoj',
-              'Pitanja i opcije su u nasumičnom redoslijedu — A, B i C ne odgovaraju niskim, srednjim ili visokim ocjenama',
+              'Razmišljajte o obrascima, ne o izuzecima — birajte ono što je tipično, ne izuzetno',
+              'Nijedna opcija nije inherentno bolja ili lošija — svaka opisuje drugačiji pristup na različitom razvojnom stepenu',
+              'Varijacija je zdrava — dosledno biranje najimpresivnije opcije daje manje tačan profil',
+              'Ako ste između dve opcije — izaberite konzervativniju; pruža pošteniju polaznu tačku za razvoj',
+              'Pitanja i opcije su u nasumičnom redosledu — A, B i C ne odgovaraju niskim, srednjim ili visokim ocenama',
               'Možete pauzirati i nastaviti — vaš napredak se automatski čuva',
             ] : [
-              `Razmišljajte o obrascima, ne o izuzecima — birajte ono što je tipično za ${subjectFirstName}, ne iznimno`,
-              'Nijedna opcija nije inherentno bolja ili lošija — svaka opisuje drugačiji pristup na različitom razvojnom stupnju',
-              'Vaša povratna informacija je korisnija kada je iskrena — dosljedno biranje najimpresivnije opcije daje netačniju sliku',
-              'Ako ste između dvije opcije — izaberite konzervativniju; pruža pošteniju polaznu tačku za razvoj',
-              'Pitanja i opcije su u nasumičnom redoslijedu — A, B i C ne odgovaraju niskim, srednjim ili visokim ocjenama',
+              `Razmišljajte o obrascima, ne o izuzecima — birajte ono što je tipično za ${subjectFirstName}, ne izuzetno`,
+              'Nijedna opcija nije inherentno bolja ili lošija — svaka opisuje drugačiji pristup na različitom razvojnom stepenu',
+              'Vaša povratna informacija je korisnija kada je iskrena — dosledno biranje najimpresivnije opcije daje netačniju sliku',
+              'Ako ste između dve opcije — izaberite konzervativniju; pruža pošteniju polaznu tačku za razvoj',
+              'Pitanja i opcije su u nasumičnom redosledu — A, B i C ne odgovaraju niskim, srednjim ili visokim ocenama',
               'Možete pauzirati i nastaviti — vaš napredak se automatski čuva',
             ]).map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -482,8 +545,8 @@ export default function AssessPage() {
             <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>Kada ste spremni</p>
             <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
               {isSelf
-                ? 'Pronađite mirno mjesto. Odvojite 20 minuta bez prekida. Vaša iskrena refleksija je najvrjednija stvar koju možete donijeti ovoj procjeni — vrednija od bilo koje ocjene.'
-                : `Pronađite mirno mjesto. Odvojite 20 minuta bez prekida. Vaše iskreno, promišljeno zapažanje je najvrjednije što možete donijeti ovoj procjeni — vrednije za razvoj ${subjectFirstName} od bilo koje uljepšane ocjene.`
+                ? 'Pronađite mirno mesto. Odvojite 20 minuta bez prekida. Vaša iskrena refleksija je najvrednija stvar koju možete doneti ovoj proceni — vrednija od bilo koje ocene.'
+                : `Pronađite mirno mesto. Odvojite 20 minuta bez prekida. Vaše iskreno, promišljeno zapažanje je najvrednije što možete doneti ovoj proceni — vrednije za razvoj ${subjectFirstName} od bilo koje ulepšane ocene.`
               }
             </p>
           </div>
@@ -611,7 +674,10 @@ export default function AssessPage() {
             {page.body}
           </Card>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '28px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px' }}>
+            <Btn variant="outline" onClick={() => setIntroStep(s => s - 1)} disabled={introStep === 1}>
+              {T.prevBtn}
+            </Btn>
             <Btn onClick={() => setIntroStep(s => s + 1)}>
               {introStep < totalSteps ? T.continueBtn : T.startBtn}
             </Btn>
@@ -654,13 +720,14 @@ export default function AssessPage() {
         {error && <div style={{ marginBottom: '20px' }}><Alert type="error">{error}</Alert></div>}
 
         {(() => {
-          const q = shuffledQuestions[currentQ];
-          if (!q) return null;
+          const safeIdx = Math.min(Math.max(currentQ, 0), shuffledQuestions.length - 1);
+          const q = shuffledQuestions[safeIdx];
+          if (!q) return <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-soft)' }}><Spinner /></div>;
           return (
             <>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                 <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', fontWeight: 500 }}>
-                  {T.questionOf(currentQ + 1, shuffledQuestions.length)}
+                  {T.questionOf(safeIdx + 1, shuffledQuestions.length)}
                 </span>
                 <span style={{ fontSize: '0.78rem', color: 'var(--ink-faint)' }}>
                   {totalAnswered} {T.answered}
@@ -694,7 +761,7 @@ export default function AssessPage() {
                         />
                         <div>
                           <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : 'var(--ink-soft)', fontSize: '0.82rem', marginRight: '8px' }}>{optLabel}.</span>
-                          <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.6 }}>{opt.text.replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
+                          <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.6 }}>{(opt.text || opt.desc || opt.label || '').replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
                         </div>
                       </label>
                     );
@@ -703,10 +770,10 @@ export default function AssessPage() {
               </Card>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', gap: '12px' }}>
-                <Btn variant="outline" onClick={() => setCurrentQ(i => Math.max(0, i - 1))} disabled={currentQ === 0}>
+                <Btn variant="outline" onClick={() => setCurrentQ(i => Math.max(0, i - 1))} disabled={safeIdx === 0}>
                   {T.prevBtn}
                 </Btn>
-                {currentQ < shuffledQuestions.length - 1 ? (
+                {safeIdx < shuffledQuestions.length - 1 ? (
                   <Btn onClick={() => setCurrentQ(i => i + 1)}>
                     {T.nextBtn}
                   </Btn>
