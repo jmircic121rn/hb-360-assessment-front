@@ -2474,18 +2474,20 @@ function pillarDim(pillar) {
   return 'INFLUENCE';
 }
 
-const PILLAR_EN_MAP = {
-  'KRATKOROČNI CILJEVI': 'SHORT-TERM GOALS', 'DUGOROČNA PROMENA': 'LONG-TERM CHANGE',
-  'DUGOROČNE PROMENE': 'LONG-TERM CHANGE', 'PREMA SEBI': 'TOWARDS ONESELF',
-  'PREMA DRUGIMA': 'TOWARDS OTHERS', 'PREMA KOMPANIJI I POZICIJI': 'TOWARDS COMPANY & POSITION',
-  'PREMA KOMPANIJI': 'TOWARDS COMPANY & POSITION', 'LIČNA EFIKASNOST': 'PERSONAL EFFICIENCY',
-  'KOMUNIKACIJA': 'COMMUNICATION', 'RAZVOJ TIMA I LJUDI': 'TEAM & PEOPLE DEVELOPMENT',
-  'KAKO SE MOJ TIM OSEĆA?': 'HOW DO I MAKE MY TEAM FEEL?', 'KAKO SE TIM OSEĆA': 'HOW DO I MAKE MY TEAM FEEL?',
-  'KAKO POKREĆEM NA AKCIJU?': 'HOW DO I INDUCE ACTION?', 'KAKO PODSTIČEM AKCIJU': 'HOW DO I INDUCE ACTION?',
-  STG: 'SHORT-TERM GOALS', LTC: 'LONG-TERM CHANGE', TO: 'TOWARDS ONESELF',
-  TOO: 'TOWARDS OTHERS', TCP: 'TOWARDS COMPANY & POSITION', CP: 'TOWARDS COMPANY & POSITION',
-  PE: 'PERSONAL EFFICIENCY', CO: 'COMMUNICATION', TPD: 'TEAM & PEOPLE DEVELOPMENT',
-  MTF: 'HOW DO I MAKE MY TEAM FEEL?', HIA: 'HOW DO I INDUCE ACTION?',
+
+const DIM_SR_MAP = {
+  RESULTS: 'REZULTATI',
+  MINDSET: 'MENTALITET',
+  SKILLS: 'VEŠTINE',
+  INFLUENCE: 'UTICAJ',
+};
+
+// Normalize any variant (EN or SR) to canonical EN key
+const DIM_NORMALIZE = {
+  RESULTS: 'RESULTS', REZULTATI: 'RESULTS',
+  MINDSET: 'MINDSET', MENTALITET: 'MINDSET',
+  SKILLS: 'SKILLS', 'VEŠTINE': 'SKILLS', VESTINE: 'SKILLS',
+  INFLUENCE: 'INFLUENCE', UTICAJ: 'INFLUENCE',
 };
 
 const DIM_QUOTES = {
@@ -2495,7 +2497,8 @@ const DIM_QUOTES = {
   INFLUENCE: '"You can\'t win friends by trying to get them interested in you." — Dale Carnegie',
 };
 
-function PillarScoreChart({ data: chartData, selfDone }) {
+function PillarScoreChart({ data: chartData, selfDone, lang }) {
+  const isSr = (lang || 'en') === 'sr';
   const byAssessorType = chartData?.byAssessorType || {};
   const selfScores = byAssessorType.self || [];
 
@@ -2512,11 +2515,12 @@ function PillarScoreChart({ data: chartData, selfDone }) {
     );
   }
 
-  // Aggregate scores by pillar — use dimension from data directly, no whitelist
+  // Aggregate scores by pillar — normalize dimension to canonical EN key
   const fMap = {};
   selfScores.forEach(r => {
     const rawDim = r.dimension || pillarDim(r.pillar || '');
-    const dim = (rawDim || 'OTHER').toUpperCase().trim();
+    const dimRaw = (rawDim || 'OTHER').toUpperCase().trim();
+    const dim = DIM_NORMALIZE[dimRaw] || dimRaw;
     const k = `${dim}||${r.pillar}`;
     if (!fMap[k]) fMap[k] = { dim, pillar: r.pillar, sum: 0, count: 0 };
     if (typeof r.score === 'number') { fMap[k].sum += r.score; fMap[k].count++; }
@@ -2567,33 +2571,36 @@ function PillarScoreChart({ data: chartData, selfDone }) {
                 </div>
                 <div style={{ height: 1.5, background: '#222', marginBottom: '8px' }} />
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 400, color: '#000', lineHeight: 1.1, marginBottom: '8px' }}>
-                  {dim}
+                  {isSr ? (DIM_SR_MAP[dim] || dim) : dim}
                 </div>
               </div>
 
               {/* Bar chart area */}
-              <div style={{ flex: 1, padding: '0 12px', display: 'flex', alignItems: 'flex-end', gap: 0, minHeight: 120 }}>
+              <div style={{ flex: 1, padding: '0 12px', display: 'flex', alignItems: 'flex-end', gap: 0, minHeight: 160 }}>
                 {pillars.length === 0 ? (
                   <div style={{ fontSize: '0.7rem', color: '#aaa', alignSelf: 'center', width: '100%', textAlign: 'center' }}>—</div>
                 ) : (
-                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, width: '100%', height: 120, justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, width: '100%', height: 160, justifyContent: 'center' }}>
                     {pillars.map(({ pillar, score }) => {
-                      const label = PILLAR_EN_MAP[pillar?.toUpperCase()] || pillar || '';
+                      const label = pillar || '';
                       const barH = Math.max(4, (score / 5) * 96);
                       return (
-                        <div key={pillar} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
+                        <div key={pillar} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#222', marginBottom: 2 }}>
                             {score.toFixed(1)}
                           </div>
                           <div style={{
-                            width: '100%', maxWidth: 36, height: barH,
+                            width: '60%', minWidth: 18, maxWidth: 36, height: barH,
                             background: '#222', borderRadius: '2px 2px 0 0',
                           }} />
                           <div style={{
                             marginTop: 5, fontSize: '0.55rem', fontWeight: 700,
-                            color: '#333', textAlign: 'center', lineHeight: 1.2,
-                            wordBreak: 'break-word', maxWidth: 54,
-                          }}>
+                            color: '#333', textAlign: 'center', lineHeight: 1.3,
+                            width: '100%', overflow: 'hidden',
+                            display: '-webkit-box', WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            wordBreak: 'break-word',
+                          }} title={label}>
                             {label}
                           </div>
                         </div>
@@ -2971,7 +2978,7 @@ export function CampaignDetail() {
             )}
           </Card>
 
-          <PillarScoreChart data={cycleData} selfDone={selfDone} />
+          <PillarScoreChart data={cycleData} selfDone={selfDone} lang={campaign?.Lang || 'en'} />
         </div>
       )}
 
