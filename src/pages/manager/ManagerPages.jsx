@@ -4371,7 +4371,7 @@ function downloadReportPdf(cycleId, reportType, reportId, firstName, lastName) {
       const name = [firstName, lastName].filter(Boolean).join('_') || reportId || cycleId;
       const a = document.createElement('a');
       a.href = blobUrl;
-      a.download = `report_${name}.pdf`;
+      a.download = `Report_${name}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
