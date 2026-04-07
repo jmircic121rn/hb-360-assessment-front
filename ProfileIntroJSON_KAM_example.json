@@ -1,0 +1,74 @@
+{
+  "portrait": "An excellent KAM Value-based Selling professional understands that their most important asset is not their product \u2014 it is their ability to make a customer feel genuinely understood. They are disciplined about their pipeline, rigorous in qualification, and persistent through the long cycles and accumulated rejections that define key account management. What sets them apart is their capacity to think in years rather than quarters \u2014 to build relationships deep enough to be trusted with a customer\u2019s real problems, and to align their capabilities with that customer\u2019s genuine growth needs. They recover quickly from setbacks, adapt to complex stakeholder environments, and sustain their energy across deals that test patience and resolve. When they are at their best, they are not just a salesperson. They are the person their customer calls first.",
+  "dimensions": [
+    {
+      "name": "Results",
+      "pillars": [
+        {
+          "name": "Short-term Goals",
+          "description": "Pipeline discipline, qualification, and closing"
+        },
+        {
+          "name": "Long-term Change",
+          "description": "Strategic account development and sustained value"
+        }
+      ]
+    },
+    {
+      "name": "Mindset",
+      "pillars": [
+        {
+          "name": "Towards Oneself",
+          "description": "Resilience, learning agility, and self-motivation"
+        },
+        {
+          "name": "Towards Others",
+          "description": "Empathy, collaboration, and stakeholder sensitivity"
+        },
+        {
+          "name": "Towards Company & Position",
+          "description": "Integrity, ownership, and conviction"
+        }
+      ]
+    },
+    {
+      "name": "Skills",
+      "pillars": [
+        {
+          "name": "Personal Efficiency",
+          "description": "Planning, prioritisation, and problem-solving"
+        },
+        {
+          "name": "Communication",
+          "description": "Listening, questioning, and presenting value"
+        },
+        {
+          "name": "Sales Steps",
+          "description": "From account profiling through to post-sale delivery"
+        }
+      ]
+    },
+    {
+      "name": "Influence",
+      "pillars": [
+        {
+          "name": "How do I make my customer feel?",
+          "description": "Trust, presence, and partnership in every interaction"
+        },
+        {
+          "name": "How do I induce action?",
+          "description": "The influence and momentum that moves customers to commit"
+        }
+      ]
+    }
+  ],
+  "signatureFacet": {
+    "name": "Resilience & Pressure Management",
+    "dimension": "Mindset",
+    "pillar": "Towards Oneself",
+    "definition": "Maintains effectiveness, composure, and forward momentum through rejection, long sales cycles, high-stakes situations, and the sustained pressure inherent in key account management.",
+    "why": "This facet is not called simply \u201cResilience\u201d \u2014 because for a KAM, the specific pressure of long cycles, high-stakes relationships, and accumulated rejection requires its own precise definition. The assessment scenarios will put you in situations that test exactly this."
+  },
+  "scopeNote": "You will not be asked about all 50 facets individually \u2014 the assessment uses paired scenarios that each cover one pillar. The questions are in randomised order. You will recognise the situations as real to your role.",
+  "fullProfileLink": null
+}

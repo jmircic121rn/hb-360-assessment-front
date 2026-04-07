@@ -2482,13 +2482,19 @@ const DIM_SR_MAP = {
   INFLUENCE: 'UTICAJ',
 };
 
-// Normalize any variant (EN or SR) to canonical EN key
-const DIM_NORMALIZE = {
-  RESULTS: 'RESULTS', REZULTATI: 'RESULTS',
-  MINDSET: 'MINDSET', MENTALITET: 'MINDSET',
-  SKILLS: 'SKILLS', 'VEŠTINE': 'SKILLS', VESTINE: 'SKILLS',
-  INFLUENCE: 'INFLUENCE', UTICAJ: 'INFLUENCE',
-};
+// Strip diacritics then map to canonical EN key
+function normalizeDim(raw) {
+  const s = (raw || '').toUpperCase().trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip diacritics
+    .replace(/Đ/g, 'DJ').replace(/đ/gi, 'DJ');        // đ has no NFD decomposition
+  const MAP = {
+    RESULTS: 'RESULTS', REZULTATI: 'RESULTS',
+    MINDSET: 'MINDSET', MENTALITET: 'MINDSET',
+    SKILLS: 'SKILLS', VESTINE: 'SKILLS',
+    INFLUENCE: 'INFLUENCE', UTICAJ: 'INFLUENCE',
+  };
+  return MAP[s] || raw.toUpperCase().trim();
+}
 
 const DIM_QUOTES = {
   RESULTS:   '"Knowing is not enough; we must apply. Willing is not enough; we must do." — Goethe',
@@ -2519,8 +2525,7 @@ function PillarScoreChart({ data: chartData, selfDone, lang }) {
   const fMap = {};
   selfScores.forEach(r => {
     const rawDim = r.dimension || pillarDim(r.pillar || '');
-    const dimRaw = (rawDim || 'OTHER').toUpperCase().trim();
-    const dim = DIM_NORMALIZE[dimRaw] || dimRaw;
+    const dim = normalizeDim(rawDim || 'OTHER');
     const k = `${dim}||${r.pillar}`;
     if (!fMap[k]) fMap[k] = { dim, pillar: r.pillar, sum: 0, count: 0 };
     if (typeof r.score === 'number') { fMap[k].sum += r.score; fMap[k].count++; }
@@ -2828,6 +2833,27 @@ export function CampaignDetail() {
 
   return (
     <Layout>
+      {/* Fullscreen loading overlay for report generation */}
+      {(aiGenerating || generating !== null) && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(4px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '16px',
+        }}>
+          <div style={{
+            width: '36px', height: '36px', border: '3px solid #e4e4e4', borderTopColor: 'var(--ink)',
+            borderRadius: '50%', animation: 'spin 0.8s linear infinite',
+          }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <p style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--ink)', letterSpacing: '0.04em' }}>
+            {aiGenerating ? (aiStatus || 'Generating Personal Development Plan...') : 'Generating report...'}
+          </p>
+          <p style={{ fontSize: '0.8rem', color: '#999' }}>
+            Please wait, this may take a minute. Do not close this page.
+          </p>
+        </div>
+      )}
+
       <PageHeader
         title={campaign ? `${campaign.Name} for ${campaign.FirstName} ${campaign.LastName}` : 'Campaign Detail'}
         subtitle={campaign ? `Started ${new Date(campaign.CreatedAt).toLocaleDateString()}` : ''}

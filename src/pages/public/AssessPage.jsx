@@ -20,7 +20,8 @@ export default function AssessPage() {
   const [assessorInfo, setAssessorInfo] = useState({ firstName: '', lastName: '', email: '' });
   const [identityConfirmed, setIdentityConfirmed] = useState(false);
   const [currentQ, setCurrentQ] = useState(0);
-  const [introStep, setIntroStep] = useState(1); // 1=compass, 2=leader, 3=intro, 4=questions
+  const [introStep, setIntroStep] = useState(1); // 1=info page, 2=prep guide, 3=profile intro (if exists), then questions
+  const [navOpen, setNavOpen] = useState(false);
 
   const PROGRESS_KEY = `compass_progress_${token}`;
   const hasRestoredRef = React.useRef(false);
@@ -331,136 +332,414 @@ export default function AssessPage() {
 
   // ── Intro pages ──────────────────────────────────────────────────────────
 
-  // Parse introText from profile into typed blocks
-  function parseIntroText(text = '') {
-    if (!text) return [];
-    const blocks = [];
-    const paragraphs = text.split(/\n\n+/);
-    for (const para of paragraphs) {
-      const trimmed = para.trim();
-      if (!trimmed) continue;
-      if (/^[A-Z][A-Z\s\-–—0-9]+$/.test(trimmed) || /^(?:LEVEL|NIVO)\s+\d+/i.test(trimmed)) { blocks.push({ type: 'section', text: trimmed }); continue; }
-      if (/^(?:Dimension|Dimenzija)\s+\d+\s*[—–-]/i.test(trimmed)) {
-        const lines = trimmed.split('\n');
-        blocks.push({ type: 'dimheader', text: lines[0] });
-        if (lines.length > 1) blocks.push({ type: 'body', text: lines.slice(1).join('\n') });
-        continue;
-      }
-      if (/^(?:Pillar|Stub)\s+\d+\s*[—–-]/i.test(trimmed)) {
-        const lines = trimmed.split('\n');
-        blocks.push({ type: 'pillarheader', text: lines[0] });
-        if (lines.length > 1) blocks.push({ type: 'body', text: lines.slice(1).join('\n') });
-        continue;
-      }
-      if (/^Facets:\s/.test(trimmed)) { blocks.push({ type: 'facetlabel', text: trimmed }); continue; }
-      blocks.push({ type: 'body', text: trimmed });
-    }
-    return blocks;
-  }
-
   // Profile display name (original casing from data)
   const profileDisplayName = data?.profileName || data?.profilName || data?.ProfilName || data?.profile?.name || 'Profile';
-  const profileIntroText = data?.introText || data?.profile?.introText || '';
 
-  // Split parsed introText into per-level block groups (level 1, 2, 3)
-  function getLevelBlocks(allBlocks, levelNum) {
-    const result = [];
-    let inside = false;
-    for (const block of allBlocks) {
-      if (block.type === 'section') {
-        const m = block.text.match(/^(?:LEVEL|NIVO)\s+(\d+)/i);
-        if (m) {
-          const n = parseInt(m[1]);
-          if (n === levelNum) { inside = true; result.push(block); continue; }
-          if (n > levelNum) break;
-          inside = false; continue;
-        }
-      }
-      if (inside) result.push(block);
+  // Profile Introduction data from API
+  const profileIntro = (() => {
+    // Try direct profileIntro field first
+    if (data?.profileIntro) return data.profileIntro;
+    if (data?.profile?.profileIntro) return data.profile.profileIntro;
+    if (data?.ProfileIntroJSON) return data.ProfileIntroJSON;
+    // If introText is a JSON object containing profile intro data, use it
+    const raw = data?.introText;
+    if (!raw) return null;
+    if (typeof raw === 'object' && raw !== null && (raw.portrait || raw.dimensions)) return raw;
+    if (typeof raw === 'string') {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && (parsed.portrait || parsed.dimensions)) return parsed;
+      } catch {}
     }
-    return result;
-  }
+    return null;
+  })();
 
-  function LevelBlocks({ blocks }) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-        {blocks.map((block, i) => {
-          if (block.type === 'section') return (
-            <div key={i} style={{ marginBottom: '24px', paddingBottom: '10px', borderBottom: '2px solid var(--ink)' }}>
-              <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', fontWeight: 700, letterSpacing: '0.06em', color: 'var(--ink)' }}>{block.text}</span>
+  // ── Information Page content (What is HB Compass) ────────────────────────
+  const dimensionCards = [
+    { letter: 'M', name: isSr ? 'Način razmišljanja' : 'Mindset', desc: isSr ? 'Uverenja i orijentacije koje oblikuju kako pristupate svojoj ulozi i odnosima' : 'The beliefs and orientations that shape how you approach your role and relationships' },
+    { letter: 'S', name: isSr ? 'Veštine' : 'Skills', desc: isSr ? 'Praktične sposobnosti koje uloga zahteva' : 'The practical capabilities the role requires' },
+    { letter: 'R', name: isSr ? 'Rezultati' : 'Results', desc: isSr ? 'Konkretan uticaj i rezultati koje proizvodi vaš rad' : 'The concrete impact and outcomes you produce' },
+    { letter: 'I', name: isSr ? 'Uticaj' : 'Influence', desc: isSr ? 'Kako pokrećete, inspirišete i angažujete ljude oko sebe' : 'How you move, inspire, and engage the people around you' },
+  ];
+
+  // Shared section style for info page (bordered sections like the HTML infographic)
+  const secStyle = { padding: '40px 56px', borderBottom: '1px solid #d8d8d8' };
+  const secNum = (n) => ({ fontSize: '10px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--ink)', marginBottom: '6px' });
+  const secTitle = { fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '22px', color: 'var(--ink)', marginBottom: '16px', lineHeight: 1.2 };
+  const secP = { fontSize: '14px', lineHeight: 1.75, color: '#333', marginBottom: '14px' };
+
+  const infoPageBody = (
+    <>
+      {/* Section 1 — What is HB Compass */}
+      <div style={secStyle}>
+        <div style={secNum('01')}>01</div>
+        <div style={secTitle}>{isSr ? 'Šta je HB Compass' : 'What is HB Compass'}</div>
+        <p style={secP}>
+          {isSr
+            ? 'HB Compass je okvir profesionalnog razvoja izgrađen oko jednog centralnog pitanja: šta zapravo zahteva izvrsno obavljanje specifične uloge — i gde se konkretna osoba trenutno nalazi u odnosu na taj standard?'
+            : 'HB Compass is a professional development framework built around one central question: what does excellent performance in a specific role actually require — and where does a specific person currently stand against that standard?'
+          }
+        </p>
+
+        {/* Three source cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '2px', marginTop: '20px' }}>
+          {[
+            { icon: '◎', name: isSr ? 'Samoprocena' : 'Self-Assessment', desc: isSr ? 'Kako vi vidite svoju profesionalnu efikasnost — u realnim scenarijima iz vaše uloge.' : 'How you see your own professional performance — in realistic scenarios drawn from your role.' },
+            { icon: '◎', name: isSr ? '360° Povratna informacija' : '360° Feedback', desc: isSr ? 'Kako kolege koje rade sa vama u različitim kapacitetima posmatraju vašu efikasnost.' : 'How colleagues who work with you in different capacities observe your performance.' },
+            { icon: '◎', name: isSr ? 'Idealni profil' : 'Ideal Profile', desc: isSr ? 'Precizno definisan standard za izvrsnu profesionalnu efikasnost u vašoj specifičnoj ulozi — referentna tačka za oba.' : 'A precisely defined standard for excellent performance in your specific role — the reference point for both.' },
+          ].map((s, i) => (
+            <div key={i} style={{ background: '#f2f2f2', padding: '20px 18px' }}>
+              <div style={{ fontSize: '20px', lineHeight: 1, marginBottom: '8px' }}>{s.icon}</div>
+              <div style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink)', lineHeight: 1.3, marginBottom: '6px' }}>{s.name}</div>
+              <p style={{ fontSize: '12.5px', color: '#666', lineHeight: 1.6, margin: 0 }}>{s.desc}</p>
             </div>
-          );
-          if (block.type === 'dimheader') return (
-            <div key={i} style={{ marginTop: '28px', marginBottom: '8px' }}>
-              <span style={{ display: 'inline-block', padding: '5px 14px', borderRadius: '4px', background: 'var(--ink)', color: '#fff', fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.06em' }}>{block.text}</span>
+          ))}
+        </div>
+
+        {/* Arrow result */}
+        <div style={{ marginTop: '8px', background: '#f2f2f2', border: '1px solid #ccc', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <span style={{ fontSize: '20px', color: 'var(--ink)', flexShrink: 0 }}>→</span>
+          <p style={{ fontSize: '13px', color: '#333', lineHeight: 1.55, margin: 0, fontStyle: 'italic' }}>
+            {isSr
+              ? 'Zajedno, ovi elementi proizvode profil jaza — razvojnu mapu koja pokazuje gde uložiti napor u učenje, i zašto. Rezultat ovog procesa je razvojni plan, ne presuda.'
+              : 'Together, these produce a gap profile — a development map showing where to invest learning effort, and why. The output of this process is a development plan, not a verdict.'
+            }
+          </p>
+        </div>
+
+        {/* Not this */}
+        <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          {(isSr
+            ? ['Ovo nije alat za upravljanje učinkom', 'Nema prolaznih ili padajućih ocena', 'Vaši rezultati neće biti korišćeni u disciplinske ili formalne svrhe evaluacije']
+            : ['This is not a performance management tool', 'There are no pass or fail scores', 'Your results will not be used for disciplinary or formal evaluation purposes']
+          ).map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: '#666' }}>
+              <span style={{ color: '#d4d4d4', flexShrink: 0 }}>—</span>{item}
             </div>
-          );
-          if (block.type === 'pillarheader') return (
-            <div key={i} style={{ marginTop: '20px', marginBottom: '6px', paddingLeft: '12px', borderLeft: '3px solid var(--ink)' }}>
-              <span style={{ fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.04em', color: 'var(--ink)' }}>{block.text}</span>
-            </div>
-          );
-          if (block.type === 'facetlabel') return (
-            <div key={i} style={{ marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--ink-soft)', fontStyle: 'italic' }}>{block.text}</span>
-            </div>
-          );
-          return (
-            <p key={i} style={{ fontSize: '0.88rem', color: 'var(--ink-soft)', lineHeight: 1.75, margin: '0 0 12px 0', whiteSpace: 'pre-wrap' }}>{block.text}</p>
-          );
-        })}
+          ))}
+        </div>
       </div>
-    );
-  }
 
-  const compassIntro = isSr ? (
-    <>
-      <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
-        Većina profesionalaca ima iskrenu, ali nepotpunu sliku o sebi. Znate svoje snage — bar one kojih ste svesni. Znate oblasti koje vam se čine izazovnim. Ali jaz između toga kako vi vidite sebe i kako vaš rad zaista deluje na druge, kako vaše razmišljanje oblikuje vaše odluke, kako vaše prisustvo utiče na ljude oko vas — taj jaz je upravo tamo gde leži najvredniji uvid za razvoj. HB Compass samoprocena je dizajnirana da zatvori taj jaz.
-      </p>
-      <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '32px' }}>
-        HB Compass je okvir profesionalnog razvoja izgrađen na jednostavnoj, ali moćnoj ideji: ono što nekoga čini istinski odličnim u svom poslu nije jedna stvar — to su četiri međusobno povezane stvari koje deluju zajedno. Većina razvojnih alata fokusira se na veštine ili rezultate. HB Compass ide dalje, procenjujući celovitu sliku onoga što pokreće profesionalnu efikasnost — jer trajna izvrsnost nikada nije samo stvar toga šta možete da radite. Jednako je važno i kako razmišljate, ko ste u svojim odnosima, i kakav uticaj imate na ljude i okruženje oko vas.
-      </p>
-    </>
-  ) : (
-    <>
-      <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '20px' }}>
-        Most professionals have a genuine but incomplete picture of themselves. You know your strengths — at least the ones you are aware of. You know the areas you find challenging. But the gap between how you see yourself and how your work actually lands with others, how your thinking shapes your decisions, how your presence influences the people around you — that gap is where the most valuable development insight lives. The HB Compass self-assessment is designed to close that gap.
-      </p>
-      <p style={{ color: 'var(--ink-soft)', lineHeight: 1.75, marginBottom: '32px' }}>
-        HB Compass is a professional development framework built on a simple but powerful idea: what makes someone genuinely excellent at their work is not one thing — it is four interconnected things, working together. Most development tools focus on skills or results. HB Compass goes further, assessing the full picture of what drives professional effectiveness — because sustainable excellence is never just about what you can do. It is equally about how you think, who you are in your relationships, and the impact you have on the people and environment around you.
-      </p>
+      {/* Section 2 — The Ideal Profile */}
+      <div style={secStyle}>
+        <div style={secNum('02')}>02</div>
+        <div style={secTitle}>{isSr ? 'Idealni profil prema kome se procenjujete' : 'The Ideal Profile you are assessing against'}</div>
+
+        <div style={{ background: '#f2f2f2', border: '1px solid #ccc', padding: '18px 22px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#666', flexShrink: 0 }}>
+            {isSr ? 'Vaš profil' : 'Your profile'}
+          </span>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '18px', color: 'var(--ink)' }}>{profileDisplayName}</span>
+        </div>
+
+        <p style={secP}>
+          {isSr
+            ? `Ova procena je izgrađena prema ${profileDisplayName} Idealnom Profilu — preciznoj, vidljivoj definiciji kako izgleda izvrsno obavljanje vaše uloge u četiri dimenzije:`
+            : `This assessment is built against the ${profileDisplayName} Ideal Profile — a precise, observable definition of what excellent performance in this role looks like across four dimensions:`
+          }
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px', marginTop: '4px' }}>
+          {dimensionCards.map(d => (
+            <div key={d.letter} style={{ background: '#f2f2f2', padding: '20px' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '32px', lineHeight: 1, color: '#e4e4e4' }}>{d.letter}</div>
+              <div style={{ fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--ink)', marginTop: '6px' }}>{d.name}</div>
+              <p style={{ fontSize: '12.5px', color: '#666', lineHeight: 1.6, margin: '6px 0 0' }}>{d.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        <p style={{ marginTop: '16px', fontSize: '13px', fontStyle: 'italic', color: '#666', lineHeight: 1.6, paddingLeft: '16px', borderLeft: '2px solid #d4d4d4' }}>
+          {isSr
+            ? 'Profil je napravljen specifično za ovu ulogu — ne iz generičkog okvira kompetencija. Kada budete čitali scenarije u proceni, prepoznaćete situacije kao realne za vaš kontekst. To je namerno.'
+            : 'The profile was built specifically for this role — not from a generic competency framework. When you read the assessment scenarios, you will recognise the situations as real to your context. That recognition is intentional.'
+          }
+        </p>
+      </div>
+
+      {/* Section 3 — What the assessment involves */}
+      <div style={secStyle}>
+        <div style={secNum('03')}>03</div>
+        <div style={secTitle}>{isSr ? 'Šta procena uključuje' : 'What the assessment involves'}</div>
+
+        <p style={secP}>
+          {isSr
+            ? 'Procena predstavlja niz realnih radnih scenarija. Za svaki birate opis koji najbolje odgovara tome kako zaista radite — i odgovarate na kratko dodatno pitanje o tome šta se tipično dešava kao rezultat vašeg pristupa.'
+            : 'The assessment presents a series of realistic workplace scenarios. For each one, you choose the description that best fits how you actually work — and answer a short follow-up question about what typically happens as a result of your approach.'
+          }
+        </p>
+
+        {/* Step flow */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+          {(isSr ? [
+            { num: '1', name: 'Pročitajte scenarij', desc: 'Realistična situacija iz vaše uloge — situacija sa kojom se profesionalci u ovoj poziciji redovno susreću.', key: true },
+            { num: '2', name: 'Izaberite svoj pristup', desc: 'Tri opcije, svaka predstavlja različit stepen profesionalnog razvoja. Nema tačnih ili pogrešnih odgovora.', key: false },
+            { num: '3', name: 'Odgovorite na dodatno pitanje', desc: 'Kratko pitanje o tome šta se zaista dešava kada radite na ovaj način — kakve rezultate vaš tipičan pristup proizvodi.', key: false },
+            { num: '↺', name: 'Ponovite kroz sve dimenzije', desc: 'Procena pokriva sve četiri dimenzije. Pitanja su u nasumičnom redosledu. Vaš napredak se automatski čuva.', key: false },
+          ] : [
+            { num: '1', name: 'Read the scenario', desc: 'A realistic situation from your role — one that professionals in this position regularly face.', key: true },
+            { num: '2', name: 'Choose your approach', desc: 'Three options, each representing a different stage of professional development. No right or wrong answers — only more or less accurate descriptions of how you actually work.', key: false },
+            { num: '3', name: 'Answer the follow-up', desc: 'A short question about what actually happens when you operate this way — what results your typical approach typically produces.', key: false },
+            { num: '↺', name: 'Repeat across all dimensions', desc: 'The full assessment covers Mindset, Skills, Results, and Influence. Questions are in randomised order. Your progress saves automatically — you can pause and return.', key: false },
+          ]).map((step, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'stretch', gap: 0 }}>
+              <div style={{
+                width: 44, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '18px',
+                background: step.key ? 'var(--ink)' : '#e4e4e4',
+                color: step.key ? '#fff' : '#666',
+              }}>{step.num}</div>
+              <div style={{ flex: 1, padding: '14px 18px', background: '#f2f2f2' }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', color: step.key ? 'var(--ink)' : 'var(--ink)', marginBottom: '4px' }}>{step.name}</div>
+                <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.6, margin: 0 }}>{step.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Honesty note */}
+        <div style={{ marginTop: '16px', background: '#f2f2f2', border: '1px solid #ccc', padding: '18px 22px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink)', marginBottom: '8px' }}>
+            {isSr ? 'Najvažnija stvar' : 'The most important thing'}
+          </div>
+          <p style={{ fontSize: '13.5px', lineHeight: 1.7, color: '#333', margin: 0, fontStyle: 'italic' }}>
+            {isSr
+              ? 'Odgovarajte na osnovu toga kako zaista radite — ne kako mislite da treba da radite. Iskren odgovor 3 vredniji je od ulepšanog 5. Dodatna pitanja su dizajnirana da otkriju jaz ako prvi odgovor nije tačan — tako da iskreni odgovori od početka proizvode korisniju sliku.'
+              : 'Answer based on how you actually work — not how you think you should work. An honest 3 is more useful than an inflated 5. The follow-up questions are designed to surface the gap if the first answer isn\'t accurate — so honest responses produce a more useful picture from the start.'
+            }
+          </p>
+        </div>
+      </div>
+
+      {/* Section 4 — What happens with your responses */}
+      <div style={secStyle}>
+        <div style={secNum('04')}>04</div>
+        <div style={secTitle}>{isSr ? 'Šta se dešava sa vašim odgovorima' : 'What happens with your responses'}</div>
+
+        {/* Data points with checkmarks */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', marginTop: '4px' }}>
+          {(isSr ? [
+            'Vaši odgovori se koriste za kreiranje profila jaza — slike gde se trenutno nalazite u odnosu na Idealni Profil, u svim dimenzijama.',
+            'Profil jaza je polazna tačka za razvojni razgovor — ne izveštaj koji se šalje bez vašeg učešća.',
+            'Vaši podaci se obrađuju u skladu sa politikom zaštite podataka vaše organizacije i ugovorom o obradi podataka kompanije HansenBeck.',
+          ] : [
+            'Your responses are used to produce a gap profile — a picture of where you currently stand relative to the Ideal Profile, across all four dimensions.',
+            'The gap profile is the starting point for a development conversation — not a report that is sent upward without your input.',
+            'Your data is processed in accordance with your organisation\'s data protection policy and HansenBeck\'s data processing agreement.',
+          ]).map((item, i) => (
+            <div key={i} style={{ background: '#f2f2f2', padding: '16px 20px', display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+              <div style={{
+                width: 20, height: 20, borderRadius: '50%', border: '1.5px solid #aaa',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                flexShrink: 0, marginTop: '1px', fontSize: '11px', fontWeight: 600, color: '#333',
+              }}>✓</div>
+              <p style={{ fontSize: '13.5px', color: '#333', lineHeight: 1.65, margin: 0 }}>{item}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Confidentiality box */}
+        <div style={{ marginTop: '16px', background: '#f2f2f2', border: '1px solid #ccc', padding: '18px 22px' }}>
+          <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#333', marginBottom: '8px' }}>
+            {isSr ? 'Poverljivost' : 'Confidentiality'}
+          </div>
+          <p style={{ fontSize: '13.5px', lineHeight: 1.7, color: '#333', margin: 0 }}>
+            {isSr
+              ? 'Vaši pojedinačni odgovori su poverljivi. Ne dele se sa vašim menadžerom ili organizacijom kao sirovi podaci. Profil jaza se prvo diskutuje sa vama, u strukturiranom razgovoru, pre nego što se dogovore bilo kakvi sledeći koraci.'
+              : 'Your individual responses are confidential. They are not shared with your manager or your organisation as raw data. The gap profile is discussed with you first, in a structured feedback conversation, before any next steps are agreed.'
+            }
+          </p>
+        </div>
+      </div>
+
+      {/* Role variant section */}
+      <div style={{ padding: '40px 56px', borderBottom: '1px solid #d8d8d8', background: '#f2f2f2' }}>
+        <div style={secNum('05')}>{isSr ? 'Pre nego što nastavite' : 'Before you continue'}</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '22px', color: 'var(--ink)', marginBottom: '8px', lineHeight: 1.2 }}>
+          {isSr ? 'Jedna stvar koju treba imati na umu dok odgovarate' : 'One thing to hold in mind as you answer'}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2px', marginTop: '20px' }}>
+          <div style={{ padding: '24px 22px', background: '#fff', borderTop: '3px solid var(--ink)' }}>
+            <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--ink)', marginBottom: '10px' }}>
+              {isSr ? 'Ako popunjavate samoprocenu' : 'If you are completing a self-assessment'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px', color: 'var(--ink)', marginBottom: '12px', lineHeight: 1.25 }}>
+              {isSr ? 'Odgovarajte na osnovu toga kako zaista radite — ne na osnovu vašeg najboljeg dana.' : 'Answer based on how you actually work — not your best day.'}
+            </div>
+            <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.68, margin: 0 }}>
+              {isSr
+                ? 'Procena je najvrednija kada odražava vaše tipične obrasce, ne vaše najimpresivnije interakcije. Razmislite o onome što dosledno radite — ne o onome što ste sposobni da uradite na dobar dan.'
+                : 'The assessment is most valuable when it reflects your typical patterns, not your most impressive interactions. Think about what you consistently do — not what you are capable of on a good day.'
+              }
+            </p>
+          </div>
+          <div style={{ padding: '24px 22px', background: '#fff', borderTop: '3px solid #888' }}>
+            <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', color: '#888', marginBottom: '10px' }}>
+              {isSr ? 'Ako pružate 360° povratnu informaciju' : 'If you are providing 360° feedback'}
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '17px', color: 'var(--ink)', marginBottom: '12px', lineHeight: 1.25 }}>
+              {isSr ? 'Opišite ono što zaista primećujete — ne ono što bi bilo najohrabrujuće.' : 'Describe what you actually observe — not what would be most encouraging.'}
+            </div>
+            <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.68, margin: 0 }}>
+              {isSr
+                ? 'Najkorisnija stvar koju možete uraditi za osobu koju procenjujete je da budete tačni. Ocene koje su previše velikodušne proizvode sliku koja potcenjuje gde zaista trebaju da se razvijaju.'
+                : 'The most helpful thing you can do for the person you are assessing is to be accurate. Scores that are too generous produce a picture that underestimates where they genuinely need to develop.'
+              }
+            </p>
+          </div>
+        </div>
+      </div>
     </>
   );
 
-  const allParsedBlocks = parseIntroText(profileIntroText);
-  const levelPages = profileIntroText
-    ? [1, 2, 3].map(n => {
-        const blocks = getLevelBlocks(allParsedBlocks, n);
-        return {
-          key: `level${n}`,
-          title: profileDisplayName,
-          subtitle: null,
-          label: T.levelLabel(n, 3),
-          body: blocks.length > 0
-            ? <>{n === 1 && compassIntro}<LevelBlocks blocks={blocks} /></>
-            : null,
-        };
-      }).filter(p => p.body)
-    : [];
+  // ── Profile Introduction Page component ──────────────────────────────────
+  // Section label with horizontal rule (for Profile Intro page)
+  const secLabel = (text) => (
+    <div style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#999', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {text}
+      <span style={{ flex: 1, height: '1px', background: '#ebebeb' }} />
+    </div>
+  );
 
-  const totalSteps = levelPages.length + 1; // levels + instructions
+  function ProfileIntroSection() {
+    if (!profileIntro) return null;
+    const { portrait, dimensions, signatureFacet, fullProfileLink, scopeNote } = profileIntro;
+
+    return (
+      <>
+        {/* Portrait */}
+        {portrait && (
+          <div style={secStyle}>
+            {secLabel(isSr ? 'Koga ovaj profil opisuje' : 'Who this profile describes')}
+            <p style={{ fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: 'clamp(16px, 2.2vw, 19px)', lineHeight: 1.7, color: '#333', borderLeft: '3px solid var(--ink)', paddingLeft: '24px' }}>
+              {portrait}
+            </p>
+          </div>
+        )}
+
+        {/* Pillar Map */}
+        {dimensions && dimensions.length > 0 && (
+          <div style={secStyle}>
+            {secLabel(isSr ? 'Šta ova procena pokriva' : 'What this assessment covers')}
+            {(() => {
+              const maxPillars = Math.max(...dimensions.map(d => (d.pillars || []).length));
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(dimensions.length, 4)}, 1fr)`, gap: '2px' }}>
+                  {dimensions.map((dim, di) => {
+                    const pillars = dim.pillars || [];
+                    const padded = [...pillars, ...Array(maxPillars - pillars.length).fill(null)];
+                    return (
+                      <div key={di} style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ background: 'var(--ink)', padding: '12px 14px', marginBottom: '2px' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fff' }}>{dim.name}</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
+                          {padded.map((p, pi) => (
+                            <div key={pi} style={{ background: p ? '#f4f4f4' : 'transparent', padding: '12px 14px', flex: 1 }}>
+                              {p && <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--ink)', lineHeight: 1.3, marginBottom: '4px' }}>{p.name}</div>}
+                              {p && p.description && <div style={{ fontSize: '11.5px', color: '#666', lineHeight: 1.5, fontStyle: 'italic' }}>{p.description}</div>}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* Signature Facet */}
+        {signatureFacet && (
+          <div style={{ ...secStyle, background: '#f4f4f4' }}>
+            {secLabel(isSr ? 'Facet napisan specifično za ovu ulogu' : 'A facet written specifically for this role')}
+            <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '32px', alignItems: 'start' }}>
+              <div>
+                <div style={{ display: 'inline-block', background: 'var(--ink)', color: '#fff', fontSize: '10px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', padding: '6px 14px', marginBottom: '16px' }}>
+                  {isSr ? 'Poseban facet' : 'Signature facet'}
+                </div>
+                {signatureFacet.dimension && (
+                  <div style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#666', lineHeight: 1.5 }}>
+                    {signatureFacet.dimension}<br />{signatureFacet.pillar}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 'clamp(20px, 3vw, 28px)', color: 'var(--ink)', lineHeight: 1.15, marginBottom: '14px' }}>
+                  {signatureFacet.name}
+                </div>
+                <p style={{ fontSize: '15px', fontStyle: 'italic', color: '#333', lineHeight: 1.65, paddingLeft: '16px', borderLeft: '2px solid #666', margin: 0 }}>
+                  {signatureFacet.definition}
+                </p>
+                {signatureFacet.why && (
+                  <p style={{ marginTop: '14px', fontSize: '12.5px', color: '#666', lineHeight: 1.6 }}>
+                    {signatureFacet.why}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Scope Note */}
+        {scopeNote && (
+          <div style={secStyle}>
+            {secLabel(isSr ? 'Obim onoga što ćete biti pitani' : 'The scope of what you will be asked')}
+            {dimensions && dimensions.length > 0 && (
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(dimensions.length, 4)}, 1fr)`, gap: '2px', marginTop: '4px', marginBottom: '14px' }}>
+                {dimensions.map((dim, di) => (
+                  <div key={di} style={{ background: '#f4f4f4', padding: '16px 14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink)', marginBottom: '4px' }}>{dim.name}</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '32px', color: '#ebebeb', lineHeight: 1, marginBottom: '4px' }}>{(dim.pillars || []).length}</div>
+                    <div style={{ fontSize: '11.5px', color: '#666' }}>{isSr ? 'stubova' : 'pillars'}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p style={{ fontSize: '13px', color: '#666', lineHeight: 1.65, fontStyle: 'italic' }}>
+              {scopeNote}
+            </p>
+          </div>
+        )}
+
+        {/* Full Profile Link */}
+        {fullProfileLink && (
+          <div style={{ padding: '28px 56px', textAlign: 'center', borderTop: '1px solid #ebebeb' }}>
+            <p style={{ fontSize: '13px', color: '#666' }}>
+              {isSr ? 'Želite da istražite kompletan Idealni Profil pre početka?' : 'Want to explore the complete Ideal Profile before beginning?'}
+              {' '}
+              <a href={fullProfileLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--ink)', fontWeight: 500, textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+                {isSr ? `Pogledajte kompletan ${profileDisplayName} profil →` : `View the full ${profileDisplayName} profile →`}
+              </a>
+            </p>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // ── Build intro pages: Info → Prep Guide → Profile Intro ─────────────────
+  const hasProfileIntro = profileIntro && (profileIntro.portrait || (profileIntro.dimensions && profileIntro.dimensions.length > 0));
+  const totalSteps = 2 + (hasProfileIntro ? 1 : 0); // info + prep + (optional profile intro)
   totalStepsRef.current = totalSteps;
 
   const introPages = [
-    ...levelPages,
+    {
+      key: 'info',
+      title: isSr ? 'HB Compass — Pre nego što počnete' : 'HB Compass — Before You Begin',
+      subtitle: isSr ? 'Ova stranica vam daje kontekst potreban za smisleno angažovanje u onome što sledi.' : 'This page gives you the context you need to engage meaningfully with what follows.',
+      label: isSr ? 'Pre nego što počnete' : 'Before you begin',
+      body: infoPageBody,
+    },
     {
       key: 'intro',
       title: T.prepGuideTitle,
       subtitle: T.prepGuideSubtitle,
       label: T.instructions,
       body: isSr ? (
-        <>
+        <div style={{ padding: '40px 56px', borderBottom: '1px solid #d8d8d8' }}>
           <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>
             {isSelf ? 'Šta vas čeka' : `Šta ćete raditi`}
           </p>
@@ -535,9 +814,9 @@ export default function AssessPage() {
               }
             </p>
           </div>
-        </>
+        </div>
       ) : (
-        <>
+        <div style={{ padding: '40px 56px', borderBottom: '1px solid #d8d8d8' }}>
           <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>
             {isSelf ? 'What you are about to do' : 'What you are about to do'}
           </p>
@@ -612,61 +891,113 @@ export default function AssessPage() {
               }
             </p>
           </div>
-        </>
+        </div>
       ),
     },
+    // Profile Introduction Page (only if data is available from API)
+    ...(hasProfileIntro ? [{
+      key: 'profile-intro',
+      title: profileDisplayName,
+      subtitle: isSr
+        ? 'Ovo je profil prema kome je vaša procena izgrađena — precizna definicija kako izgleda izvrsno obavljanje vaše uloge. Ova stranica traje oko 2 minuta.'
+        : 'This is the profile your assessment is built against — a precise definition of what excellent performance in your role looks like. This page takes about 2 minutes to read.',
+      label: isSr ? 'Vaš idealni profil' : 'Your Ideal Profile',
+      body: <ProfileIntroSection />,
+    }] : []),
   ];
 
+
+  // Step labels for progress trail
+  const trailSteps = [
+    isSr ? 'Informacije' : 'Information',
+    isSr ? 'Vodič za pripremu' : 'Preparation Guide',
+    ...(hasProfileIntro ? [isSr ? 'Vaš profil' : 'Your Profile'] : []),
+    isSr ? 'Procena' : 'Assessment',
+  ];
 
   if (introStep <= totalSteps) {
     const page = introPages[introStep - 1];
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--canvas)' }}>
+      <div style={{ minHeight: '100vh', background: '#ffffff' }}>
+        {/* Top band */}
+        <div style={{ height: '3px', background: 'var(--ink)' }} />
+
+        {/* Header */}
         <header style={{
-          background: 'var(--ink)', padding: '16px 24px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          position: 'sticky', top: 0, zIndex: 10,
+          padding: '20px 56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: '1px solid #d8d8d8',
         }}>
-          <Logo light size="sm" />
-          {data?.employeeName && (
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
-              {T.assessmentFor} <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{data.employeeName}</strong>
-            </div>
-          )}
-          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem' }}>
-            {introStep} of {totalSteps}
-          </div>
+          <img src="/hansenbeck.png" alt="HansenBeck™" style={{ height: '36px' }} />
+          <span style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '0.1em', color: '#999' }}>
+            {page.label}
+          </span>
         </header>
 
-        <div style={{ height: '3px', background: 'var(--canvas-warm)' }}>
-          <div style={{
-            height: '100%', background: 'var(--accent)',
-            width: `${(introStep / totalSteps) * 100}%`,
-            transition: 'width 0.4s ease',
-          }} />
+        {/* Progress trail */}
+        <div style={{ padding: '12px 56px', display: 'flex', alignItems: 'center', gap: 0, borderBottom: '1px solid #ebebeb', background: '#f4f4f4' }}>
+          {trailSteps.map((step, i) => (
+            <React.Fragment key={i}>
+              {i > 0 && <span style={{ fontSize: '10px', color: '#d8d8d8', padding: '0 10px' }}>›</span>}
+              <span style={{
+                fontSize: '11px', letterSpacing: '0.06em',
+                fontWeight: i === introStep - 1 ? 600 : 400,
+                color: i === introStep - 1 ? 'var(--ink)' : '#999',
+              }}>{step}</span>
+            </React.Fragment>
+          ))}
         </div>
 
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '48px 24px' }}>
-          <div style={{ marginBottom: '32px' }}>
-            <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '8px' }}>
+        {/* Page content area */}
+        <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 0 80px' }}>
+
+          {/* Intro header */}
+          <div style={{ padding: '40px 56px 32px', borderBottom: '1px solid #d8d8d8' }}>
+            <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '12px' }}>
               {page.label}
             </p>
-            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', marginBottom: '8px', lineHeight: 1.25 }}>{page.title}</h1>
-            {page.subtitle && <p style={{ color: 'var(--ink-soft)', fontSize: '0.95rem' }}>{page.subtitle}</p>}
+            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(28px, 4vw, 42px)', marginBottom: '10px', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--ink)' }}>{page.title}</h1>
+            {page.subtitle && <p style={{ color: '#666', fontSize: '0.92rem', lineHeight: 1.7, maxWidth: 560 }}>{page.subtitle}</p>}
           </div>
 
-          <Card style={{ padding: '32px' }}>
-            {page.body}
-          </Card>
+          {/* Body — rendered as sections, not a card */}
+          {page.body}
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px' }}>
-            <Btn variant="outline" onClick={() => setIntroStep(s => s - 1)} disabled={introStep === 1}>
-              {T.prevBtn}
-            </Btn>
-            <Btn onClick={() => setIntroStep(s => s + 1)}>
-              {introStep < totalSteps ? T.continueBtn : T.startBtn}
-            </Btn>
+          {/* CTA / Navigation */}
+          <div style={{ padding: '44px 56px', textAlign: 'center' }}>
+            <div
+              onClick={() => setIntroStep(s => s + 1)}
+              style={{
+                display: 'inline-block', background: 'var(--ink)', color: '#fff',
+                fontFamily: "'DM Sans', sans-serif", fontWeight: 500, fontSize: '13px',
+                letterSpacing: '0.1em', textTransform: 'uppercase',
+                padding: '16px 40px', cursor: 'pointer',
+              }}
+            >
+              {introStep < totalSteps
+                ? (isSr ? 'Nastavi →' : 'Continue →')
+                : (isSr ? 'Pokreni procenu →' : 'Begin Assessment →')
+              }
+            </div>
+            {introStep > 1 && (
+              <div style={{ marginTop: '14px' }}>
+                <span
+                  onClick={() => setIntroStep(s => s - 1)}
+                  style={{ fontSize: '0.82rem', color: '#999', cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '3px' }}
+                >
+                  {isSr ? '← Prethodna stranica' : '← Previous page'}
+                </span>
+              </div>
+            )}
           </div>
+
+          {/* Footer */}
+          <div style={{
+            padding: '20px 56px', borderTop: '1px solid #d8d8d8',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <img src="/explore_master_deliver.png" alt="Explore, Master, Deliver." style={{ height: '28px' }} />
+          </div>
+
         </div>
       </div>
     );
@@ -675,34 +1006,99 @@ export default function AssessPage() {
   // ── Main assessment UI ────────────────────────────────────────────────────
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--canvas)' }}>
-      <header style={{
-        background: 'var(--ink)', padding: '16px 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        position: 'sticky', top: 0, zIndex: 10,
-      }}>
-        <Logo light size="sm" />
-        {data?.employeeName && (
-          <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
-            {T.assessmentFor} <strong style={{ color: 'rgba(255,255,255,0.85)' }}>{data.employeeName}</strong>
-          </div>
-        )}
-        <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.82rem' }}>
-          {totalAnswered} / {questions.length} {T.answered}
+    <div style={{ minHeight: '100vh', background: '#ffffff' }}>
+      {/* Fullscreen loading overlay */}
+      {submitting && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(4px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px',
+        }}>
+          <Spinner size={36} />
+          <p style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--ink)', letterSpacing: '0.04em' }}>
+            {isSr ? 'Slanje vaše procene...' : 'Submitting your assessment...'}
+          </p>
+          <p style={{ fontSize: '0.8rem', color: '#999' }}>
+            {isSr ? 'Molimo sačekajte, ne zatvarajte stranicu.' : 'Please wait, do not close this page.'}
+          </p>
         </div>
+      )}
+
+      {/* Top band */}
+      <div style={{ height: '3px', background: 'var(--ink)' }} />
+
+      {/* Header — matches intro pages */}
+      <header style={{
+        padding: '20px 56px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        borderBottom: '1px solid #d8d8d8', position: 'sticky', top: 0, zIndex: 10, background: '#fff',
+      }}>
+        <img src="/hansenbeck.png" alt="HansenBeck™" style={{ height: '36px' }} />
+        {data?.employeeName && (
+          <span style={{ fontSize: '11px', fontWeight: 400, letterSpacing: '0.1em', color: '#999' }}>
+            {T.assessmentFor} <strong style={{ color: 'var(--ink)' }}>{data.employeeName}</strong>
+          </span>
+        )}
       </header>
 
-      <div style={{ height: '3px', background: 'var(--canvas-warm)' }}>
+      {/* Progress bar */}
+      <div style={{ height: '3px', background: '#ebebeb' }}>
         <div style={{
-          height: '100%', background: 'var(--accent)',
+          height: '100%', background: 'var(--ink)',
           width: `${(totalAnswered / questions.length) * 100}%`,
           transition: 'width 0.4s ease',
         }} />
       </div>
 
-      <div style={{ maxWidth: 780, margin: '0 auto', padding: '32px 24px' }}>
+      {/* Question navigator strip */}
+      {(() => {
+        const safeCurrentIdx = Math.min(Math.max(currentQ, 0), shuffledQuestions.length - 1);
+        return (
+          <div style={{
+            padding: '14px 56px', display: 'flex', alignItems: 'center', gap: '16px',
+            borderBottom: '1px solid #ebebeb', background: '#fafafa',
+          }}>
+            {/* Progress label */}
+            <div style={{ flexShrink: 0, textAlign: 'center', minWidth: '48px' }}>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--ink)', lineHeight: 1 }}>{totalAnswered}</div>
+              <div style={{ fontSize: '9px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999', marginTop: '2px' }}>/ {questions.length}</div>
+            </div>
 
-        {error && <div style={{ marginBottom: '20px' }}><Alert type="error">{error}</Alert></div>}
+            <div style={{ width: '1px', height: '28px', background: '#d8d8d8', flexShrink: 0 }} />
+
+            {/* Question numbers */}
+            <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', flex: 1, alignItems: 'center' }}>
+              {shuffledQuestions.map((sq, i) => {
+                const isAnswered = answers[sq.id] !== undefined;
+                const isCurrent = i === safeCurrentIdx;
+                return (
+                  <div
+                    key={i}
+                    onClick={() => setCurrentQ(i)}
+                    style={{
+                      width: isCurrent ? '26px' : '18px',
+                      height: isCurrent ? '26px' : '18px',
+                      borderRadius: '50%',
+                      cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: isCurrent ? '11px' : '8px',
+                      fontWeight: isCurrent ? 700 : 500,
+                      background: isCurrent ? 'var(--ink)' : isAnswered ? '#bbb' : '#e8e8e8',
+                      color: isCurrent ? '#fff' : isAnswered ? '#fff' : '#aaa',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {i + 1}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 0 80px' }}>
+
+        {error && <div style={{ padding: '20px 56px' }}><Alert type="error">{error}</Alert></div>}
 
         {(() => {
           const safeIdx = Math.min(Math.max(currentQ, 0), shuffledQuestions.length - 1);
@@ -710,31 +1106,29 @@ export default function AssessPage() {
           if (!q) return <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--ink-soft)' }}><Spinner /></div>;
           return (
             <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <span style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', fontWeight: 500 }}>
-                  {T.questionOf(safeIdx + 1, shuffledQuestions.length)}
-                </span>
-                <span style={{ fontSize: '0.78rem', color: 'var(--ink-faint)' }}>
-                  {totalAnswered} {T.answered}
-                </span>
+              {/* Question label */}
+              <div style={{ padding: '32px 56px 0' }}>
+                <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '8px' }}>
+                  {isSr ? 'Pitanje' : 'Question'} {safeIdx + 1} / {shuffledQuestions.length}
+                </p>
               </div>
-              
 
-              <Card style={{ padding: '28px' }}>
-                <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.65, marginBottom: '24px' }}>
+              {/* Question card */}
+              <div style={{ padding: '16px 56px 0' }}>
+                <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '28px', fontFamily: 'var(--font-display)', fontWeight: 400 }}>
                   {(q.text.includes(':') ? q.text.split(':').slice(1).join(':').trim() : q.text).replace(/\[Name\]/g, subjectFirstName)}
                 </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {q.options.map((opt, oi) => {
                     const optLabel = String.fromCharCode(65 + oi);
                     const selected = answers[q.id] === oi;
                     return (
                       <label key={oi} style={{
-                        display: 'flex', gap: '12px', alignItems: 'flex-start',
-                        padding: '12px 14px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                        border: `1.5px solid ${selected ? 'var(--ink)' : 'var(--canvas-warm)'}`,
-                        background: selected ? 'var(--canvas-warm)' : 'var(--canvas)',
-                        transition: 'all var(--transition)',
+                        display: 'flex', gap: '14px', alignItems: 'flex-start',
+                        padding: '14px 18px', cursor: 'pointer',
+                        border: `1.5px solid ${selected ? 'var(--ink)' : '#e4e4e4'}`,
+                        background: selected ? '#f4f4f4' : '#fff',
+                        transition: 'all 0.15s ease',
                       }}>
                         <input
                           type="radio"
@@ -742,36 +1136,77 @@ export default function AssessPage() {
                           value={oi}
                           checked={selected}
                           onChange={() => setAnswers(prev => ({ ...prev, [q.id]: oi }))}
-                          style={{ marginTop: '2px', accentColor: 'var(--ink)', flexShrink: 0 }}
+                          style={{ marginTop: '3px', accentColor: 'var(--ink)', flexShrink: 0 }}
                         />
                         <div>
-                          <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : 'var(--ink-soft)', fontSize: '0.82rem', marginRight: '8px' }}>{optLabel}.</span>
-                          <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.6 }}>{(opt.text || opt.desc || opt.label || '').replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
+                          <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : '#999', fontSize: '0.8rem', marginRight: '8px' }}>{optLabel}.</span>
+                          <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.65 }}>{(opt.text || opt.desc || opt.label || '').replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
                         </div>
                       </label>
                     );
                   })}
                 </div>
-              </Card>
+              </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px', gap: '12px' }}>
-                <Btn variant="outline" onClick={() => setCurrentQ(i => Math.max(0, i - 1))} disabled={safeIdx === 0}>
-                  {T.prevBtn}
-                </Btn>
+              {/* Navigation */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '32px 56px', gap: '12px' }}>
+                <span
+                  onClick={() => safeIdx > 0 && setCurrentQ(i => Math.max(0, i - 1))}
+                  style={{
+                    fontSize: '0.82rem', color: safeIdx === 0 ? '#ccc' : '#999',
+                    cursor: safeIdx === 0 ? 'default' : 'pointer',
+                    textDecoration: safeIdx === 0 ? 'none' : 'underline', textUnderlineOffset: '3px',
+                  }}
+                >
+                  ← {isSr ? 'Prethodno' : 'Previous'}
+                </span>
                 {safeIdx < shuffledQuestions.length - 1 ? (
-                  <Btn onClick={() => setCurrentQ(i => i + 1)}>
-                    {T.nextBtn}
-                  </Btn>
+                  <div
+                    onClick={() => setCurrentQ(i => i + 1)}
+                    style={{
+                      display: 'inline-block', background: 'var(--ink)', color: '#fff',
+                      fontFamily: "'DM Sans', sans-serif", fontWeight: 500, fontSize: '13px',
+                      letterSpacing: '0.1em', textTransform: 'uppercase',
+                      padding: '14px 36px', cursor: 'pointer',
+                    }}
+                  >
+                    {isSr ? 'Sledeće →' : 'Next →'}
+                  </div>
                 ) : (
-                  <Btn onClick={handleSubmit} loading={submitting} disabled={!allAnswered}>
-                    {allAnswered ? T.submitBtn : T.remaining(shuffledQuestions.length - totalAnswered)}
-                  </Btn>
+                  <div
+                    onClick={() => allAnswered && !submitting && handleSubmit()}
+                    style={{
+                      display: 'inline-block',
+                      background: allAnswered && !submitting ? 'var(--ink)' : '#ccc',
+                      color: '#fff',
+                      fontFamily: "'DM Sans', sans-serif", fontWeight: 500, fontSize: '13px',
+                      letterSpacing: '0.1em', textTransform: 'uppercase',
+                      padding: '14px 36px', cursor: allAnswered && !submitting ? 'pointer' : 'default',
+                      opacity: submitting ? 0.6 : 1,
+                    }}
+                  >
+                    {submitting
+                      ? (isSr ? 'Slanje...' : 'Submitting...')
+                      : allAnswered
+                        ? (isSr ? 'Pošalji procenu' : 'Submit Assessment')
+                        : (isSr ? `Još ${shuffledQuestions.length - totalAnswered} preostalo` : `${shuffledQuestions.length - totalAnswered} remaining`)
+                    }
+                  </div>
                 )}
               </div>
             </>
           );
         })()}
 
+      </div>
+
+      {/* Footer — matches intro pages */}
+      <div style={{
+        maxWidth: 800, margin: '0 auto',
+        padding: '20px 56px', borderTop: '1px solid #d8d8d8',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <img src="/explore_master_deliver.png" alt="Explore, Master, Deliver." style={{ height: '28px' }} />
       </div>
     </div>
   );
