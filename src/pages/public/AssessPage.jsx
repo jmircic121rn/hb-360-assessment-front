@@ -335,23 +335,40 @@ export default function AssessPage() {
   // Profile display name (original casing from data)
   const profileDisplayName = data?.profileName || data?.profilName || data?.ProfilName || data?.profile?.name || 'Profile';
 
-  // Profile Introduction data from API
-  const profileIntro = (() => {
-    // Try direct profileIntro field first
-    if (data?.profileIntro) return data.profileIntro;
-    if (data?.profile?.profileIntro) return data.profile.profileIntro;
-    if (data?.ProfileIntroJSON) return data.ProfileIntroJSON;
-    // If introText is a JSON object containing profile intro data, use it
+  // Profile Introduction data from API — supports both flat and multi-language JSON
+  const profileIntroRaw = (() => {
+    const candidates = [
+      data?.profileIntro,
+      data?.profile?.profileIntro,
+      data?.ProfileIntroJSON,
+    ];
+    for (const c of candidates) {
+      if (c && typeof c === 'object' && (c.portrait || c.dimensions || c.en || c.sr)) return c;
+    }
     const raw = data?.introText;
     if (!raw) return null;
-    if (typeof raw === 'object' && raw !== null && (raw.portrait || raw.dimensions)) return raw;
+    if (typeof raw === 'object' && raw !== null && (raw.portrait || raw.dimensions || raw.en || raw.sr)) return raw;
     if (typeof raw === 'string') {
       try {
         const parsed = JSON.parse(raw);
-        if (parsed && (parsed.portrait || parsed.dimensions)) return parsed;
+        if (parsed && (parsed.portrait || parsed.dimensions || parsed.en || parsed.sr)) return parsed;
       } catch {}
     }
     return null;
+  })();
+
+  // Resolve language-specific version: if JSON has { en: {...}, sr: {...} }, pick the right one
+  // If JSON is flat (portrait at top level), use as-is (assumed to be the only language available)
+  const profileIntro = (() => {
+    if (!profileIntroRaw) return null;
+    // Multi-language format: { en: { portrait, dimensions, ... }, sr: { ... } }
+    if (profileIntroRaw.en || profileIntroRaw.sr) {
+      const langKey = isSr ? 'sr' : 'en';
+      // Prefer requested language, fall back to en, then to whatever is available
+      return profileIntroRaw[langKey] || profileIntroRaw.en || profileIntroRaw.sr || null;
+    }
+    // Flat format (single language) — use as-is
+    return profileIntroRaw;
   })();
 
   // ── Information Page content (What is HB Compass) ────────────────────────
@@ -621,7 +638,7 @@ export default function AssessPage() {
         {/* Pillar Map */}
         {dimensions && dimensions.length > 0 && (
           <div style={secStyle}>
-            {secLabel(isSr ? 'Šta ova procena pokriva' : 'What this assessment covers')}
+            {secLabel(isSr ? 'Šta ova procena obuhvata' : 'What this assessment covers')}
             {(() => {
               const maxPillars = Math.max(...dimensions.map(d => (d.pillars || []).length));
               return (
@@ -654,11 +671,11 @@ export default function AssessPage() {
         {/* Signature Facet */}
         {signatureFacet && (
           <div style={{ ...secStyle, background: '#f4f4f4' }}>
-            {secLabel(isSr ? 'Facet napisan specifično za ovu ulogu' : 'A facet written specifically for this role')}
+            {secLabel(isSr ? 'Faceta napisana specifično za ovu ulogu' : 'A facet written specifically for this role')}
             <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '32px', alignItems: 'start' }}>
               <div>
                 <div style={{ display: 'inline-block', background: 'var(--ink)', color: '#fff', fontSize: '10px', fontWeight: 600, letterSpacing: '0.16em', textTransform: 'uppercase', padding: '6px 14px', marginBottom: '16px' }}>
-                  {isSr ? 'Poseban facet' : 'Signature facet'}
+                  {isSr ? 'Signature faceta' : 'Signature facet'}
                 </div>
                 {signatureFacet.dimension && (
                   <div style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#666', lineHeight: 1.5 }}>
@@ -686,14 +703,14 @@ export default function AssessPage() {
         {/* Scope Note */}
         {scopeNote && (
           <div style={secStyle}>
-            {secLabel(isSr ? 'Obim onoga što ćete biti pitani' : 'The scope of what you will be asked')}
+            {secLabel(isSr ? 'Obim onoga o čemu ćete biti pitani' : 'The scope of what you will be asked')}
             {dimensions && dimensions.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(dimensions.length, 4)}, 1fr)`, gap: '2px', marginTop: '4px', marginBottom: '14px' }}>
                 {dimensions.map((dim, di) => (
                   <div key={di} style={{ background: '#f4f4f4', padding: '16px 14px', textAlign: 'center' }}>
                     <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--ink)', marginBottom: '4px' }}>{dim.name}</div>
                     <div style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: '32px', color: '#ebebeb', lineHeight: 1, marginBottom: '4px' }}>{(dim.pillars || []).length}</div>
-                    <div style={{ fontSize: '11.5px', color: '#666' }}>{isSr ? 'stubova' : 'pillars'}</div>
+                    <div style={{ fontSize: '11.5px', color: '#666' }}>{isSr ? 'stuba' : 'pillars'}</div>
                   </div>
                 ))}
               </div>
@@ -720,9 +737,9 @@ export default function AssessPage() {
     );
   }
 
-  // ── Build intro pages: Info → Prep Guide → Profile Intro ─────────────────
+  // ── Build intro pages: Info → Profile Intro → Prep Guide ─────────────────
   const hasProfileIntro = profileIntro && (profileIntro.portrait || (profileIntro.dimensions && profileIntro.dimensions.length > 0));
-  const totalSteps = 2 + (hasProfileIntro ? 1 : 0); // info + prep + (optional profile intro)
+  const totalSteps = 2 + (hasProfileIntro ? 1 : 0); // info + (optional profile intro) + prep
   totalStepsRef.current = totalSteps;
 
   const introPages = [
@@ -733,6 +750,16 @@ export default function AssessPage() {
       label: isSr ? 'Pre nego što počnete' : 'Before you begin',
       body: infoPageBody,
     },
+    // Profile Introduction Page (only if data is available from API) — now page 2
+    ...(hasProfileIntro ? [{
+      key: 'profile-intro',
+      title: profileDisplayName,
+      subtitle: isSr
+        ? 'Ovo je profil prema kome je vaša procena izgrađena — precizna definicija toga kako izgleda odličan učinak u vašoj ulozi. Čitanje ove stranice traje oko 2 minuta.'
+        : 'This is the profile your assessment is built against — a precise definition of what excellent performance in your role looks like. This page takes about 2 minutes to read.',
+      label: isSr ? 'Vaš idealni profil' : 'Your Ideal Profile',
+      body: <ProfileIntroSection />,
+    }] : []),
     {
       key: 'intro',
       title: T.prepGuideTitle,
@@ -894,24 +921,14 @@ export default function AssessPage() {
         </div>
       ),
     },
-    // Profile Introduction Page (only if data is available from API)
-    ...(hasProfileIntro ? [{
-      key: 'profile-intro',
-      title: profileDisplayName,
-      subtitle: isSr
-        ? 'Ovo je profil prema kome je vaša procena izgrađena — precizna definicija kako izgleda izvrsno obavljanje vaše uloge. Ova stranica traje oko 2 minuta.'
-        : 'This is the profile your assessment is built against — a precise definition of what excellent performance in your role looks like. This page takes about 2 minutes to read.',
-      label: isSr ? 'Vaš idealni profil' : 'Your Ideal Profile',
-      body: <ProfileIntroSection />,
-    }] : []),
   ];
 
 
   // Step labels for progress trail
   const trailSteps = [
     isSr ? 'Informacije' : 'Information',
-    isSr ? 'Vodič za pripremu' : 'Preparation Guide',
     ...(hasProfileIntro ? [isSr ? 'Vaš profil' : 'Your Profile'] : []),
+    isSr ? 'Vodič za pripremu' : 'Preparation Guide',
     isSr ? 'Procena' : 'Assessment',
   ];
 

@@ -2053,6 +2053,7 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
                 const pid = e.target.value;
                 const prof = availableProfiles.find(p => String(p.id || p.ProfilID) === String(pid));
                 const langs = prof?.availableLangs || [];
+                console.log('[CampaignForm] selected profile:', prof, '| availableLangs:', langs);
                 setForm(f => ({ ...f, profilId: pid, lang: langs.length >= 1 ? langs[0] : 'en' }));
               }}>
                 <option value="">— Select profile —</option>
