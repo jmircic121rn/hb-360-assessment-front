@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { PortalLayout } from '../../components/Layout';
-import { NAV } from './ManagerPages';
+import { NAV } from './managerUtils';
 
 const FAQ = () => {
   const [openIndex, setOpenIndex] = useState(null);

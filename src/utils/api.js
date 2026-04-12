@@ -93,6 +93,8 @@ export const api = {
     addEmployeeDirectReport: (employeeId, data) => request(`/api/360/manager/employees/${employeeId}/direct-reports`, { method: 'POST', body: JSON.stringify(data) }, 'admin'),
     removeEmployeeDirectReport: (employeeId, drId) => request(`/api/360/manager/employees/${employeeId}/direct-reports/${drId}`, { method: 'DELETE' }, 'admin'),
     getCycleConfig: (employeeId, profileId) => request(`/api/360/manager/employees/${employeeId}/cycle-config?profileId=${profileId}`, {}, 'admin'),
+    getSelfFormats: (profileId) => request(`/api/360/manager/self-formats/${profileId}/available`, {}, 'admin'),
+    getAllSelfFormats: () => request('/api/360/manager/self-formats', {}, 'admin'),
     // Super-admin: manage which profiles each admin can see
     getAdminProfiles: () => request('/api/360/manager/admin-profiles', {}, 'admin'),
     updateAdminProfiles: (managerId, data) => request(`/api/360/manager/admin-profiles/${managerId}`, { method: 'PUT', body: JSON.stringify(data) }, 'admin'),

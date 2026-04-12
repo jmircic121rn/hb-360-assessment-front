@@ -1363,6 +1363,7 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
     includeSelf: false, includeManager: false, includePeer: false,
     includeDirectReports: false, includeExternal: false,
     includeCrossPartisan: false, includeMentor: false,
+    selfFormat: 'standard_40',
     peerEmployeeIds: [],
     peerNewPersons: [],
     drEmployeeIds: [],
@@ -1370,6 +1371,8 @@ function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockM
     deadline: '',
     ...initialData,
   });
+  const [selfFormats, setSelfFormats] = useState([]);
+  const [selfFormatsLoading, setSelfFormatsLoading] = useState(false);
   const [showAddEmp, setShowAddEmp] = useState(false);
   const [showAddPeer, setShowAddPeer] = useState(false);
   const [showAddDr, setShowAddDr] = useState(false);
@@ -1454,6 +1457,25 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
     if (isEmployeeProfile) {
       setForm(f => ({ ...f, includeSelf: true, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeCrossPartisan: false, includeMentor: false }));
     }
+  }, [form.profilId]); // eslint-disable-line
+
+  // Fetch available self-assessment formats when profile is selected
+  useEffect(() => {
+    if (!form.profilId) {
+      setSelfFormats([]);
+      return;
+    }
+    setSelfFormatsLoading(true);
+    api.manager.getSelfFormats(form.profilId)
+      .then(formats => {
+        setSelfFormats(formats || []);
+        // Reset to standard_40 if current format not available for this profile
+        if (formats?.length && !formats.find(f => f.formatKey === form.selfFormat)) {
+          setForm(f => ({ ...f, selfFormat: formats[0].formatKey }));
+        }
+      })
+      .catch(() => setSelfFormats([]))
+      .finally(() => setSelfFormatsLoading(false));
   }, [form.profilId]); // eslint-disable-line
 
   // Fetch cycle config when employee + profile selected (individual mode)
@@ -1675,6 +1697,7 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
       includePeer: form.includePeer, includeDirectReports: form.includeDirectReports,
       includeExternal: form.includeExternal,
       includeCrossPartisan: form.includeCrossPartisan, includeMentor: form.includeMentor,
+      selfFormat: form.includeSelf ? (form.selfFormat || 'standard_40') : undefined,
       // Dynamic profile-specific types (e.g. includeClient, includeBusinessPartner for ice_pilot)
       ...Object.fromEntries(
         Object.entries(form)
@@ -2171,6 +2194,66 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
           </FormField>
         );
       })()}
+
+      {/* Self-Assessment Format picker — shown when Self is included and formats are available */}
+      {form.includeSelf && selfFormats.length > 1 && (
+        <FormField label="Self-Assessment Format" hint="Choose the question format for the self-assessment">
+          {selfFormatsLoading ? (
+            <div style={{ padding: '8px 0', fontSize: '0.83rem', color: 'var(--ink-faint)' }}>Loading formats...</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {selfFormats.map(fmt => {
+                const isSelected = form.selfFormat === fmt.formatKey;
+                return (
+                  <label key={fmt.formatKey} style={{
+                    display: 'flex', gap: '14px', padding: '16px 18px', borderRadius: 'var(--radius-md)',
+                    cursor: 'pointer',
+                    border: `1.5px solid ${isSelected ? 'var(--ink)' : 'var(--canvas-warm)'}`,
+                    background: isSelected ? 'var(--canvas-warm)' : 'var(--canvas)',
+                    transition: 'all var(--transition)',
+                  }}>
+                    <input
+                      type="radio" name="selfFormat" value={fmt.formatKey}
+                      checked={isSelected}
+                      onChange={() => setForm(f => ({ ...f, selfFormat: fmt.formatKey }))}
+                      style={{ accentColor: 'var(--ink)', flexShrink: 0, marginTop: '2px' }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '4px' }}>
+                        {fmt.label}
+                        <span style={{ fontWeight: 400, fontSize: '0.8rem', color: 'var(--ink-soft)', marginLeft: '8px' }}>
+                          {fmt.estimatedTime} · {fmt.questionCount} questions
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '8px' }}>
+                        {fmt.description}
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Pros</div>
+                          {fmt.pros.map((p, i) => (
+                            <div key={i} style={{ fontSize: '0.78rem', color: 'var(--ink-soft)', lineHeight: 1.5, paddingLeft: '10px', position: 'relative' }}>
+                              <span style={{ position: 'absolute', left: 0 }}>+</span> {p}
+                            </div>
+                          ))}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Cons</div>
+                          {fmt.cons.map((c, i) => (
+                            <div key={i} style={{ fontSize: '0.78rem', color: 'var(--ink-soft)', lineHeight: 1.5, paddingLeft: '10px', position: 'relative' }}>
+                              <span style={{ position: 'absolute', left: 0 }}>-</span> {c}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </FormField>
+      )}
 
       {/* Peer picker — individual mode only */}
       {form.includePeer && mode === 'individual' && (

@@ -18,7 +18,7 @@ import { UnifiedLogin } from './pages/auth/LoginPages';
 import {
   ManagerWelcome, ManagerDashboard, ArchivedCampaigns, EmployeeForm,
   NewCampaign, CampaignEdit, CampaignDetail, CompaniesAndEmployees, EmployeeOverview, HBProfiles, CreateIdealProfile, AdminProfileAccess
-} from './pages/manager/ManagerPages';
+} from './pages/manager';
 
 // Employee portal
 import { EmployeeDashboard, EmployeeReports } from './pages/employee/EmployeePages';

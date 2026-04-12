@@ -3,10 +3,6 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { api } from '../../utils/api';
 import { Logo } from '../../components/Layout';
 import { Btn, Spinner, Alert, Card, FormField, Input } from '../../components/UI';
-import { leaderQuestions40 } from '../../data/leaderQuestions40';
-import { employeeQuestions40 } from '../../data/employeeQuestions40';
-import { managerQuestions } from '../../data/managerQuestions';
-import { peerQuestions } from '../../data/peerQuestions';
 
 export default function AssessPage() {
   const { token } = useParams();
@@ -138,20 +134,12 @@ export default function AssessPage() {
   const profileName = (data?.profileName || data?.profilName || data?.profile?.name || data?.ProfilName || '').toLowerCase();
   const isEmployeeProfile = profileName.includes('employee') || profileName.includes('modern');
 
-  // Use questions from DB if available; fall back to local question files
+  // Questions from DB
   const questions = (() => {
     const dbQ = data?.questions;
-    if (dbQ) {
-      const flat = Array.isArray(dbQ) ? dbQ : Object.values(dbQ).flat();
-      if (flat.length > 0) return flat;
-    }
-    const questionBank =
-      assessmentType === 'manager' ? managerQuestions :
-      ['peer', 'directreport', 'direct_report', 'external', 'other'].includes(assessmentType) ? peerQuestions :
-      isEmployeeProfile ? employeeQuestions40 :
-      leaderQuestions40;
-    const langQuestions = questionBank[lang] || questionBank['eng'];
-    return langQuestions ? Object.values(langQuestions).flat() : [];
+    if (!dbQ) return [];
+    const flat = Array.isArray(dbQ) ? dbQ : Object.values(dbQ).flat();
+    return flat;
   })();
 
   // Shuffle once — restore saved order on return visits so answered questions stay in place
