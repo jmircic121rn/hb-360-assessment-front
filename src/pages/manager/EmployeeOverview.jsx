@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../../utils/api';
-import { Layout, NAV, ActionMenu, IcPeople } from './managerUtils';
+import { Layout, NAV, ActionMenu, IcPeople, downloadReportPdf } from './managerUtils';
 import { PortalLayout } from '../../components/Layout';
 import {
   PageHeader, Card, Badge, Spinner, Alert, Select, Btn, Modal, Input

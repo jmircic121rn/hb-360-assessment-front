@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { api } from '../../utils/api';
-import { Layout, ActionMenu } from './managerUtils';
+import { Layout, ActionMenu, downloadReportPdf } from './managerUtils';
 import {
   PageHeader, Alert, Card, Badge, Btn, Table, Spinner, Select, Modal
 } from '../../components/UI';
