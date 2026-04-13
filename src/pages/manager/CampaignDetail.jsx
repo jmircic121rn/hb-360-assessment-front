@@ -45,6 +45,8 @@ export function CampaignDetail() {
 
   const selfLink = links.find(l => l.AssessmentType === 'self');
   const managerLink = links.find(l => l.AssessmentType === 'manager');
+  const selfFormat = campaign?.SelfFormat || 'standard_40';
+  const reportsAvailable = ['standard_40', 'short_20'].includes(selfFormat);
   const peerLinks = links.filter(l => l.AssessmentType === 'peer');
   const drLinks = links.filter(l => ['directreport', 'direct_report'].includes(l.AssessmentType));
   const otherLinks = links.filter(l => !['self', 'manager', 'peer', 'directreport', 'direct_report'].includes(l.AssessmentType));
@@ -283,9 +285,15 @@ export function CampaignDetail() {
             </div>
           </Card>
 
-          {/* Reports — always visible */}
+          {/* Reports — only for standard_40 and short_20 formats */}
           <Card style={{ padding: '24px' }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '4px' }}>Reports</h3>
+            {!reportsAvailable ? (
+              <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '0', lineHeight: 1.6 }}>
+                Reports are not available for the <strong>{selfFormat === 'forced_choice' ? 'Forced Choice' : selfFormat === 'deep_scenario' ? 'Deep Scenario' : selfFormat}</strong> assessment format.
+                Reports can only be generated for Standard (40Q) and Short (20Q) self-assessment formats.
+              </p>
+            ) : (<>
             <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.6 }}>
               Reports are visible to you and the employee.
               {!selfDone && <span style={{ color: 'var(--danger)', marginLeft: '4px' }}>Self assessment must be completed first.</span>}
@@ -376,6 +384,7 @@ export function CampaignDetail() {
                 </div>
               </div>
             )}
+            </>)}
           </Card>
 
           <PillarScoreChart data={cycleData} selfDone={selfDone} lang={campaign?.Lang || 'en'} />
