@@ -134,21 +134,43 @@ export default function AssessPage() {
   const profileName = (data?.profileName || data?.profilName || data?.profile?.name || data?.ProfilName || '').toLowerCase();
   const isEmployeeProfile = profileName.includes('employee') || profileName.includes('modern');
 
-  // Questions from DB
+  // Questions from DB — normalize so every item has `id` and `_format`
   const questions = (() => {
     const dbQ = data?.questions;
     if (!dbQ) return [];
     const flat = Array.isArray(dbQ) ? dbQ : Object.values(dbQ).flat();
-    return flat;
+    return flat.map((q, idx) => {
+      const n = { ...q };
+      // Ensure stable id
+      if (q.questionId) n.id = q.questionId;
+      else if (q.quadId) n.id = q.quadId;
+      else if (q.scenarioNumber !== undefined) n.id = `scenario_${q.scenarioNumber}`;
+      else if (!q.id) n.id = `q_${idx}`;
+      // Detect rendering format
+      if (q.statements) n._format = 'forced_choice';
+      else if (q.stages) n._format = 'deep_scenario_staged';
+      else if (q.questions && Array.isArray(q.questions)) n._format = 'deep_scenario_open';
+      else if (q.scale && Array.isArray(q.scale)) n._format = 'likert';
+      else if (q.scoringType === 'qualitative' || q.questionType === 'open_reflection') n._format = 'qualitative';
+      else if (q.options && Array.isArray(q.options)) n._format = 'options';
+      else n._format = 'options';
+      return n;
+    });
   })();
 
   // Shuffle once — restore saved order on return visits so answered questions stay in place
   // NOTE: depends on !!data so memo re-runs after data loads (not during loading state when
   // questions fall back to EN JS files, which would save wrong ORDER_KEY)
   const ORDER_KEY = `${PROGRESS_KEY}_order`;
+  // Detect selfFormat from API — used for format-specific logic
+  const selfFormat = data?.selfFormat || 'standard_40';
+
   const shuffledQuestions = useMemo(() => {
     if (questions.length === 0 || !data) return questions;
     if (assessmentType !== 'self') return questions;
+    // Don't shuffle forced_choice or deep_scenario — order matters
+    const hasCompound = questions.some(q => ['forced_choice', 'deep_scenario_staged', 'deep_scenario_open'].includes(q._format));
+    if (hasCompound) return questions;
     try {
       const savedOrder = localStorage.getItem(ORDER_KEY);
       if (savedOrder) {
@@ -167,49 +189,142 @@ export default function AssessPage() {
     return arr;
   }, [questions.length, assessmentType, !!data]); // eslint-disable-line
 
-  const totalAnswered = shuffledQuestions.filter(q => answers[q.id] !== undefined).length;
+  // Format-aware answer detection
+  const isQAnswered = (q) => {
+    if (!q) return false;
+    const a = answers[q.id];
+    switch (q._format) {
+      case 'forced_choice':
+        return a && typeof a === 'object' && a.most !== undefined && a.least !== undefined;
+      case 'deep_scenario_staged':
+        return (q.stages || []).every((_, i) => answers[`${q.id}_S${i + 1}`] !== undefined);
+      case 'deep_scenario_open':
+        return (q.questions || []).every((_, i) => {
+          const v = answers[`${q.id}_Q${i + 1}`];
+          return typeof v === 'string' && v.trim().length > 0;
+        });
+      case 'qualitative':
+        return typeof a === 'string' && a.trim().length > 0;
+      default: // options, likert
+        return a !== undefined && a !== null;
+    }
+  };
+  const totalAnswered = shuffledQuestions.filter(isQAnswered).length;
   const allAnswered = totalAnswered === shuffledQuestions.length;
 
   function pillarDim(pillar) {
     const p = (pillar || '').toUpperCase().trim();
-    if (p.includes('CILJEVI') || p.includes('PROMEN') || p.includes('SHORT-TERM') || p.includes('LONG-TERM')) return 'rezultati';
-    if (p.includes('PREMA') || p.includes('TOWARDS')) return 'mindset';
-    if (p.includes('EFIKASNOST') || p.includes('KOMUNIKACIJA') || p.includes('RAZVOJ TIMA') || p.includes('EFFICIENCY') || p.includes('COMMUNICATION') || p.includes('PEOPLE DEVELOPMENT')) return 'vestine';
-    return 'uticaj';
+    // Direct dimension names (EN)
+    if (p === 'RESULTS' || p === 'MINDSET' || p === 'SKILLS' || p === 'INFLUENCE') return p;
+    // Serbian/ICT/KAM pillar names → dimension mapping
+    if (p.includes('CILJEVI') || p.includes('PROMEN') || p.includes('SHORT-TERM') || p.includes('LONG-TERM')) return 'RESULTS';
+    if (p.includes('PREMA') || p.includes('TOWARDS') || p.includes('YOURSELF') || p.includes('AUDIENCE') || p.includes('MESSAGE') || p.includes('CRAFT')) return 'MINDSET';
+    if (p.includes('EFIKASNOST') || p.includes('KOMUNIKACIJA') || p.includes('RAZVOJ TIMA') || p.includes('EFFICIENCY') || p.includes('COMMUNICATION') || p.includes('PEOPLE DEVELOPMENT') || p.includes('TAKE-OFF') || p.includes('IN-FLIGHT') || p.includes('LANDING') || p.includes('PHYSICAL') || p.includes('PRESENCE')) return 'SKILLS';
+    return 'INFLUENCE';
   }
 
   async function handleSubmit() {
     setSubmitting(true);
     try {
-      const questionsPayload = questions.map(q => ({
-        id: q.id,
-        pillar: q.pillar,
-        dimension: q.dimension || pillarDim(q.pillar),
-        type: q.type,
-      }));
-
-      // answers stores option index — resolve to score first
       const qMap = {};
       questions.forEach(q => { qMap[q.id] = q; });
-      let processedAnswers = {};
-      Object.entries(answers).forEach(([qId, optIdx]) => {
-        const q = qMap[qId];
-        processedAnswers[qId] = q?.options[optIdx]?.score ?? optIdx;
+
+      // Build questions metadata payload
+      const questionsPayload = [];
+      questions.forEach(q => {
+        if (q._format === 'deep_scenario_staged') {
+          (q.stages || []).forEach((s, i) => questionsPayload.push({
+            id: `${q.id}_S${i + 1}`, pillar: q.pillar || q.pillarName || null,
+            dimension: q.dimension || pillarDim(q.pillar), type: s.stageType || 'decision',
+          }));
+        } else if (q._format === 'deep_scenario_open') {
+          (q.questions || []).forEach((sub, i) => questionsPayload.push({
+            id: `${q.id}_Q${i + 1}`, pillar: q.pillar || q.pillarName || null,
+            dimension: q.dimension || pillarDim(q.pillar), type: 'qualitative',
+          }));
+        } else if (q._format === 'forced_choice') {
+          questionsPayload.push({
+            id: q.id, pillar: null, dimension: null, type: 'forced_choice',
+            statements: q.statements, // backend needs this for ipsative scoring
+          });
+        } else {
+          questionsPayload.push({
+            id: q.id, pillar: q.pillar || q.pillarName || null,
+            dimension: q.dimension || pillarDim(q.pillar),
+            type: q.questionType || q.type || q._format,
+          });
+        }
       });
 
+      // Process answers based on format
+      let processedAnswers = {};
+      Object.entries(answers).forEach(([qId, val]) => {
+        const q = qMap[qId];
+        if (!q) {
+          // Sub-question of a compound type (scenario_1_S1, scenario_1_Q1, etc.)
+          // Find parent question
+          const parentId = qId.replace(/_[SQ]\d+$/, '');
+          const parent = qMap[parentId];
+          if (parent?._format === 'deep_scenario_staged') {
+            // val is option index → resolve to score
+            const stageIdx = parseInt(qId.split('_S')[1], 10) - 1;
+            const stage = parent.stages?.[stageIdx];
+            processedAnswers[qId] = stage?.options?.[val]?.score ?? val;
+          } else {
+            // deep_scenario_open or other — text or direct value
+            processedAnswers[qId] = val;
+          }
+          return;
+        }
+
+        switch (q._format) {
+          case 'options': {
+            const score = q.options?.[val]?.score ?? val;
+            processedAnswers[qId] = score;
+            break;
+          }
+          case 'likert': {
+            // val is the direct scale value (1-5)
+            processedAnswers[qId] = val;
+            break;
+          }
+          case 'qualitative': {
+            // val is text string
+            processedAnswers[qId] = val;
+            break;
+          }
+          case 'forced_choice': {
+            // val is { most: idx, least: idx } — send as-is, backend handles ipsative scoring
+            processedAnswers[qId] = val;
+            break;
+          }
+          default:
+            processedAnswers[qId] = val;
+        }
+      });
+
+      // Apply reflection modifier for self-assessment with standard options format
       if (assessmentType === 'self') {
         const REFLECTION_MAP = { 1: -2, 3: 0, 5: 1 };
         const resolved = {};
         Object.entries(processedAnswers).forEach(([qId, score]) => {
           const q = qMap[qId];
-          resolved[qId] = (q?.type === 'reflection' && REFLECTION_MAP[score] !== undefined)
-            ? REFLECTION_MAP[score]
-            : score;
+          // Only apply reflection map to 'options' format questions (A/B/C scoring)
+          // Likert reflection questions keep their original score
+          if (q && q._format === 'options' && q.questionType === 'reflection' && typeof score === 'number' && REFLECTION_MAP[score] !== undefined) {
+            resolved[qId] = REFLECTION_MAP[score];
+          } else {
+            resolved[qId] = score;
+          }
         });
         processedAnswers = resolved;
       }
 
-      const payload = { answers: processedAnswers, questions: questionsPayload };
+      const payload = {
+        answers: processedAnswers,
+        questions: questionsPayload,
+        selfFormat: selfFormat,
+      };
       if (needsIdentity) payload.assessorInfo = { ...assessorInfo, language: rawLang || 'en' };
       await api.submitAssessment(token, payload);
       localStorage.removeItem(PROGRESS_KEY);
@@ -1073,7 +1188,7 @@ export default function AssessPage() {
             {/* Question numbers */}
             <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap', flex: 1, alignItems: 'center' }}>
               {shuffledQuestions.map((sq, i) => {
-                const isAnswered = answers[sq.id] !== undefined;
+                const isAnswered = isQAnswered(sq);
                 const isCurrent = i === safeCurrentIdx;
                 return (
                   <div
@@ -1114,43 +1229,283 @@ export default function AssessPage() {
               {/* Question label */}
               <div style={{ padding: '32px 56px 0' }}>
                 <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '8px' }}>
-                  {isSr ? 'Pitanje' : 'Question'} {safeIdx + 1} / {shuffledQuestions.length}
+                  {q._format === 'forced_choice'
+                    ? `${isSr ? 'Izbor' : 'Choice'} ${safeIdx + 1} / ${shuffledQuestions.length}`
+                    : q._format?.startsWith('deep_scenario')
+                      ? `${isSr ? 'Scenario' : 'Scenario'} ${safeIdx + 1} / ${shuffledQuestions.length}`
+                      : `${isSr ? 'Pitanje' : 'Question'} ${safeIdx + 1} / ${shuffledQuestions.length}`
+                  }
                 </p>
               </div>
 
-              {/* Question card */}
+              {/* Question card — format-aware rendering */}
               <div style={{ padding: '16px 56px 0' }}>
-                <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '28px', fontFamily: 'var(--font-display)', fontWeight: 400 }}>
-                  {(q.text.includes(':') ? q.text.split(':').slice(1).join(':').trim() : q.text).replace(/\[Name\]/g, subjectFirstName)}
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {q.options.map((opt, oi) => {
-                    const optLabel = String.fromCharCode(65 + oi);
-                    const selected = answers[q.id] === oi;
-                    return (
-                      <label key={oi} style={{
-                        display: 'flex', gap: '14px', alignItems: 'flex-start',
-                        padding: '14px 18px', cursor: 'pointer',
-                        border: `1.5px solid ${selected ? 'var(--ink)' : '#e4e4e4'}`,
-                        background: selected ? '#f4f4f4' : '#fff',
-                        transition: 'all 0.15s ease',
-                      }}>
-                        <input
-                          type="radio"
-                          name={q.id}
-                          value={oi}
-                          checked={selected}
-                          onChange={() => setAnswers(prev => ({ ...prev, [q.id]: oi }))}
-                          style={{ marginTop: '3px', accentColor: 'var(--ink)', flexShrink: 0 }}
-                        />
-                        <div>
-                          <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : '#999', fontSize: '0.8rem', marginRight: '8px' }}>{optLabel}.</span>
-                          <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.65 }}>{(opt.text || opt.desc || opt.label || '').replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
+
+                {/* ── OPTIONS (A/B/C) ── */}
+                {q._format === 'options' && (
+                  <>
+                    <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '28px', fontFamily: 'var(--font-display)', fontWeight: 400 }}>
+                      {((q.text || q.stem || '').includes(':') ? (q.text || q.stem || '').split(':').slice(1).join(':').trim() : (q.text || q.stem || '')).replace(/\[Name\]/g, subjectFirstName)}
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {q.options.map((opt, oi) => {
+                        const optLabel = String.fromCharCode(65 + oi);
+                        const selected = answers[q.id] === oi;
+                        return (
+                          <label key={oi} style={{
+                            display: 'flex', gap: '14px', alignItems: 'flex-start',
+                            padding: '14px 18px', cursor: 'pointer',
+                            border: `1.5px solid ${selected ? 'var(--ink)' : '#e4e4e4'}`,
+                            background: selected ? '#f4f4f4' : '#fff',
+                            transition: 'all 0.15s ease',
+                          }}>
+                            <input type="radio" name={q.id} value={oi} checked={selected}
+                              onChange={() => setAnswers(prev => ({ ...prev, [q.id]: oi }))}
+                              style={{ marginTop: '3px', accentColor: 'var(--ink)', flexShrink: 0 }}
+                            />
+                            <div>
+                              <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : '#999', fontSize: '0.8rem', marginRight: '8px' }}>{optLabel}.</span>
+                              <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.65 }}>{(opt.text || opt.desc || opt.label || '').replace(/^[A-Z]\.\s*/, '').replace(/\[Name\]/g, subjectFirstName)}</span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* ── LIKERT 1-5 SCALE ── */}
+                {q._format === 'likert' && (
+                  <>
+                    <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '28px', fontFamily: 'var(--font-display)', fontWeight: 400 }}>
+                      {(q.stem || q.text || '').replace(/\[Name\]/g, subjectFirstName)}
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {(q.scale || []).map((s) => {
+                        const selected = answers[q.id] === s.value;
+                        return (
+                          <label key={s.value} onClick={() => setAnswers(prev => ({ ...prev, [q.id]: s.value }))}
+                            style={{
+                              display: 'flex', gap: '14px', alignItems: 'center',
+                              padding: '14px 18px', cursor: 'pointer',
+                              border: `1.5px solid ${selected ? 'var(--ink)' : '#e4e4e4'}`,
+                              background: selected ? '#f4f4f4' : '#fff',
+                              transition: 'all 0.15s ease',
+                            }}>
+                            <div style={{
+                              width: 32, height: 32, borderRadius: '50%', flexShrink: 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: selected ? 'var(--ink)' : '#f0f0f0',
+                              color: selected ? '#fff' : '#666',
+                              fontWeight: 700, fontSize: '0.9rem',
+                            }}>{s.value}</div>
+                            <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.5 }}>{s.label}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* ── QUALITATIVE (open text) ── */}
+                {q._format === 'qualitative' && (
+                  <>
+                    <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '16px', fontFamily: 'var(--font-display)', fontWeight: 400 }}>
+                      {(q.stem || q.text || '').replace(/\[Name\]/g, subjectFirstName)}
+                    </p>
+                    {q.followUpPrompts && (
+                      <div style={{ background: '#f8f8f8', border: '1px solid #e8e8e8', padding: '16px 20px', marginBottom: '20px', fontSize: '0.82rem', color: '#555', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
+                        <div style={{ fontWeight: 600, marginBottom: '6px', color: 'var(--ink)', fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                          {isSr ? 'Smernice za odgovor' : 'Response guidance'}
                         </div>
-                      </label>
-                    );
-                  })}
-                </div>
+                        {q.followUpPrompts}
+                      </div>
+                    )}
+                    <textarea
+                      value={answers[q.id] || ''}
+                      onChange={e => setAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                      placeholder={isSr ? 'Unesite vaš odgovor ovde...' : 'Enter your response here...'}
+                      style={{
+                        width: '100%', minHeight: 180, padding: '14px 16px',
+                        border: '1.5px solid #e4e4e4', fontSize: '0.9rem', lineHeight: 1.7,
+                        fontFamily: 'inherit', resize: 'vertical', outline: 'none',
+                        background: '#fff',
+                      }}
+                      onFocus={e => e.target.style.borderColor = 'var(--ink)'}
+                      onBlur={e => e.target.style.borderColor = '#e4e4e4'}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: '#999', marginTop: '6px', textAlign: 'right' }}>
+                      {(answers[q.id] || '').length} {isSr ? 'karaktera' : 'characters'}
+                    </div>
+                  </>
+                )}
+
+                {/* ── FORCED CHOICE (Most / Least) ── */}
+                {q._format === 'forced_choice' && (
+                  <>
+                    {q.topic && (
+                      <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                        {q.topic}
+                      </p>
+                    )}
+                    <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '24px', fontFamily: 'var(--font-display)', fontWeight: 400 }}>
+                      {isSr
+                        ? 'Izaberite tvrdnju koja vas NAJVIŠE opisuje i tvrdnju koja vas NAJMANJE opisuje.'
+                        : 'Select the statement that is MOST like you and the statement that is LEAST like you.'
+                      }
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {(q.statements || []).map((st, si) => {
+                        const fcAnswer = answers[q.id] || {};
+                        const isMost = fcAnswer.most === si;
+                        const isLeast = fcAnswer.least === si;
+                        return (
+                          <div key={si} style={{
+                            display: 'flex', gap: '12px', alignItems: 'center',
+                            padding: '14px 18px',
+                            border: `1.5px solid ${isMost ? '#2a7d2a' : isLeast ? '#c44' : '#e4e4e4'}`,
+                            background: isMost ? '#f0f8f0' : isLeast ? '#fef5f5' : '#fff',
+                            transition: 'all 0.15s ease',
+                          }}>
+                            <div style={{ flex: 1, fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.65 }}>
+                              {st.label && <span style={{ fontWeight: 600, color: '#999', marginRight: '8px' }}>{st.label}.</span>}
+                              {st.text}
+                            </div>
+                            <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                              <button type="button" onClick={() => {
+                                setAnswers(prev => {
+                                  const cur = prev[q.id] || {};
+                                  const newMost = cur.most === si ? undefined : si;
+                                  const newLeast = cur.least === si ? undefined : cur.least;
+                                  return { ...prev, [q.id]: { most: newMost, least: newLeast === newMost ? undefined : newLeast } };
+                                });
+                              }} style={{
+                                padding: '4px 10px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer',
+                                border: `1.5px solid ${isMost ? '#2a7d2a' : '#ccc'}`,
+                                background: isMost ? '#2a7d2a' : '#fff', color: isMost ? '#fff' : '#666',
+                                textTransform: 'uppercase', letterSpacing: '0.05em',
+                              }}>
+                                {isSr ? 'Najviše' : 'Most'}
+                              </button>
+                              <button type="button" onClick={() => {
+                                setAnswers(prev => {
+                                  const cur = prev[q.id] || {};
+                                  const newLeast = cur.least === si ? undefined : si;
+                                  const newMost = cur.most === si ? undefined : cur.most;
+                                  return { ...prev, [q.id]: { most: newMost === newLeast ? undefined : newMost, least: newLeast } };
+                                });
+                              }} style={{
+                                padding: '4px 10px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer',
+                                border: `1.5px solid ${isLeast ? '#c44' : '#ccc'}`,
+                                background: isLeast ? '#c44' : '#fff', color: isLeast ? '#fff' : '#666',
+                                textTransform: 'uppercase', letterSpacing: '0.05em',
+                              }}>
+                                {isSr ? 'Najmanje' : 'Least'}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* ── DEEP SCENARIO — staged (ICT/KAM: stages with decision/reflection options) ── */}
+                {q._format === 'deep_scenario_staged' && (
+                  <>
+                    {q.title && (
+                      <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: '8px' }}>
+                        {q.title}
+                      </p>
+                    )}
+                    {q.context && (
+                      <p style={{ fontSize: '0.88rem', color: '#555', lineHeight: 1.7, marginBottom: '20px', fontStyle: 'italic', background: '#f8f8f8', padding: '14px 18px', border: '1px solid #e8e8e8' }}>
+                        {q.context}
+                      </p>
+                    )}
+                    {(q.stages || []).map((stage, si) => {
+                      const stageKey = `${q.id}_S${si + 1}`;
+                      return (
+                        <div key={si} style={{ marginBottom: '28px', paddingBottom: '20px', borderBottom: si < q.stages.length - 1 ? '1px solid #eee' : 'none' }}>
+                          <div style={{ fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999', marginBottom: '8px' }}>
+                            {isSr ? 'Faza' : 'Stage'} {si + 1} — {stage.stageType === 'reflection' ? (isSr ? 'Refleksija' : 'Reflection') : (isSr ? 'Odluka' : 'Decision')}
+                          </div>
+                          <p style={{ fontSize: '0.9rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '14px' }}>
+                            {stage.situation}
+                          </p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {(stage.options || []).map((opt, oi) => {
+                              const optLabel = String.fromCharCode(65 + oi);
+                              const selected = answers[stageKey] === oi;
+                              return (
+                                <label key={oi} style={{
+                                  display: 'flex', gap: '14px', alignItems: 'flex-start',
+                                  padding: '14px 18px', cursor: 'pointer',
+                                  border: `1.5px solid ${selected ? 'var(--ink)' : '#e4e4e4'}`,
+                                  background: selected ? '#f4f4f4' : '#fff',
+                                  transition: 'all 0.15s ease',
+                                }}>
+                                  <input type="radio" name={stageKey} value={oi} checked={selected}
+                                    onChange={() => setAnswers(prev => ({ ...prev, [stageKey]: oi }))}
+                                    style={{ marginTop: '3px', accentColor: 'var(--ink)', flexShrink: 0 }}
+                                  />
+                                  <div>
+                                    <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : '#999', fontSize: '0.8rem', marginRight: '8px' }}>{optLabel}.</span>
+                                    <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.65 }}>{opt.text}</span>
+                                  </div>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* ── DEEP SCENARIO — open (TLS: scenarios with qualitative questions) ── */}
+                {q._format === 'deep_scenario_open' && (
+                  <>
+                    {q.title && (
+                      <p style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginBottom: '8px' }}>
+                        {q.title}
+                      </p>
+                    )}
+                    {q.facetsAssessed && (
+                      <p style={{ fontSize: '0.78rem', color: '#999', marginBottom: '16px', fontWeight: 500 }}>
+                        {q.facetsAssessed}
+                      </p>
+                    )}
+                    {q.context && (
+                      <p style={{ fontSize: '0.88rem', color: '#555', lineHeight: 1.7, marginBottom: '20px', fontStyle: 'italic', background: '#f8f8f8', padding: '14px 18px', border: '1px solid #e8e8e8' }}>
+                        {q.context}
+                      </p>
+                    )}
+                    {(q.questions || []).map((sub, si) => {
+                      const subKey = `${q.id}_Q${si + 1}`;
+                      return (
+                        <div key={si} style={{ marginBottom: '24px' }}>
+                          <p style={{ fontSize: '0.9rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '10px', fontWeight: 500 }}>
+                            {si + 1}. {sub.text}
+                          </p>
+                          <textarea
+                            value={answers[subKey] || ''}
+                            onChange={e => setAnswers(prev => ({ ...prev, [subKey]: e.target.value }))}
+                            placeholder={isSr ? 'Vaš odgovor...' : 'Your response...'}
+                            style={{
+                              width: '100%', minHeight: 120, padding: '12px 14px',
+                              border: '1.5px solid #e4e4e4', fontSize: '0.88rem', lineHeight: 1.65,
+                              fontFamily: 'inherit', resize: 'vertical', outline: 'none', background: '#fff',
+                            }}
+                            onFocus={e => e.target.style.borderColor = 'var(--ink)'}
+                            onBlur={e => e.target.style.borderColor = '#e4e4e4'}
+                          />
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+
               </div>
 
               {/* Navigation */}
