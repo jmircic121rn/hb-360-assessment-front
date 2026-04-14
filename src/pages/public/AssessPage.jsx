@@ -145,15 +145,46 @@ export default function AssessPage() {
       if (q.questionId) n.id = q.questionId;
       else if (q.quadId) n.id = q.quadId;
       else if (q.scenarioNumber !== undefined) n.id = `scenario_${q.scenarioNumber}`;
+      else if (q.questionNumber !== undefined && !q.id) n.id = `q_${q.cluster || ''}_${q.questionNumber}`;
       else if (!q.id) n.id = `q_${idx}`;
+
+      // Normalise options-as-object (e.g. short_20 ICT: { A: "...", B: "...", C: "..." })
+      // into an array of { label, text, score } matching the rest of the pipeline.
+      if (q.options && !Array.isArray(q.options) && typeof q.options === 'object') {
+        const scoreMap = q.scoring || {};
+        const keys = Object.keys(q.options).filter(k => typeof q.options[k] === 'string');
+        if (keys.length) {
+          n.options = keys.map(k => ({
+            label: k,
+            text: q.options[k],
+            score: typeof scoreMap[k] === 'number' ? scoreMap[k] : undefined,
+          }));
+        }
+      }
+
+      // Short_20 placeholder stems look like "Core Scenario — Q1" / "Reflection on Impact — Q2".
+      // Treat these as non-text so we render a proper topic + lead-in instead.
+      const stemRaw = (q.stem || q.text || '').trim();
+      const isPlaceholderStem = /^(Core\s+Scenario|Reflection\s+on\s+Impact)\s*[—–-]\s*Q\s*\d+$/i.test(stemRaw);
+      if (isPlaceholderStem) {
+        n._placeholderStem = true;
+        n.stem = '';
+        n.text = '';
+      }
+
       // Detect rendering format
       if (q.statements) n._format = 'forced_choice';
       else if (q.stages) n._format = 'deep_scenario_staged';
       else if (q.questions && Array.isArray(q.questions)) n._format = 'deep_scenario_open';
       else if (q.scale && Array.isArray(q.scale)) n._format = 'likert';
       else if (q.scoringType === 'qualitative' || q.questionType === 'open_reflection') n._format = 'qualitative';
-      else if (q.options && Array.isArray(q.options)) n._format = 'options';
+      else if (n.options && Array.isArray(n.options)) n._format = 'options';
       else n._format = 'options';
+
+      // Normalise question sub-type for topic rendering (core vs reflection)
+      const t = (q.questionType || q.type || '').toLowerCase();
+      n._questionKind = t === 'reflection' ? 'reflection' : t === 'core' ? 'core' : null;
+
       return n;
     });
   })();
@@ -213,7 +244,7 @@ export default function AssessPage() {
   const allAnswered = totalAnswered === shuffledQuestions.length;
 
   function pillarDim(pillar) {
-    const p = (pillar || '').toUpperCase().trim();
+    const p = String(pillar || '').toUpperCase().trim();
     // Direct dimension names (EN)
     if (p === 'RESULTS' || p === 'MINDSET' || p === 'SKILLS' || p === 'INFLUENCE') return p;
     // Serbian/ICT/KAM pillar names → dimension mapping
@@ -230,17 +261,26 @@ export default function AssessPage() {
       questions.forEach(q => { qMap[q.id] = q; });
 
       // Build questions metadata payload
+      // Some formats (short_20) use numeric pillar ids with a separate pillarName.
+      // Backend expects pillar as a string, so always coerce to a string label.
+      const pillarStr = (qq) => {
+        if (typeof qq.pillarName === 'string' && qq.pillarName.trim()) return qq.pillarName;
+        if (typeof qq.pillar === 'string' && qq.pillar.trim()) return qq.pillar;
+        if (qq.pillar != null) return String(qq.pillar);
+        return null;
+      };
       const questionsPayload = [];
       questions.forEach(q => {
+        const pStr = pillarStr(q);
         if (q._format === 'deep_scenario_staged') {
           (q.stages || []).forEach((s, i) => questionsPayload.push({
-            id: `${q.id}_S${i + 1}`, pillar: q.pillar || q.pillarName || null,
-            dimension: q.dimension || pillarDim(q.pillar), type: s.stageType || 'decision',
+            id: `${q.id}_S${i + 1}`, pillar: pStr,
+            dimension: q.dimension || pillarDim(pStr), type: s.stageType || 'decision',
           }));
         } else if (q._format === 'deep_scenario_open') {
           (q.questions || []).forEach((sub, i) => questionsPayload.push({
-            id: `${q.id}_Q${i + 1}`, pillar: q.pillar || q.pillarName || null,
-            dimension: q.dimension || pillarDim(q.pillar), type: 'qualitative',
+            id: `${q.id}_Q${i + 1}`, pillar: pStr,
+            dimension: q.dimension || pillarDim(pStr), type: 'qualitative',
           }));
         } else if (q._format === 'forced_choice') {
           questionsPayload.push({
@@ -249,8 +289,8 @@ export default function AssessPage() {
           });
         } else {
           questionsPayload.push({
-            id: q.id, pillar: q.pillar || q.pillarName || null,
-            dimension: q.dimension || pillarDim(q.pillar),
+            id: q.id, pillar: pStr,
+            dimension: q.dimension || pillarDim(pStr),
             type: q.questionType || q.type || q._format,
           });
         }
@@ -1245,7 +1285,18 @@ export default function AssessPage() {
                 {q._format === 'options' && (
                   <>
                     <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '28px', fontFamily: 'var(--font-display)', fontWeight: 400 }}>
-                      {((q.text || q.stem || '').includes(':') ? (q.text || q.stem || '').split(':').slice(1).join(':').trim() : (q.text || q.stem || '')).replace(/\[Name\]/g, subjectFirstName)}
+                      {q._placeholderStem
+                        ? (q._questionKind === 'reflection'
+                            ? (isSr
+                                ? 'Kada se osvrnete na situacije poput ove, koja od sledećih tvrdnji najbolje opisuje ono što se obično dešavalo?'
+                                : 'Looking back at situations like this, which of the following best describes what typically happened?')
+                            : (isSr
+                                ? 'Izaberite pristup koji najbolje opisuje kako biste vi postupili u ovoj situaciji.'
+                                : 'Select the approach that best describes how you would act in this situation.'))
+                        : ((q.text || q.stem || '').includes(':')
+                            ? (q.text || q.stem || '').split(':').slice(1).join(':').trim()
+                            : (q.text || q.stem || '')
+                          ).replace(/\[Name\]/g, subjectFirstName)}
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {q.options.map((opt, oi) => {
