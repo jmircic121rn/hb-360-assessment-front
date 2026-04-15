@@ -135,6 +135,8 @@ export default function AssessPage() {
   const isEmployeeProfile = profileName.includes('employee') || profileName.includes('modern');
 
   // Questions from DB — normalize so every item has `id` and `_format`
+  const isFcThenScenarioPhase1 =
+    (data?.selfFormat === 'fc_then_scenario') && ((data?.currentPhase ?? 1) <= 1);
   const questions = (() => {
     const dbQ = data?.questions;
     if (!dbQ) return [];
@@ -173,7 +175,7 @@ export default function AssessPage() {
       }
 
       // Detect rendering format
-      if (q.statements) n._format = 'forced_choice';
+      if (q.statements) n._format = isFcThenScenarioPhase1 ? 'forced_choice_rank' : 'forced_choice';
       else if (q.stages) n._format = 'deep_scenario_staged';
       else if (q.questions && Array.isArray(q.questions)) n._format = 'deep_scenario_open';
       else if (q.scale && Array.isArray(q.scale)) n._format = 'likert';
@@ -200,7 +202,7 @@ export default function AssessPage() {
     if (questions.length === 0 || !data) return questions;
     if (assessmentType !== 'self') return questions;
     // Don't shuffle forced_choice or deep_scenario — order matters
-    const hasCompound = questions.some(q => ['forced_choice', 'deep_scenario_staged', 'deep_scenario_open'].includes(q._format));
+    const hasCompound = questions.some(q => ['forced_choice', 'forced_choice_rank', 'deep_scenario_staged', 'deep_scenario_open'].includes(q._format));
     if (hasCompound) return questions;
     try {
       const savedOrder = localStorage.getItem(ORDER_KEY);
@@ -227,6 +229,17 @@ export default function AssessPage() {
     switch (q._format) {
       case 'forced_choice':
         return a && typeof a === 'object' && a.most !== undefined && a.least !== undefined;
+      case 'forced_choice_rank': {
+        if (!a || typeof a !== 'object') return false;
+        const n = (q.statements || []).length;
+        const ranks = [];
+        for (let i = 0; i < n; i++) {
+          const r = a[`s${i}`];
+          if (r !== 1 && r !== 2 && r !== 3 && r !== 4) return false;
+          ranks.push(r);
+        }
+        return new Set(ranks).size === n;
+      }
       case 'deep_scenario_staged':
         return (q.stages || []).every((_, i) => answers[`${q.id}_S${i + 1}`] !== undefined);
       case 'deep_scenario_open':
@@ -287,6 +300,11 @@ export default function AssessPage() {
             id: q.id, pillar: null, dimension: null, type: 'forced_choice',
             statements: q.statements, // backend needs this for ipsative scoring
           });
+        } else if (q._format === 'forced_choice_rank') {
+          questionsPayload.push({
+            id: q.id, pillar: null, dimension: null, type: 'forced_choice_rank',
+            statements: q.statements, // backend needs dimensionCode per position for Phase 1 scoring
+          });
         } else {
           questionsPayload.push({
             id: q.id, pillar: pStr,
@@ -338,6 +356,11 @@ export default function AssessPage() {
             processedAnswers[qId] = val;
             break;
           }
+          case 'forced_choice_rank': {
+            // val is { s0: rank, s1: rank, s2: rank, s3: rank } — send as-is; backend scores +3/+1/-1/-3
+            processedAnswers[qId] = val;
+            break;
+          }
           default:
             processedAnswers[qId] = val;
         }
@@ -366,7 +389,31 @@ export default function AssessPage() {
         selfFormat: selfFormat,
       };
       if (needsIdentity) payload.assessorInfo = { ...assessorInfo, language: rawLang || 'en' };
-      await api.submitAssessment(token, payload);
+      const resp = await api.submitAssessment(token, payload);
+
+      // fc_then_scenario: Phase 1 submit transitions to Phase 2 — refetch and
+      // keep the user on the assessment flow (new question set is DS tracks).
+      if (resp && resp.nextPhase === 2) {
+        localStorage.removeItem(PROGRESS_KEY);
+        localStorage.removeItem(ORDER_KEY);
+        setAnswers({});
+        setCurrentQ(0);
+        // Skip the intro pages on Phase 2 — respondent has already seen them
+        // on Phase 1. Jump straight to the first deep-scenario question.
+        setIntroStep(999);
+        setLoading(true);
+        setData(null);
+        try {
+          const fresh = await api.getAssessment(token);
+          setData(fresh);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
       localStorage.removeItem(PROGRESS_KEY);
       localStorage.removeItem(ORDER_KEY);
       setSubmitted(true);
@@ -1269,7 +1316,7 @@ export default function AssessPage() {
               {/* Question label */}
               <div style={{ padding: '32px 56px 0' }}>
                 <p style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--ink-faint)', marginBottom: '8px' }}>
-                  {q._format === 'forced_choice'
+                  {(q._format === 'forced_choice' || q._format === 'forced_choice_rank')
                     ? `${isSr ? 'Izbor' : 'Choice'} ${safeIdx + 1} / ${shuffledQuestions.length}`
                     : q._format?.startsWith('deep_scenario')
                       ? `${isSr ? 'Scenario' : 'Scenario'} ${safeIdx + 1} / ${shuffledQuestions.length}`
@@ -1461,6 +1508,73 @@ export default function AssessPage() {
                   </>
                 )}
 
+                {/* ── FORCED CHOICE — 4-way ranking (fc_then_scenario Phase 1) ── */}
+                {q._format === 'forced_choice_rank' && (() => {
+                  const rankAnswer = answers[q.id] || {};
+                  const rankLabels = isSr ? ['1. (najviše)', '2.', '3.', '4. (najmanje)'] : ['1st (most)', '2nd', '3rd', '4th (least)'];
+                  const assignRank = (statementIdx, rank) => {
+                    setAnswers(prev => {
+                      const cur = { ...(prev[q.id] || {}) };
+                      // If another statement already holds this rank, clear it.
+                      for (const k of Object.keys(cur)) {
+                        if (cur[k] === rank) delete cur[k];
+                      }
+                      // Toggle off if clicking the same rank again.
+                      if (cur[`s${statementIdx}`] === rank) {
+                        delete cur[`s${statementIdx}`];
+                      } else {
+                        cur[`s${statementIdx}`] = rank;
+                      }
+                      return { ...prev, [q.id]: cur };
+                    });
+                  };
+                  return (
+                    <>
+                      {q.topic && (
+                        <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
+                          {q.topic}
+                        </p>
+                      )}
+                      <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '24px', fontFamily: 'var(--font-display)', fontWeight: 400 }}>
+                        {q.instruction || (isSr
+                          ? 'Rangirajte ove četiri tvrdnje od one koja vam NAJVIŠE liči (1.) do one koja vam NAJMANJE liči (4.).'
+                          : 'Rank these four statements from most like you (1st) to least like you (4th).')}
+                      </p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {(q.statements || []).map((st, si) => {
+                          const currentRank = rankAnswer[`s${si}`];
+                          return (
+                            <div key={si} style={{
+                              display: 'flex', gap: '12px', alignItems: 'center',
+                              padding: '14px 18px',
+                              border: `1.5px solid ${currentRank ? '#2a7d2a' : '#e4e4e4'}`,
+                              background: currentRank ? '#f0f8f0' : '#fff',
+                              transition: 'all 0.15s ease',
+                            }}>
+                              <div style={{ flex: 1, fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.65 }}>
+                                {st.text}
+                              </div>
+                              <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
+                                {[1, 2, 3, 4].map(r => {
+                                  const active = currentRank === r;
+                                  return (
+                                    <button key={r} type="button" onClick={() => assignRank(si, r)} style={{
+                                      minWidth: '80px', padding: '6px 10px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer',
+                                      border: `1.5px solid ${active ? '#2a7d2a' : '#ccc'}`,
+                                      background: active ? '#2a7d2a' : '#fff', color: active ? '#fff' : '#666',
+                                      textTransform: 'uppercase', letterSpacing: '0.05em',
+                                    }}>{rankLabels[r - 1]}</button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  );
+                })()}
+
                 {/* ── DEEP SCENARIO — staged (ICT/KAM: stages with decision/reflection options) ── */}
                 {q._format === 'deep_scenario_staged' && (
                   <>
@@ -1487,6 +1601,9 @@ export default function AssessPage() {
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {(stage.options || []).map((opt, oi) => {
                               const optLabel = String.fromCharCode(65 + oi);
+                              // Seed data sometimes prefixes option text with "A. "/"B. "/"C. "
+                              // Strip it so we don't render the label twice.
+                              const optText = (opt.text || '').replace(/^\s*[A-E]\s*[.)\-:]\s*/, '');
                               const selected = answers[stageKey] === oi;
                               return (
                                 <label key={oi} style={{
@@ -1502,7 +1619,7 @@ export default function AssessPage() {
                                   />
                                   <div>
                                     <span style={{ fontWeight: 600, color: selected ? 'var(--ink)' : '#999', fontSize: '0.8rem', marginRight: '8px' }}>{optLabel}.</span>
-                                    <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.65 }}>{opt.text}</span>
+                                    <span style={{ fontSize: '0.88rem', color: 'var(--ink)', lineHeight: 1.65 }}>{optText}</span>
                                   </div>
                                 </label>
                               );
