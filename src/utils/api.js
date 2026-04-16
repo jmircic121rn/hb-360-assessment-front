@@ -80,6 +80,11 @@ export const api = {
       return res.blob();
     },
     getManagersList: () => request('/api/360/manager/managers-list', {}, 'admin'),
+    // Drafts
+    getDrafts: () => request('/api/360/manager/drafts', {}, 'admin'),
+    saveDraft: (data) => request('/api/360/manager/drafts', { method: 'POST', body: JSON.stringify(data) }, 'admin'),
+    updateDraft: (id, data) => request(`/api/360/manager/drafts/${id}`, { method: 'PUT', body: JSON.stringify(data) }, 'admin'),
+    deleteDraft: (id) => request(`/api/360/manager/drafts/${id}`, { method: 'DELETE' }, 'admin'),
     // Companies
     getCompanies: () => request('/api/360/manager/companies', {}, 'admin'),
     createCompany: (data) => request('/api/360/manager/companies', { method: 'POST', body: JSON.stringify(data) }, 'admin'),
@@ -95,6 +100,7 @@ export const api = {
     getCycleConfig: (employeeId, profileId) => request(`/api/360/manager/employees/${employeeId}/cycle-config?profileId=${profileId}`, {}, 'admin'),
     getSelfFormats: (profileId) => request(`/api/360/manager/self-formats/${profileId}/available`, {}, 'admin'),
     getAllSelfFormats: () => request('/api/360/manager/self-formats', {}, 'admin'),
+    getManagerFormats: (profileId) => request(`/api/360/manager/manager-formats/${profileId}/available`, {}, 'admin'),
     // Super-admin: manage which profiles each admin can see
     getAdminProfiles: () => request('/api/360/manager/admin-profiles', {}, 'admin'),
     updateAdminProfiles: (managerId, data) => request(`/api/360/manager/admin-profiles/${managerId}`, { method: 'PUT', body: JSON.stringify(data) }, 'admin'),

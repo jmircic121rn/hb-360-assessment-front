@@ -137,6 +137,8 @@ export default function AssessPage() {
   // Questions from DB — normalize so every item has `id` and `_format`
   const isFcThenScenarioPhase1 =
     (data?.selfFormat === 'fc_then_scenario') && ((data?.currentPhase ?? 1) <= 1);
+  const isShort20QuadsPhase2 =
+    (data?.selfFormat === 'short_20_quads') && ((data?.currentPhase ?? 1) >= 2);
   const questions = (() => {
     const dbQ = data?.questions;
     if (!dbQ) return [];
@@ -175,7 +177,7 @@ export default function AssessPage() {
       }
 
       // Detect rendering format
-      if (q.statements) n._format = isFcThenScenarioPhase1 ? 'forced_choice_rank' : 'forced_choice';
+      if (q.statements) n._format = (isFcThenScenarioPhase1 || isShort20QuadsPhase2) ? 'forced_choice_rank' : 'forced_choice';
       else if (q.stages) n._format = 'deep_scenario_staged';
       else if (q.questions && Array.isArray(q.questions)) n._format = 'deep_scenario_open';
       else if (q.scale && Array.isArray(q.scale)) n._format = 'likert';
@@ -197,6 +199,22 @@ export default function AssessPage() {
   const ORDER_KEY = `${PROGRESS_KEY}_order`;
   // Detect selfFormat from API — used for format-specific logic
   const selfFormat = data?.selfFormat || 'standard_40';
+  const managerFormat = data?.managerFormat || 'standard_40';
+
+  // Estimated completion time based on format and assessment type
+  const estimatedMinutes = (() => {
+    if (assessmentType === 'self') {
+      if (selfFormat === 'short_20' || selfFormat === 'short_20_quads') return 15;
+      if (selfFormat === 'fc_then_scenario') return 35;
+      return 45; // standard_40
+    }
+    if (assessmentType === 'manager') {
+      if (managerFormat === 'short_20') return 15;
+      return 30; // standard_40
+    }
+    // peer, directreport — 40 facets, A/B/C simpler than scenarios
+    return 25;
+  })();
 
   const shuffledQuestions = useMemo(() => {
     if (questions.length === 0 || !data) return questions;
@@ -302,7 +320,7 @@ export default function AssessPage() {
           });
         } else if (q._format === 'forced_choice_rank') {
           questionsPayload.push({
-            id: q.id, pillar: null, dimension: null, type: 'forced_choice_rank',
+            id: q.id, pillar: pStr || null, dimension: q.dimension || null, type: 'forced_choice_rank',
             statements: q.statements, // backend needs dimensionCode per position for Phase 1 scoring
           });
         } else {
@@ -1026,8 +1044,8 @@ export default function AssessPage() {
             <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>Kada ste spremni</p>
             <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
               {isSelf
-                ? 'Pronađite mirno mesto. Odvojite 20 minuta bez prekida. Vaša iskrena refleksija je najvrednija stvar koju možete doneti ovoj proceni — vrednija od bilo koje ocene.'
-                : `Pronađite mirno mesto. Odvojite 20 minuta bez prekida. Vaše iskreno, promišljeno zapažanje je najvrednije što možete doneti ovoj proceni — vrednije za razvoj ${subjectFirstName} od bilo koje ulepšane ocene.`
+                ? `Pronađite mirno mesto. Odvojite ${estimatedMinutes} minuta bez prekida. Vaša iskrena refleksija je najvrednija stvar koju možete doneti ovoj proceni — vrednija od bilo koje ocene.`
+                : `Pronađite mirno mesto. Odvojite ${estimatedMinutes} minuta bez prekida. Vaše iskreno, promišljeno zapažanje je najvrednije što možete doneti ovoj proceni — vrednije za razvoj ${subjectFirstName} od bilo koje ulepšane ocene.`
               }
             </p>
           </div>
@@ -1103,8 +1121,8 @@ export default function AssessPage() {
             <p style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', color: 'var(--ink)' }}>When you're ready</p>
             <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, fontSize: '0.88rem' }}>
               {isSelf
-                ? 'Find a quiet place. Set aside 20 minutes without interruptions. Your honest reflection is the most valuable thing you can bring to this assessment — more valuable than any particular score.'
-                : `Find a quiet place. Set aside 20 minutes without interruptions. Your honest, considered observation is the most valuable thing you can bring to this assessment — more useful to ${subjectFirstName}'s development than any inflated score.`
+                ? `Find a quiet place. Set aside ${estimatedMinutes} minutes without interruptions. Your honest reflection is the most valuable thing you can bring to this assessment — more valuable than any particular score.`
+                : `Find a quiet place. Set aside ${estimatedMinutes} minutes without interruptions. Your honest, considered observation is the most valuable thing you can bring to this assessment — more useful to ${subjectFirstName}'s development than any inflated score.`
               }
             </p>
           </div>
@@ -1508,7 +1526,7 @@ export default function AssessPage() {
                   </>
                 )}
 
-                {/* ── FORCED CHOICE — 4-way ranking (fc_then_scenario Phase 1) ── */}
+                {/* ── FORCED CHOICE — 4-way ranking (fc_then_scenario Phase 1 / short_20_quads Phase 2) ── */}
                 {q._format === 'forced_choice_rank' && (() => {
                   const rankAnswer = answers[q.id] || {};
                   const rankLabels = isSr ? ['1. (najviše)', '2.', '3.', '4. (najmanje)'] : ['1st (most)', '2nd', '3rd', '4th (least)'];
@@ -1533,6 +1551,16 @@ export default function AssessPage() {
                       {q.topic && (
                         <p style={{ fontSize: '0.82rem', fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '8px' }}>
                           {q.topic}
+                        </p>
+                      )}
+                      {q.context && (
+                        <p style={{ fontSize: '0.88rem', color: '#555', lineHeight: 1.7, marginBottom: '14px', fontStyle: 'italic', background: '#f8f8f8', padding: '14px 18px', border: '1px solid #e8e8e8' }}>
+                          {q.context}
+                        </p>
+                      )}
+                      {q.question && (
+                        <p style={{ fontSize: '0.92rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '12px', fontWeight: 500 }}>
+                          {q.question}
                         </p>
                       )}
                       <p style={{ fontSize: '0.95rem', color: 'var(--ink)', lineHeight: 1.7, marginBottom: '24px', fontFamily: 'var(--font-display)', fontWeight: 400 }}>

@@ -6,7 +6,7 @@ import {
   Btn, Card, Modal, FormField, Input, Select, Alert, Spinner, Badge
 } from '../../components/UI';
 
-export function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockMode, initialCompanyId, returnTo }) {
+export const CampaignForm = React.forwardRef(function CampaignForm({ initialData, onSubmit, submitLoading, submitError, lockMode, initialCompanyId, returnTo, onSaveDraft, saveDraftLoading }, ref) {
   const navigate = useNavigate();
   const [employees, setEmployees] = useState([]);
   const [profiles, setProfiles] = useState([]);
@@ -18,6 +18,7 @@ export function CampaignForm({ initialData, onSubmit, submitLoading, submitError
     includeDirectReports: false, includeExternal: false,
     includeCrossPartisan: false, includeMentor: false,
     selfFormat: 'standard_40',
+    managerFormat: 'standard_40',
     peerEmployeeIds: [],
     peerNewPersons: [],
     drEmployeeIds: [],
@@ -52,20 +53,51 @@ export function CampaignForm({ initialData, onSubmit, submitLoading, submitError
   const [groupSameBlockReasons, setGroupSameBlockReasons] = useState({}); // { [key]: blockMessage }
   const [selfFormats, setSelfFormats] = useState([]);
   const [selfFormatsLoading, setSelfFormatsLoading] = useState(false);
+  const [managerFormats, setManagerFormats] = useState([]);
+  const [managerFormatsLoading, setManagerFormatsLoading] = useState(false);
+  const [expandedFormatSection, setExpandedFormatSection] = useState(null); // 'self' | 'manager' | null
 
   useEffect(() => {
     api.manager.getEmployees().then(setEmployees).catch(() => {});
     api.manager.getProfiles().then(setProfiles).catch(() => {});
     api.manager.getCompanies().then(r => setCompanies(Array.isArray(r) ? r : [])).catch(() => {});
     if (!lockMode) {
-      api.manager.getCampaigns()
-        .then(campaigns => {
-          const nextNum = (campaigns?.length || 0) + 1;
-          setForm(f => ({ ...f, name: f.name || `HB Compass Campaign ${nextNum}` }));
-        })
-        .catch(() => {});
+      // Fetch both campaigns and drafts so the auto-generated name number
+      // doesn't collide with existing campaigns or saved drafts.
+      Promise.all([
+        api.manager.getCampaigns().catch(() => []),
+        api.manager.getDrafts().catch(() => []),
+      ]).then(([campaigns, drafts]) => {
+        // Collect all numbers already used in "HB Compass Campaign N" names
+        const usedNums = new Set();
+        const nameRe = /^HB Compass Campaign\s+(\d+)$/i;
+        for (const c of (campaigns || [])) {
+          const m = (c.name || c.Name || '').match(nameRe);
+          if (m) usedNums.add(Number(m[1]));
+        }
+        for (const d of (drafts || [])) {
+          const m = (d.name || '').match(nameRe);
+          if (m) usedNums.add(Number(m[1]));
+        }
+        // Pick the first unused number starting from total+1, or at least 1
+        let nextNum = Math.max((campaigns?.length || 0) + (drafts?.length || 0), 1);
+        while (usedNums.has(nextNum)) nextNum++;
+        setForm(f => ({ ...f, name: f.name || `HB Compass Campaign ${nextNum}` }));
+      });
     }
   }, []);
+
+  // Expose form data to parent (for draft save/load)
+  React.useImperativeHandle(ref, () => ({
+    getFormData: () => ({ form, mode, groupStyle, subgroups, filterEmpCompany }),
+    setFormData: (data) => {
+      if (data.form) setForm(f => ({ ...f, ...data.form }));
+      if (data.mode) setMode(data.mode);
+      if (data.groupStyle) setGroupStyle(data.groupStyle);
+      if (data.subgroups) setSubgroups(data.subgroups);
+      if (data.filterEmpCompany) setFilterEmpCompany(data.filterEmpCompany);
+    },
+  }));
 
   const selectedProfile = profiles.find(p => String(p.id || p.ProfilID) === String(form.profilId));
 
@@ -129,6 +161,24 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
       })
       .catch(() => setSelfFormats([]))
       .finally(() => setSelfFormatsLoading(false));
+  }, [form.profilId]); // eslint-disable-line
+
+  // Fetch available manager-assessment formats when profile is selected
+  useEffect(() => {
+    if (!form.profilId) {
+      setManagerFormats([]);
+      return;
+    }
+    setManagerFormatsLoading(true);
+    api.manager.getManagerFormats(form.profilId)
+      .then(formats => {
+        setManagerFormats(formats || []);
+        if (formats?.length && !formats.find(f => f.formatKey === form.managerFormat)) {
+          setForm(f => ({ ...f, managerFormat: formats[0].formatKey }));
+        }
+      })
+      .catch(() => setManagerFormats([]))
+      .finally(() => setManagerFormatsLoading(false));
   }, [form.profilId]); // eslint-disable-line
 
   // Fetch cycle config when employee + profile selected (individual mode)
@@ -327,7 +377,29 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
     finally { setAddEmpLoading(false); }
   }
 
-  const toggle = key => setForm(f => ({ ...f, [key]: !f[key] }));
+  const toggle = key => {
+    setForm(f => {
+      const next = { ...f, [key]: !f[key] };
+
+      // Format picker accordion logic:
+      // When checking a type that has formats → expand its picker.
+      // When checking a second type that also has formats → collapse the first.
+      // When unchecking → collapse if it was open.
+      const formatMap = { includeSelf: 'self', includeManager: 'manager' };
+      const section = formatMap[key];
+      if (section) {
+        if (next[key]) {
+          // Just checked — open this picker
+          setExpandedFormatSection(section);
+        } else {
+          // Unchecked — close if it was the open one
+          setExpandedFormatSection(prev => prev === section ? null : prev);
+        }
+      }
+
+      return next;
+    });
+  };
 
   function toggleId(listKey, id) {
     setForm(f => ({
@@ -351,6 +423,7 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
       includeExternal: form.includeExternal,
       includeCrossPartisan: form.includeCrossPartisan, includeMentor: form.includeMentor,
       selfFormat: form.includeSelf ? (form.selfFormat || 'standard_40') : undefined,
+      managerFormat: form.includeManager ? (form.managerFormat || 'standard_40') : undefined,
       // Dynamic profile-specific types (e.g. includeClient, includeBusinessPartner for ice_pilot)
       ...Object.fromEntries(
         Object.entries(form)
@@ -855,65 +928,111 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
         );
       })()}
 
-      {/* Self-Assessment Format picker — shown when Self is included and multiple formats are available */}
-      {form.includeSelf && selfFormats.length > 1 && (
-        <FormField label="Self-Assessment Format" hint="Choose the question format for the self-assessment">
-          {selfFormatsLoading ? (
-            <div style={{ padding: '8px 0', fontSize: '0.83rem', color: 'var(--ink-faint)' }}>Loading formats...</div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {selfFormats.map(fmt => {
-                const isSelected = form.selfFormat === fmt.formatKey;
-                return (
-                  <label key={fmt.formatKey} style={{
-                    display: 'flex', gap: '14px', padding: '16px 18px', borderRadius: 'var(--radius-md)',
-                    cursor: 'pointer',
-                    border: `1.5px solid ${isSelected ? 'var(--ink)' : 'var(--canvas-warm)'}`,
-                    background: isSelected ? 'var(--canvas-warm)' : 'var(--canvas)',
-                    transition: 'all var(--transition)',
-                  }}>
-                    <input
-                      type="radio" name="selfFormat" value={fmt.formatKey}
-                      checked={isSelected}
-                      onChange={() => setForm(f => ({ ...f, selfFormat: fmt.formatKey }))}
-                      style={{ accentColor: 'var(--ink)', flexShrink: 0, marginTop: '2px' }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.9rem', marginBottom: '4px' }}>
-                        {fmt.label}
-                        <span style={{ fontWeight: 400, fontSize: '0.8rem', color: 'var(--ink-soft)', marginLeft: '8px' }}>
-                          {fmt.estimatedTime} · {fmt.questionCount} questions
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '0.82rem', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '8px' }}>
-                        {fmt.description}
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                        <div>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Pros</div>
-                          {(fmt.pros || []).map((p, i) => (
-                            <div key={i} style={{ fontSize: '0.78rem', color: 'var(--ink-soft)', lineHeight: 1.5, paddingLeft: '10px', position: 'relative' }}>
-                              <span style={{ position: 'absolute', left: 0 }}>+</span> {p}
-                            </div>
-                          ))}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Cons</div>
-                          {(fmt.cons || []).map((c, i) => (
-                            <div key={i} style={{ fontSize: '0.78rem', color: 'var(--ink-soft)', lineHeight: 1.5, paddingLeft: '10px', position: 'relative' }}>
-                              <span style={{ position: 'absolute', left: 0 }}>-</span> {c}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </label>
-                );
-              })}
+      {/* ── Format pickers (accordion) ── only one expanded at a time ── */}
+      {[
+        { key: 'self',    show: form.includeSelf    && selfFormats.length > 1,    formats: selfFormats,    loading: selfFormatsLoading,    label: 'Self-Assessment Format',    formField: 'selfFormat',    radioName: 'selfFormat' },
+        { key: 'manager', show: form.includeManager && managerFormats.length > 1, formats: managerFormats, loading: managerFormatsLoading, label: 'Manager Assessment Format', formField: 'managerFormat', radioName: 'managerFormat' },
+      ].filter(s => s.show).map(section => {
+        const isExpanded = expandedFormatSection === section.key;
+        const selectedFmt = section.formats.find(f => f.formatKey === form[section.formField]) || section.formats[0];
+        return (
+          <div key={section.key} style={{ marginBottom: '4px' }}>
+            {/* Collapsed summary bar */}
+            <div
+              onClick={() => setExpandedFormatSection(isExpanded ? null : section.key)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 16px', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                border: `1.5px solid ${isExpanded ? 'var(--ink)' : 'var(--canvas-warm)'}`,
+                background: isExpanded ? 'var(--canvas-warm)' : 'var(--canvas)',
+                transition: 'all var(--transition)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--ink-soft)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  {section.label}
+                </div>
+                {selectedFmt && (
+                  <div style={{ fontSize: '0.83rem', color: 'var(--ink)', fontWeight: 500 }}>
+                    {selectedFmt.label}
+                    <span style={{ fontWeight: 400, fontSize: '0.78rem', color: 'var(--ink-soft)', marginLeft: '6px' }}>
+                      {selectedFmt.estimatedTime}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div style={{
+                fontSize: '0.72rem', fontWeight: 600, color: 'var(--ink-soft)',
+                textTransform: 'uppercase', letterSpacing: '0.06em',
+                padding: '3px 10px', borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--canvas-warm)', background: 'var(--canvas)',
+              }}>
+                {isExpanded ? 'Close' : 'Change'}
+              </div>
             </div>
-          )}
-        </FormField>
-      )}
+
+            {/* Expanded format cards */}
+            {isExpanded && (
+              <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {section.loading ? (
+                  <div style={{ padding: '8px 0', fontSize: '0.83rem', color: 'var(--ink-faint)' }}>Loading formats...</div>
+                ) : section.formats.map(fmt => {
+                  const isSelected = form[section.formField] === fmt.formatKey;
+                  return (
+                    <label key={fmt.formatKey} style={{
+                      display: 'flex', gap: '14px', padding: '14px 16px', borderRadius: 'var(--radius-md)',
+                      cursor: 'pointer',
+                      border: `1.5px solid ${isSelected ? 'var(--ink)' : 'var(--canvas-warm)'}`,
+                      background: isSelected ? 'var(--canvas-warm)' : 'var(--canvas)',
+                      transition: 'all var(--transition)',
+                    }}>
+                      <input
+                        type="radio" name={section.radioName} value={fmt.formatKey}
+                        checked={isSelected}
+                        onChange={() => {
+                          setForm(f => ({ ...f, [section.formField]: fmt.formatKey }));
+                          // Auto-collapse after selection
+                          setExpandedFormatSection(null);
+                        }}
+                        style={{ accentColor: 'var(--ink)', flexShrink: 0, marginTop: '2px' }}
+                      />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: '0.88rem', marginBottom: '3px' }}>
+                          {fmt.label}
+                          <span style={{ fontWeight: 400, fontSize: '0.78rem', color: 'var(--ink-soft)', marginLeft: '8px' }}>
+                            {fmt.estimatedTime} · {fmt.questionCount} questions
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: 'var(--ink-soft)', lineHeight: 1.5, marginBottom: '6px' }}>
+                          {fmt.description}
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                          <div>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '3px' }}>Pros</div>
+                            {(fmt.pros || []).map((p, i) => (
+                              <div key={i} style={{ fontSize: '0.76rem', color: 'var(--ink-soft)', lineHeight: 1.45, paddingLeft: '10px', position: 'relative' }}>
+                                <span style={{ position: 'absolute', left: 0 }}>+</span> {p}
+                              </div>
+                            ))}
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '3px' }}>Cons</div>
+                            {(fmt.cons || []).map((c, i) => (
+                              <div key={i} style={{ fontSize: '0.76rem', color: 'var(--ink-soft)', lineHeight: 1.45, paddingLeft: '10px', position: 'relative' }}>
+                                <span style={{ position: 'absolute', left: 0 }}>-</span> {c}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       {/* Peer picker — individual mode only */}
       {form.includePeer && mode === 'individual' && (
@@ -983,6 +1102,12 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
 
       <div style={{ display: 'flex', gap: '10px' }}>
         <Btn type="submit" loading={submitLoading} style={{ minWidth: 160, justifyContent: 'center' }}>Launch Campaign</Btn>
+        {onSaveDraft && (
+          <Btn variant="outline" type="button" loading={saveDraftLoading} onClick={onSaveDraft}
+            style={{ minWidth: 120, justifyContent: 'center' }}>
+            Save Draft
+          </Btn>
+        )}
         <Btn variant="outline" type="button" onClick={() => navigate(returnTo || '/manager/dashboard')}>Cancel</Btn>
       </div>
     </form>
@@ -1075,7 +1200,7 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
     </Modal>
     </>
   );
-}
+});
 
 // ── People Picker (Peers / Direct Reports) ─────────────────────────────────
 // Uvek generiše I shared link I individualne linkove za izabrane iz baze
