@@ -290,7 +290,6 @@ export function CampaignDetail() {
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '4px' }}>Reports</h3>
             {!reportsAvailable ? (
               <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '0', lineHeight: 1.6 }}>
-                Reports are not available for the <strong>{selfFormat === 'forced_choice' ? 'Forced Choice' : selfFormat === 'deep_scenario' ? 'Deep Scenario' : selfFormat}</strong> assessment format.
                 Reports can only be generated for Standard (40Q) and Short (20Q) self-assessment formats.
               </p>
             ) : (<>
