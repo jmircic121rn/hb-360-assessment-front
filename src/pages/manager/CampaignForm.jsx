@@ -16,6 +16,8 @@ export const CampaignForm = React.forwardRef(function CampaignForm({ initialData
     name: '', employeeId: '', employeeIds: [], profilId: '', lang: '',
     includeSelf: false, includeManager: false, includePeer: false,
     includeDirectReports: false, includeExternal: false,
+    includeClient: false, includeInternalSupport: false,
+    includeBusinessPartner: false, includeTrainingParticipant: false,
     includeCrossPartisan: false, includeMentor: false,
     selfFormat: 'standard_40',
     managerFormat: 'standard_40',
@@ -42,7 +44,7 @@ export const CampaignForm = React.forwardRef(function CampaignForm({ initialData
   const [drEmployees, setDrEmployees] = useState([]);
   const [loadingRelationships, setLoadingRelationships] = useState(false);
   const [groupStyle, setGroupStyle] = useState('same');
-  const EMPTY_SUBGROUP = { employeeIds: [], profilId: '', includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeCrossPartisan: false, includeMentor: false };
+  const EMPTY_SUBGROUP = { employeeIds: [], profilId: '', includeSelf: false, includeManager: false, includePeer: false, includeDirectReports: false, includeExternal: false, includeClient: false, includeInternalSupport: false, includeBusinessPartner: false, includeTrainingParticipant: false, includeCrossPartisan: false, includeMentor: false };
   const [subgroups, setSubgroups] = useState([{ ...EMPTY_SUBGROUP }]);
   const [cycleConfig, setCycleConfig] = useState(null);
   const [cycleConfigLoading, setCycleConfigLoading] = useState(false);
@@ -108,6 +110,10 @@ export const CampaignForm = React.forwardRef(function CampaignForm({ initialData
     includePeer: 'peer',
     includeDirectReports: 'direct_report',
     includeExternal: 'external',
+    includeClient: 'client',
+    includeInternalSupport: 'internalsupport',
+    includeBusinessPartner: 'business_partner',
+    includeTrainingParticipant: 'training_participant',
     includeCrossPartisan: 'crosspartisan',
     includeMentor: 'mentor',
   };
@@ -700,6 +706,10 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
                         { key: 'includePeer', label: 'Peer' },
                         { key: 'includeDirectReports', label: 'Direct Reports' },
                         { key: 'includeExternal', label: 'External' },
+                        { key: 'includeClient', label: 'Client' },
+                        { key: 'includeInternalSupport', label: 'Internal Support' },
+                        { key: 'includeBusinessPartner', label: 'Business Partner' },
+                        { key: 'includeTrainingParticipant', label: 'Training Participant' },
                         { key: 'includeCrossPartisan', label: 'Cross-Partisan' },
                         { key: 'includeMentor', label: 'Mentor' },
                       ].filter(t => {
@@ -870,6 +880,10 @@ const normalizeCycleTypes = (types) => (types || []).map(t => ({ ...t, key: t.ke
                 { key: 'includePeer', label: 'Peer Review', desc: 'Individual links + shared link' },
                 { key: 'includeDirectReports', label: 'Direct Reports', desc: 'Individual links + shared link' },
                 { key: 'includeExternal', label: 'External', desc: 'One shared link for external assessors' },
+                { key: 'includeClient', label: 'Client', desc: 'Client / key client assessment' },
+                { key: 'includeInternalSupport', label: 'Internal Support', desc: 'Internal support assessment' },
+                { key: 'includeBusinessPartner', label: 'Business Partner', desc: 'Business partner assessment' },
+                { key: 'includeTrainingParticipant', label: 'Training Participant', desc: 'Training participant assessment' },
                 { key: 'includeCrossPartisan', label: 'Cross-Partisan', desc: 'Cross-partisan assessment' },
                 { key: 'includeMentor', label: 'Mentor', desc: 'Mentor assessment' },
               ];
