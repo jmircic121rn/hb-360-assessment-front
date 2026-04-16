@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../../utils/api';
 import { Layout, ActionMenu } from './managerUtils';
 import {
@@ -20,6 +20,7 @@ export function ManagerDashboard() {
   const [filterStatus, setFilterStatus] = useState('');
   const [expandedGroups, setExpandedGroups] = useState({});
   const [actionLoading, setActionLoading] = useState(null);
+  const navigate = useNavigate();
 
   async function handleDeleteCampaign() {
     setDeleting(true);
@@ -219,7 +220,7 @@ export function ManagerDashboard() {
               const campaignRow = (c, sub = false) => {
                 const td = sub ? tdSubStyle : tdStyle;
                 return (
-                  <tr key={c.CycleID}>
+                  <tr key={c.CycleID} onDoubleClick={() => navigate(`/manager/campaigns/${c.CycleID}`)} style={{ cursor: 'pointer' }}>
                     <td style={{ ...td, paddingLeft: sub ? 32 : 14 }}>{sub ? <span style={{ color: 'var(--ink-faint)', marginRight: 6 }}>↳</span> : null}<strong>{sub ? `${c.FirstName} ${c.LastName}` : c.Name}</strong></td>
                     <td style={td}>{sub ? <span style={{ color: 'var(--ink-faint)', fontSize: '0.78rem' }}>—</span> : <span>{c.FirstName} {c.LastName}</span>}</td>
                     <td style={{ ...td, color: 'var(--ink-soft)' }}>{c.CompanyName || '—'}</td>

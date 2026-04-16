@@ -204,8 +204,9 @@ export default function AssessPage() {
   // Estimated completion time based on format and assessment type
   const estimatedMinutes = (() => {
     if (assessmentType === 'self') {
-      if (selfFormat === 'short_20' || selfFormat === 'short_20_quads') return 15;
-      if (selfFormat === 'fc_then_scenario') return 35;
+      if (selfFormat === 'short_20') return 20;
+      if (selfFormat === 'short_20_quads') return 25;
+      if (selfFormat === 'fc_then_scenario') return 30;
       return 45; // standard_40
     }
     if (assessmentType === 'manager') {
