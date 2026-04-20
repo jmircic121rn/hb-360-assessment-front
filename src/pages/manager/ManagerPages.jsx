@@ -2734,6 +2734,10 @@ export function CampaignDetail() {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiStatus, setAiStatus] = useState('');
   const [aiError, setAiError] = useState(null);
+  // Report 2 — 360 state (self + manager + direct reports + peers).
+  const [ai360Generating, setAi360Generating] = useState(false);
+  const [ai360Status, setAi360Status] = useState('');
+  const [ai360Error, setAi360Error] = useState(null);
   const [cycleData, setCycleData] = useState(null);
 
   function fetchReports() {
@@ -2804,6 +2808,59 @@ export function CampaignDetail() {
     };
     poll();
   }
+
+  // Report 2 — 360: mirrors generateFullReport, routed through the 360 endpoints.
+  async function generateFullReport360() {
+    setAi360Generating(true); setAi360Error(null); setAi360Status('Starting…');
+    let jobId;
+    try {
+      ({ jobId } = await api.manager.generateAIReport360(id));
+      setAi360Status('AI is analyzing 360° feedback…');
+    } catch (e) {
+      setAi360Error(e.message); setAi360Generating(false); setAi360Status('');
+      return;
+    }
+    const poll = async () => {
+      try {
+        const result = await api.manager.getAIReportStatus(id, jobId);
+        if (result.status === 'done') {
+          setAi360Status('Saving…');
+          const saved = await api.manager.saveAIReport360(id, result.report || '');
+          const reportId = saved?.reportId || saved?.ReportID || saved?.id;
+          setAi360Status('Downloading PDF…');
+          const blob = await api.manager.downloadAIReport360Pdf(reportId);
+          const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+          const url = URL.createObjectURL(pdfBlob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Development_Report_360_${campaign.FirstName}_${campaign.LastName}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(url), 30000);
+          fetchReports();
+          setAi360Generating(false); setAi360Status('');
+        } else if (result.status === 'error' || result.status === 'failed') {
+          setAi360Error(result.error || result.message || 'Report 2 — 360 generation failed.');
+          setAi360Generating(false); setAi360Status('');
+        } else {
+          setTimeout(poll, 5000);
+        }
+      } catch (e) {
+        setAi360Error(e.message); setAi360Generating(false); setAi360Status('');
+      }
+    };
+    poll();
+  }
+
+  // See CampaignDetail.jsx for the full rationale. Same two-stage gate here:
+  // hasObservers → render the button, observerLinksDone → enable it.
+  const OBSERVER_TYPES = ['manager', 'peer', 'directreport', 'direct_report', 'external'];
+  const hasObservers = links.some(l => OBSERVER_TYPES.includes(l.AssessmentType));
+  const observerLinksDone = links.some(l =>
+    OBSERVER_TYPES.includes(l.AssessmentType) && l.Status === 'completed'
+  );
+  const canGenerate360 = selfDone && hasObservers && observerLinksDone;
 
   async function doGenerateReport(type, force = false) {
     if (type === 2 && !force) {
@@ -2918,7 +2975,7 @@ export function CampaignDetail() {
   return (
     <Layout>
       {/* Fullscreen loading overlay for report generation */}
-      {(aiGenerating || generating !== null) && (
+      {(aiGenerating || ai360Generating || generating !== null) && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
           background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(4px)',
@@ -2930,7 +2987,11 @@ export function CampaignDetail() {
           }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           <p style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--ink)', letterSpacing: '0.04em' }}>
-            {aiGenerating ? (aiStatus || 'Generating Personal Development Plan...') : 'Generating report...'}
+            {ai360Generating
+              ? (ai360Status || 'Generating Personal Development Plan (+360)...')
+              : aiGenerating
+                ? (aiStatus || 'Generating Personal Development Plan...')
+                : 'Generating report...'}
           </p>
           <p style={{ fontSize: '0.8rem', color: '#999' }}>
             Please wait, this may take a minute. Do not close this page.
@@ -3017,50 +3078,73 @@ export function CampaignDetail() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <Btn variant={selfDone ? 'primary' : 'outline'} loading={aiGenerating}
-                  disabled={!selfDone || aiGenerating || generating !== null} onClick={generateFullReport}
+                  disabled={!selfDone || aiGenerating || ai360Generating || generating !== null} onClick={generateFullReport}
                   style={!selfDone ? { opacity: 0.45, cursor: 'not-allowed' } : {}}>
                   {aiGenerating ? (aiStatus || 'Generating Personal Development Plan...') : 'Personal Development Plan'}
                 </Btn>
                 {!selfDone
                   ? <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Requires: self assessment complete</span>
-                  : <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Downloads as PDF</span>
+                  : <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Self-assessment only · PDF</span>
+                }
+              </div>
+
+              {/* Report 3: 360 Feedback Report — ALWAYS visible. Enabled only when
+                  self + campaign has observers + at least one observer completed. */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <Btn
+                  variant={canGenerate360 ? 'primary' : 'outline'}
+                  loading={ai360Generating}
+                  disabled={!canGenerate360 || aiGenerating || ai360Generating || generating !== null}
+                  onClick={generateFullReport360}
+                  style={!canGenerate360 ? { opacity: 0.45, cursor: 'not-allowed' } : {}}>
+                  {ai360Generating
+                    ? (ai360Status || 'Generating 360 Feedback Report...')
+                    : '360 Feedback Report'}
+                </Btn>
+                {!selfDone
+                  ? <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Requires: self assessment complete</span>
+                  : !hasObservers
+                    ? <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Self-only campaign — not a 360</span>
+                    : !observerLinksDone
+                      ? <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Waiting for at least one manager / peer / direct report response</span>
+                      : <span style={{ fontSize: '0.74rem', color: 'var(--ink-faint)' }}>Includes 360° feedback · PDF</span>
                 }
               </div>
             </div>
 
-            {/* 360 inclusions */}
+            {ai360Error && <div style={{ marginBottom: '16px' }}><Alert type="error">{ai360Error}</Alert></div>}
+
+            {/* 360 inclusions — only meaningful on 360 campaigns */}
+            {hasObservers && (
             <div style={{ borderTop: '1px solid var(--canvas-warm)', paddingTop: '16px' }}>
               <div style={{ fontSize: '0.75rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--ink-soft)', marginBottom: '10px' }}>
-                Will be included in Personal Development plan report
+                Will be included in Personal Development Plan (+360)
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <div style={{
-                  padding: '5px 12px', borderRadius: 'var(--radius-md)',
-                  border: `1px solid ${selfDone ? 'var(--ink)' : 'var(--canvas-warm)'}`,
-                  background: selfDone ? 'var(--canvas-warm)' : 'var(--canvas)',
-                  fontSize: '0.78rem', fontWeight: 500,
-                  color: selfDone ? 'var(--ink)' : 'var(--ink-faint)',
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                }}>
-                  {selfDone
-                    ? <span style={{ color: 'var(--success)', fontSize: '0.7rem' }}>●</span>
-                    : <span style={{ color: 'var(--ink-faint)', fontSize: '0.7rem' }}>○</span>
-                  }
-                  Self Assessment
-                </div>
-                <div style={{
-                  padding: '5px 12px', borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--canvas-warm)',
-                  background: 'var(--canvas)',
-                  fontSize: '0.78rem', fontWeight: 500,
-                  color: 'var(--ink-faint)',
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                }}>
-                  <span style={{ fontSize: '0.7rem' }}>◌</span>
-                  360 feedback — in development
-                </div>
+                {[
+                  { label: 'Self Assessment',   active: selfDone },
+                  { label: 'Manager',           active: links.some(l => l.AssessmentType === 'manager' && l.Status === 'completed') },
+                  { label: 'Direct Reports',    active: links.some(l => ['directreport','direct_report'].includes(l.AssessmentType) && l.Status === 'completed') },
+                  { label: 'Peers',             active: links.some(l => l.AssessmentType === 'peer' && l.Status === 'completed') },
+                ].map(chip => (
+                  <div key={chip.label} style={{
+                    padding: '5px 12px', borderRadius: 'var(--radius-md)',
+                    border: `1px solid ${chip.active ? 'var(--ink)' : 'var(--canvas-warm)'}`,
+                    background: chip.active ? 'var(--canvas-warm)' : 'var(--canvas)',
+                    fontSize: '0.78rem', fontWeight: 500,
+                    color: chip.active ? 'var(--ink)' : 'var(--ink-faint)',
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                  }}>
+                    {chip.active
+                      ? <span style={{ color: 'var(--success)', fontSize: '0.7rem' }}>●</span>
+                      : <span style={{ color: 'var(--ink-faint)', fontSize: '0.7rem' }}>○</span>
+                    }
+                    {chip.label}
+                  </div>
+                ))}
               </div>
             </div>
+            )}
 
             {/* Generated reports list */}
             {reports.length > 0 && (
@@ -3071,7 +3155,11 @@ export function CampaignDetail() {
                     <div key={r.ReportID} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--canvas)', borderRadius: 'var(--radius-md)', border: '1px solid var(--canvas-warm)' }}>
                       <div>
                         <div style={{ fontSize: '0.86rem', fontWeight: 500 }}>
-                          {r.ReportType === 'report1' ? 'Self Assessment Report' : 'HB Compass Development Report'}
+                          {r.ReportType === 'report1'
+                            ? 'Self Assessment Report'
+                            : r.ReportType === 'report2_360'
+                              ? 'HB Compass Development Report (+360)'
+                              : 'HB Compass Development Report'}
                         </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', marginTop: '2px' }}>
                           {new Date(r.GeneratedAt).toLocaleDateString()}
@@ -3940,8 +4028,9 @@ setCompanies(Array.isArray(comp) ? comp : []);
                     </div>
                   ) : visibleCampaigns.map((c, i) => {
                     const campReports = reports.filter(r => String(r.CycleID) === String(c.CycleID));
-                    const report1 = campReports.find(r => r.ReportType === 'report1');
-                    const report2 = campReports.find(r => r.ReportType === 'report2');
+                    const report1     = campReports.find(r => r.ReportType === 'report1');
+                    const report2     = campReports.find(r => r.ReportType === 'report2');
+                    const report2_360 = campReports.find(r => r.ReportType === 'report2_360');
                     const pct = c.TotalLinks > 0 ? Math.round((c.CompletedLinks / c.TotalLinks) * 100) : 0;
                     const statusMap = { in_progress: { label: 'In Progress', color: '#2563eb' }, completed: { label: 'Completed', color: '#16a34a' }, archived: { label: 'Archived', color: '#6b7280' } };
                     const { label: statusLabel, color: statusColor } = statusMap[c.Status] || { label: c.Status, color: '#6b7280' };
@@ -3977,8 +4066,9 @@ setCompanies(Array.isArray(comp) ? comp : []);
                           </div>
                           <ActionMenu items={[
                             { label: 'View Campaign', href: `/manager/campaigns/${c.CycleID}` },
-                            report1 && { label: 'Download Self Report', onClick: () => handleDownload(report1, selectedEmployee), loading: downloading === report1.ReportID },
-                            report2 && { label: 'Download AI Report', onClick: () => handleDownload(report2, selectedEmployee), loading: downloading === report2.ReportID },
+                            report1     && { label: 'Download Self Report', onClick: () => handleDownload(report1, selectedEmployee), loading: downloading === report1.ReportID },
+                            report2     && { label: 'Download AI Report',   onClick: () => handleDownload(report2, selectedEmployee), loading: downloading === report2.ReportID },
+                            report2_360 && { label: 'Download AI Report (+360)', onClick: () => handleDownload(report2_360, selectedEmployee), loading: downloading === report2_360.ReportID },
                           ].filter(Boolean)} />
                         </div>
                       </div>

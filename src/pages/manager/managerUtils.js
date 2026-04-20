@@ -127,9 +127,12 @@ export function Layout({ children }) {
 export function downloadReportPdf(cycleId, reportType, reportId, firstName, lastName) {
   const token = localStorage.getItem('compass_token_admin');
   const BASE = process.env.REACT_APP_API_URL || 'https://api.hansenbeck.com';
-  const url = reportType === 'report2'
-    ? `${BASE}/api/360/manager/reports/${reportId}/ai-pdf`
-    : `${BASE}/api/360/manager/cycles/${cycleId}/report/1/pdf`;
+  // Route by report type: report1 (self PDF), report2 (AI Report 2), report2_360 (AI Report 2 — 360)
+  const url = reportType === 'report2_360'
+    ? `${BASE}/api/360/manager/reports/${reportId}/ai-pdf-360`
+    : reportType === 'report2'
+      ? `${BASE}/api/360/manager/reports/${reportId}/ai-pdf`
+      : `${BASE}/api/360/manager/cycles/${cycleId}/report/1/pdf`;
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.blob(); })
     .then(blob => {

@@ -244,8 +244,9 @@ setCompanies(Array.isArray(comp) ? comp : []);
                     </div>
                   ) : visibleCampaigns.map((c, i) => {
                     const campReports = reports.filter(r => String(r.CycleID) === String(c.CycleID));
-                    const report1 = campReports.find(r => r.ReportType === 'report1');
-                    const report2 = campReports.find(r => r.ReportType === 'report2');
+                    const report1     = campReports.find(r => r.ReportType === 'report1');
+                    const report2     = campReports.find(r => r.ReportType === 'report2');
+                    const report2_360 = campReports.find(r => r.ReportType === 'report2_360');
                     const pct = c.TotalLinks > 0 ? Math.round((c.CompletedLinks / c.TotalLinks) * 100) : 0;
                     const statusMap = { in_progress: { label: 'In Progress', color: '#2563eb' }, completed: { label: 'Completed', color: '#16a34a' }, archived: { label: 'Archived', color: '#6b7280' } };
                     const { label: statusLabel, color: statusColor } = statusMap[c.Status] || { label: c.Status, color: '#6b7280' };
@@ -281,8 +282,9 @@ setCompanies(Array.isArray(comp) ? comp : []);
                           </div>
                           <ActionMenu items={[
                             { label: 'View Campaign', href: `/manager/campaigns/${c.CycleID}` },
-                            report1 && { label: 'Download Self Report', onClick: () => handleDownload(report1, selectedEmployee), loading: downloading === report1.ReportID },
-                            report2 && { label: 'Download AI Report', onClick: () => handleDownload(report2, selectedEmployee), loading: downloading === report2.ReportID },
+                            report1     && { label: 'Download Self Report', onClick: () => handleDownload(report1, selectedEmployee), loading: downloading === report1.ReportID },
+                            report2     && { label: 'Download AI Report',   onClick: () => handleDownload(report2, selectedEmployee), loading: downloading === report2.ReportID },
+                            report2_360 && { label: 'Download AI Report (+360)', onClick: () => handleDownload(report2_360, selectedEmployee), loading: downloading === report2_360.ReportID },
                           ].filter(Boolean)} />
                         </div>
                       </div>

@@ -79,6 +79,17 @@ export const api = {
       if (!res.ok) throw new Error('Failed to download PDF');
       return res.blob();
     },
+    // Report 2 — 360 (self + manager + direct reports + peers). Reuses the same
+    // status-polling endpoint as Report 2, but save / PDF are separate so the
+    // two report types live side-by-side in F360_Reports.
+    generateAIReport360: (cycleId) => request(`/api/360/manager/cycles/${cycleId}/generate-ai-report-360`, { method: 'POST' }, 'admin'),
+    saveAIReport360: (cycleId, report) => request(`/api/360/manager/cycles/${cycleId}/save-ai-report-360`, { method: 'POST', body: JSON.stringify({ report }) }, 'admin'),
+    downloadAIReport360Pdf: async (reportId) => {
+      const token = localStorage.getItem('compass_token_admin');
+      const res = await fetch(`${BASE}/api/360/manager/reports/${reportId}/ai-pdf-360`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error('Failed to download PDF');
+      return res.blob();
+    },
     getManagersList: () => request('/api/360/manager/managers-list', {}, 'admin'),
     // Drafts
     getDrafts: () => request('/api/360/manager/drafts', {}, 'admin'),
