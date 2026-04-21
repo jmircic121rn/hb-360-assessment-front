@@ -305,15 +305,27 @@ export default function AssessPage() {
       questions.forEach(q => {
         const pStr = pillarStr(q);
         if (q._format === 'deep_scenario_staged') {
-          (q.stages || []).forEach((s, i) => questionsPayload.push({
-            id: `${q.id}_S${i + 1}`, pillar: pStr,
-            dimension: q.dimension || pillarDim(pStr), type: s.stageType || 'decision',
-          }));
+          // Each STAGE carries its own pillarName (see ict_sales_deep_scenario_*.json:
+          // a scenario has a dimension at top level, but its stages each specify
+          // which pillar within that dimension they're probing). Use the
+          // stage-level pillar; fall back to the scenario-level one only when the
+          // stage omits it.
+          (q.stages || []).forEach((s, i) => {
+            const stagePillar = pillarStr(s) || pStr;
+            questionsPayload.push({
+              id: `${q.id}_S${i + 1}`, pillar: stagePillar,
+              dimension: q.dimension || pillarDim(stagePillar), type: s.stageType || 'decision',
+            });
+          });
         } else if (q._format === 'deep_scenario_open') {
-          (q.questions || []).forEach((sub, i) => questionsPayload.push({
-            id: `${q.id}_Q${i + 1}`, pillar: pStr,
-            dimension: q.dimension || pillarDim(pStr), type: 'qualitative',
-          }));
+          // Same pattern for open scenarios — prefer sub-question pillar if present.
+          (q.questions || []).forEach((sub, i) => {
+            const subPillar = pillarStr(sub) || pStr;
+            questionsPayload.push({
+              id: `${q.id}_Q${i + 1}`, pillar: subPillar,
+              dimension: q.dimension || pillarDim(subPillar), type: 'qualitative',
+            });
+          });
         } else if (q._format === 'forced_choice') {
           questionsPayload.push({
             id: q.id, pillar: null, dimension: null, type: 'forced_choice',

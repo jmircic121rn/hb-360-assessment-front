@@ -50,9 +50,12 @@ export function CampaignDetail() {
   const selfLink = links.find(l => l.AssessmentType === 'self');
   const managerLink = links.find(l => l.AssessmentType === 'manager');
   const selfFormat = campaign?.SelfFormat || 'standard_40';
-  // Report 2 (AI) now supports all three self-assessment formats:
-  // standard_40, short_20, and fc_then_scenario (20 questions + quad forced-choice)
-  const reportsAvailable = ['standard_40', 'short_20', 'fc_then_scenario'].includes(selfFormat);
+  // Report 2 (AI) supports every scoreable self-assessment format:
+  //   standard_40        — 40 questions
+  //   short_20           — 20 questions
+  //   short_20_quads     — 20 questions + pillar quads on weak pillars (canonical "20 + quad")
+  //   fc_then_scenario   — forced-choice phase 1 + deep scenarios phase 2
+  const reportsAvailable = ['standard_40', 'short_20', 'short_20_quads', 'fc_then_scenario'].includes(selfFormat);
   const peerLinks = links.filter(l => l.AssessmentType === 'peer');
   const drLinks = links.filter(l => ['directreport', 'direct_report'].includes(l.AssessmentType));
   const otherLinks = links.filter(l => !['self', 'manager', 'peer', 'directreport', 'direct_report'].includes(l.AssessmentType));
@@ -354,12 +357,12 @@ export function CampaignDetail() {
             </div>
           </Card>
 
-          {/* Reports — only for standard_40 and short_20 formats */}
+          {/* Reports — supported for standard_40, short_20, short_20_quads, and fc_then_scenario */}
           <Card style={{ padding: '24px' }}>
             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', marginBottom: '4px' }}>Reports</h3>
             {!reportsAvailable ? (
               <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '0', lineHeight: 1.6 }}>
-                Reports can only be generated for Standard (40Q) and Short (20Q) self-assessment formats.
+                Reports can only be generated for Standard (40Q), Short (20Q), Short (20) + quad (short_20_quads), and forced-choice + scenario (fc_then_scenario) self-assessment formats.
               </p>
             ) : (<>
             <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '20px', lineHeight: 1.6 }}>
