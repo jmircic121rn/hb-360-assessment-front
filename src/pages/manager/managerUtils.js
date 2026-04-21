@@ -133,6 +133,13 @@ export function downloadReportPdf(cycleId, reportType, reportId, firstName, last
     : reportType === 'report2'
       ? `${BASE}/api/360/manager/reports/${reportId}/ai-pdf`
       : `${BASE}/api/360/manager/cycles/${cycleId}/report/1/pdf`;
+  // Filename prefix by report type — must match the names used at generation
+  // time in CampaignDetail.jsx so re-downloads are consistent.
+  const prefix = reportType === 'report2_360'
+    ? 'Development_Report_360'
+    : reportType === 'report2'
+      ? 'Development_Report'
+      : 'Self_Assessment_Report';
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(res => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.blob(); })
     .then(blob => {
@@ -141,7 +148,7 @@ export function downloadReportPdf(cycleId, reportType, reportId, firstName, last
       const name = [firstName, lastName].filter(Boolean).join('_') || reportId || cycleId;
       const a = document.createElement('a');
       a.href = blobUrl;
-      a.download = `Report_${name}.pdf`;
+      a.download = `${prefix}_${name}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
