@@ -46,6 +46,7 @@ export function CampaignDetail() {
   const campaign = data?.cycle;
   const links = data?.links || [];
   const typeLabels = data?.typeLabels || {};
+  const selfFormatDetail = data?.selfFormatDetail || null;
 
   const selfLink = links.find(l => l.AssessmentType === 'self');
   const managerLink = links.find(l => l.AssessmentType === 'manager');
@@ -337,6 +338,17 @@ export function CampaignDetail() {
                 <div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Profile</div>
                   <div style={{ fontWeight: 500 }}>{campaign.ProfilName || campaign.ProfileName}</div>
+                </div>
+              )}
+              {selfFormatDetail && (
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--ink-soft)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>Self Assessment Type</div>
+                  <div style={{ fontWeight: 500 }}>{selfFormatDetail.label}</div>
+                  {(selfFormatDetail.questionCount || selfFormatDetail.estimatedTime) && (
+                    <div style={{ fontSize: '0.78rem', color: 'var(--ink-soft)', marginTop: '2px' }}>
+                      {[selfFormatDetail.questionCount && `${selfFormatDetail.questionCount}Q`, selfFormatDetail.estimatedTime].filter(Boolean).join(' · ')}
+                    </div>
+                  )}
                 </div>
               )}
               {campaign.Status === 'in_progress' && (
